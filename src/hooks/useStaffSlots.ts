@@ -1,7 +1,9 @@
 import useSWR, { mutate } from 'swr';
-import { USE_MOCK } from '@/lib/api';
+import { useMockFor } from '@/lib/api';
 import { MOCK_STAFF_SLOTS, MOCK_STAFF } from '@/lib/mock-data';
 import type { StaffSlotAssignment } from '@/lib/types';
+
+const MOCK = useMockFor('staffSlots');
 
 /** In-memory mock store */
 let mockStaffSlots: StaffSlotAssignment[] = [...MOCK_STAFF_SLOTS];
@@ -10,7 +12,7 @@ export function useStaffSlots(day?: string, timeSortKey?: number) {
   const key = `staff-slots-${day || 'all'}-${timeSortKey || 'all'}`;
 
   return useSWR<StaffSlotAssignment[]>(key, async () => {
-    if (USE_MOCK) {
+    if (MOCK) {
       let slots = mockStaffSlots;
       if (day) slots = slots.filter((s) => s.day_of_week === day);
       if (timeSortKey) slots = slots.filter((s) => s.time_sort_key === timeSortKey);
@@ -26,7 +28,7 @@ export function useStaffSlots(day?: string, timeSortKey?: number) {
 
 export function useAllStaffSlots() {
   return useSWR<StaffSlotAssignment[]>('staff-slots-all-all', async () => {
-    if (USE_MOCK) {
+    if (MOCK) {
       return mockStaffSlots.map((s) => ({
         ...s,
         staff: MOCK_STAFF.find((st) => st.id === s.staff_id),
@@ -50,7 +52,7 @@ export async function assignStaffToSlot(
     effective_to: null,
     created_at: new Date().toISOString(),
   };
-  if (USE_MOCK) {
+  if (MOCK) {
     mockStaffSlots.push(entry);
   }
   // Revalidate all staff slot keys
@@ -59,7 +61,7 @@ export async function assignStaffToSlot(
 }
 
 export async function removeStaffFromSlot(assignmentId: number): Promise<void> {
-  if (USE_MOCK) {
+  if (MOCK) {
     mockStaffSlots = mockStaffSlots.filter((s) => s.id !== assignmentId);
   }
   mutate((key: string) => typeof key === 'string' && key.startsWith('staff-slots-'), undefined, { revalidate: true });

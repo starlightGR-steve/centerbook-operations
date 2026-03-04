@@ -39,6 +39,23 @@ const API_PASS = process.env.NEXT_PUBLIC_API_PASS || '';
 
 export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
+// ── Per-Module Real API Toggle ────────────
+// When USE_MOCK is false, all modules use real API.
+// When USE_MOCK is true, individual modules can opt into real API
+// via NEXT_PUBLIC_{MODULE}_REAL=true env vars.
+// This allows gradual migration as backend endpoints come online.
+
+const MODULE_OVERRIDES: Record<string, boolean> = {
+  attendance: process.env.NEXT_PUBLIC_ATTENDANCE_REAL === 'true',
+};
+
+/** Check if a module should use mock data */
+export function useMockFor(module: string): boolean {
+  if (!USE_MOCK) return false; // Global mock off = everything real
+  if (MODULE_OVERRIDES[module]) return false; // Module override = use real
+  return true; // Default: use mock
+}
+
 // ── Rate Limiter ───────────────────────────
 // WP Engine Cloudflare WAF: batch 2 requests, 2s between batches
 

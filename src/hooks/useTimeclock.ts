@@ -1,7 +1,9 @@
 import useSWR, { mutate } from 'swr';
-import { api, USE_MOCK } from '@/lib/api';
+import { api, useMockFor } from '@/lib/api';
 import { MOCK_TIME_ENTRIES, MOCK_STAFF } from '@/lib/mock-data';
 import type { TimeEntry, ClockInRequest, ClockOutRequest } from '@/lib/types';
+
+const MOCK = useMockFor('timeclock');
 
 /** In-memory mock store so mutations persist across SWR refetches */
 let mockTimeEntries: TimeEntry[] = [...MOCK_TIME_ENTRIES];
@@ -13,7 +15,7 @@ export function useTimeclock(date?: string) {
   return useSWR<TimeEntry[]>(
     `timeclock-${d}`,
     async () => {
-      if (USE_MOCK) {
+      if (MOCK) {
         return mockTimeEntries.map((t) => ({
           ...t,
           staff: MOCK_STAFF.find((s) => s.id === t.staff_id),
@@ -34,7 +36,7 @@ export function useClockedInStaff(date?: string) {
 
 /** Clock in a staff member */
 export async function clockInStaff(data: ClockInRequest): Promise<TimeEntry> {
-  if (USE_MOCK) {
+  if (MOCK) {
     const entry: TimeEntry = {
       id: Date.now(),
       staff_id: data.staff_id,
@@ -58,7 +60,7 @@ export async function clockInStaff(data: ClockInRequest): Promise<TimeEntry> {
 
 /** Clock out a staff member */
 export async function clockOutStaff(data: ClockOutRequest): Promise<TimeEntry> {
-  if (USE_MOCK) {
+  if (MOCK) {
     const existing = mockTimeEntries.find(
       (e) => e.staff_id === data.staff_id && e.clock_out === null
     );

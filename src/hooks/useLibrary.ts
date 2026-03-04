@@ -1,7 +1,9 @@
 import useSWR, { mutate } from 'swr';
-import { api, USE_MOCK } from '@/lib/api';
+import { api, useMockFor } from '@/lib/api';
 import { MOCK_BOOKS, MOCK_BOOK_LOANS, MOCK_STUDENTS } from '@/lib/mock-data';
 import type { Book, BookLoan, CheckoutBookRequest, ReturnBookRequest } from '@/lib/types';
+
+const MOCK = useMockFor('library');
 
 /** In-memory mock stores */
 let mockBooks: Book[] = [...MOCK_BOOKS];
@@ -12,7 +14,7 @@ export function useBooks() {
   return useSWR<Book[]>(
     'library-books',
     async () => {
-      if (USE_MOCK) return mockBooks;
+      if (MOCK) return mockBooks;
       return api.library.books();
     },
     { dedupingInterval: 5000 }
@@ -24,7 +26,7 @@ export function useOutstandingLoans() {
   return useSWR<BookLoan[]>(
     'library-loans-outstanding',
     async () => {
-      if (USE_MOCK) {
+      if (MOCK) {
         return mockLoans
           .filter((l) => l.returned_at === null)
           .map((l) => ({
@@ -44,7 +46,7 @@ export function useBookLoans(bookId?: number) {
   return useSWR<BookLoan[]>(
     bookId ? `library-loans-book-${bookId}` : 'library-loans-all',
     async () => {
-      if (USE_MOCK) {
+      if (MOCK) {
         let loans = mockLoans;
         if (bookId) loans = loans.filter((l) => l.book_id === bookId);
         return loans.map((l) => ({
@@ -67,7 +69,7 @@ function revalidateAll() {
 
 /** Checkout a book */
 export async function checkoutBook(data: CheckoutBookRequest): Promise<BookLoan> {
-  if (USE_MOCK) {
+  if (MOCK) {
     const loan: BookLoan = {
       id: Date.now(),
       book_id: data.book_id,
@@ -97,7 +99,7 @@ export async function checkoutBook(data: CheckoutBookRequest): Promise<BookLoan>
 
 /** Return a book */
 export async function returnBook(data: ReturnBookRequest): Promise<BookLoan> {
-  if (USE_MOCK) {
+  if (MOCK) {
     const existing = mockLoans.find(
       (l) => l.book_id === data.book_id && l.returned_at === null
     );
@@ -130,7 +132,7 @@ export async function addBook(data: Partial<Book>): Promise<Book> {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-  if (USE_MOCK) {
+  if (MOCK) {
     mockBooks.push(book);
     revalidateAll();
     return book;

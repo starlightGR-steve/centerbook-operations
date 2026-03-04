@@ -1,7 +1,9 @@
 import useSWR, { mutate } from 'swr';
-import { api, USE_MOCK } from '@/lib/api';
+import { api, useMockFor } from '@/lib/api';
 import { MOCK_ROW_ASSIGNMENTS, MOCK_STUDENTS } from '@/lib/mock-data';
 import type { RowAssignment, AssignRowRequest } from '@/lib/types';
+
+const MOCK = useMockFor('rows');
 
 /** Fetch row assignments for a specific row on a given date */
 export function useRowAssignments(rowNumber: number, date?: string) {
@@ -10,7 +12,7 @@ export function useRowAssignments(rowNumber: number, date?: string) {
   return useSWR<RowAssignment[]>(
     `row-${rowNumber}-${d}`,
     async () => {
-      if (USE_MOCK) {
+      if (MOCK) {
         return MOCK_ROW_ASSIGNMENTS.filter(
           (a) => a.row_number === rowNumber && a.assigned_date === d
         ).map((a) => ({
@@ -26,7 +28,7 @@ export function useRowAssignments(rowNumber: number, date?: string) {
 
 /** Assign a student to a row */
 export async function assignToRow(data: AssignRowRequest): Promise<RowAssignment> {
-  if (USE_MOCK) {
+  if (MOCK) {
     const assignment: RowAssignment = {
       id: Date.now(),
       student_id: data.student_id,
@@ -49,7 +51,7 @@ export async function removeFromRow(
   rowNumber: number,
   date: string
 ): Promise<void> {
-  if (USE_MOCK) {
+  if (MOCK) {
     mutate(`row-${rowNumber}-${date}`);
     return;
   }

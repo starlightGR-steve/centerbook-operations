@@ -1,7 +1,9 @@
 import useSWR, { mutate } from 'swr';
-import { api, USE_MOCK } from '@/lib/api';
+import { api, useMockFor } from '@/lib/api';
 import { MOCK_ATTENDANCE, MOCK_STUDENTS } from '@/lib/mock-data';
 import type { Attendance, CheckInRequest, CheckOutRequest } from '@/lib/types';
+
+const MOCK = useMockFor('attendance');
 
 // In-memory mock store so mutations persist within session
 let mockAttendance = [...MOCK_ATTENDANCE];
@@ -13,7 +15,7 @@ export function useAttendance(date?: string, refreshInterval = 10000) {
   return useSWR<Attendance[]>(
     `attendance-${d}`,
     async () => {
-      if (USE_MOCK) {
+      if (MOCK) {
         return mockAttendance.map((a) => ({
           ...a,
           student: MOCK_STUDENTS.find((s) => s.id === a.student_id),
@@ -39,7 +41,7 @@ export async function checkInStudent(data: CheckInRequest): Promise<Attendance> 
     Date.now() + data.session_duration_minutes * 60000
   ).toISOString();
 
-  if (USE_MOCK) {
+  if (MOCK) {
     const entry: Attendance = {
       id: Date.now(),
       student_id: data.student_id,
@@ -74,7 +76,7 @@ export async function checkInStudent(data: CheckInRequest): Promise<Attendance> 
 export async function checkOutStudent(data: CheckOutRequest): Promise<Attendance> {
   const now = new Date().toISOString();
 
-  if (USE_MOCK) {
+  if (MOCK) {
     const idx = mockAttendance.findIndex(
       (a) => a.student_id === data.student_id && a.check_out === null
     );

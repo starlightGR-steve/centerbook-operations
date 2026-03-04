@@ -1,14 +1,16 @@
 import useSWR from 'swr';
-import { api, USE_MOCK } from '@/lib/api';
+import { api, useMockFor } from '@/lib/api';
 import { MOCK_STUDENTS } from '@/lib/mock-data';
 import type { Student } from '@/lib/types';
+
+const MOCK = useMockFor('students');
 
 /** Fetch all active students */
 export function useStudents() {
   return useSWR<Student[]>(
     'students',
     async () => {
-      if (USE_MOCK) return MOCK_STUDENTS;
+      if (MOCK) return MOCK_STUDENTS;
       const all = await api.students.list();
       return all.filter((s) => s.enrollment_status === 'Active');
     },
@@ -22,7 +24,7 @@ export function useStudent(id: number | null) {
     id ? `student-${id}` : null,
     async () => {
       if (!id) return null;
-      if (USE_MOCK) return MOCK_STUDENTS.find((s) => s.id === id) ?? null;
+      if (MOCK) return MOCK_STUDENTS.find((s) => s.id === id) ?? null;
       return api.students.get(id);
     },
     { dedupingInterval: 5000 }

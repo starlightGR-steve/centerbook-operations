@@ -1,7 +1,9 @@
 import useSWR, { mutate } from 'swr';
-import { USE_MOCK } from '@/lib/api';
+import { useMockFor } from '@/lib/api';
 import { MOCK_SCHEDULE_OVERRIDES } from '@/lib/mock-data';
 import type { ScheduleOverride } from '@/lib/types';
+
+const MOCK = useMockFor('scheduleOverrides');
 
 /** In-memory mock store */
 let mockOverrides: ScheduleOverride[] = [...MOCK_SCHEDULE_OVERRIDES];
@@ -10,7 +12,7 @@ export function useScheduleOverrides(weekStartDate: string) {
   return useSWR<ScheduleOverride[]>(
     `schedule-overrides-${weekStartDate}`,
     async () => {
-      if (USE_MOCK) {
+      if (MOCK) {
         // Return overrides for the given week (Mon–Sun from weekStartDate)
         const start = new Date(weekStartDate + 'T00:00:00');
         const end = new Date(start);
@@ -33,7 +35,7 @@ export async function createOverride(
     id: Date.now(),
     created_at: new Date().toISOString(),
   };
-  if (USE_MOCK) {
+  if (MOCK) {
     mockOverrides.push(entry);
   }
   mutate(
@@ -45,7 +47,7 @@ export async function createOverride(
 }
 
 export async function removeOverride(overrideId: number): Promise<void> {
-  if (USE_MOCK) {
+  if (MOCK) {
     mockOverrides = mockOverrides.filter((o) => o.id !== overrideId);
   }
   mutate(

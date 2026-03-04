@@ -1,7 +1,9 @@
 import useSWR, { mutate } from 'swr';
-import { api, USE_MOCK } from '@/lib/api';
+import { api, useMockFor } from '@/lib/api';
 import { MOCK_NOTES } from '@/lib/mock-data';
 import type { StudentNote, CreateNoteRequest } from '@/lib/types';
+
+const MOCK = useMockFor('notes');
 
 /** Fetch notes for a student, optionally filtered by date */
 export function useNotes(studentId: number | null, date?: string) {
@@ -9,7 +11,7 @@ export function useNotes(studentId: number | null, date?: string) {
     studentId ? `notes-${studentId}${date ? `-${date}` : ''}` : null,
     async () => {
       if (!studentId) return [];
-      if (USE_MOCK) {
+      if (MOCK) {
         let notes = MOCK_NOTES.filter((n) => n.student_id === studentId);
         if (date) notes = notes.filter((n) => n.note_date === date);
         return notes.sort(
@@ -25,7 +27,7 @@ export function useNotes(studentId: number | null, date?: string) {
 
 /** Create a new note */
 export async function createNote(data: CreateNoteRequest): Promise<StudentNote> {
-  if (USE_MOCK) {
+  if (MOCK) {
     const note: StudentNote = {
       id: Date.now(),
       student_id: data.student_id,
@@ -52,7 +54,7 @@ export async function deleteNote(
   noteId: number,
   studentId: number
 ): Promise<void> {
-  if (USE_MOCK) {
+  if (MOCK) {
     mutate(`notes-${studentId}`);
     return;
   }
