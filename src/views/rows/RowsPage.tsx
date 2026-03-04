@@ -10,6 +10,7 @@ import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { useRowAssignments } from '@/hooks/useRows';
 import type { Student, Attendance } from '@/lib/types';
+import RowsSkeleton from './RowsSkeleton';
 import styles from './RowsPage.module.css';
 
 const ROW_NUMBERS = [1, 2, 3, 4, 5, 6];
@@ -59,7 +60,7 @@ export default function RowsPage() {
     : null;
 
   if (!allStudents || !checkedIn) {
-    return <div className={styles.loading}>Loading...</div>;
+    return <RowsSkeleton />;
   }
 
   return (

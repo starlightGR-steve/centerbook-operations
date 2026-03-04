@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import Card from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
 import type { Attendance, Student } from '@/lib/types';
 import { getTimeRemaining, formatTime } from '@/lib/types';
@@ -34,9 +35,13 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
       <h3 className={styles.header}>
         <LogOut size={18} color="var(--accent)" /> Check-Out
       </h3>
-      <div className={styles.list}>
+      <div className={styles.list} role="list" aria-label="Students currently checked in">
         {attendance.length === 0 && (
-          <p className={styles.empty}>No students checked in.</p>
+          <EmptyState
+            icon={LogOut}
+            title="No students checked in yet"
+            description="Check in students from the left panel"
+          />
         )}
         {attendance.map((a) => {
           const student = a.student || getStudent(a.student_id);
@@ -50,6 +55,7 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
               key={a.id}
               className={styles.row}
               onClick={() => handleCheckOut(a.student_id)}
+              aria-label={`Check out ${student.first_name} ${student.last_name}, ${timeLeft} minutes remaining`}
             >
               <div>
                 <p className={styles.name}>

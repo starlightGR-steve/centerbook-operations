@@ -1,11 +1,28 @@
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import Sidebar from './Sidebar';
 import styles from './Shell.module.css';
 
+function ShellInner({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams();
+  const isEmbedded = searchParams.get('embedded') === 'true';
+
+  return (
+    <div className={`${styles.shell} ${isEmbedded ? styles.shellEmbedded : ''}`}>
+      {!isEmbedded && <Sidebar />}
+      <main id="main-content" className={`${styles.main} ${isEmbedded ? styles.mainEmbedded : ''}`}>
+        {children}
+      </main>
+    </div>
+  );
+}
+
 export default function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className={styles.shell}>
-      <Sidebar />
-      <main className={styles.main}>{children}</main>
-    </div>
+    <Suspense>
+      <ShellInner>{children}</ShellInner>
+    </Suspense>
   );
 }

@@ -32,7 +32,14 @@ export default function StudentCard({
       : styles.cardNormal;
 
   return (
-    <div className={`${styles.card} ${cardClass}`} onClick={onClick}>
+    <div
+      className={`${styles.card} ${cardClass}`}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      tabIndex={0}
+      role="button"
+      aria-label={`${student.first_name} ${student.last_name}, ${timeLeft} minutes remaining${isWarn ? ', time warning' : ''}`}
+    >
       <div>
         <div className={styles.top}>
           <div className={styles.badges}>

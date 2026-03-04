@@ -14,6 +14,7 @@ import { useCenterSettings } from '@/hooks/useCenterSettings';
 import { useScheduleOverrides } from '@/hooks/useScheduleOverrides';
 import type { CapacityCell, Student } from '@/lib/types';
 import { getWeekDates } from '@/lib/types';
+import LogisticsSkeleton from './LogisticsSkeleton';
 import styles from './LogisticsPage.module.css';
 
 export default function LogisticsPage() {
@@ -77,7 +78,7 @@ export default function LogisticsPage() {
 
       <div className={styles.content}>
         {isLoading ? (
-          <div className={styles.loading}>Loading capacity data...</div>
+          <LogisticsSkeleton />
         ) : gridData ? (
           <CapacityGrid data={gridData} onCellClick={handleCellClick} />
         ) : (

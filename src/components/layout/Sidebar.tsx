@@ -23,9 +23,9 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.logo}>CB</div>
-      <nav className={styles.nav}>
+    <aside className={styles.sidebar} aria-label="Module navigation">
+      <div className={styles.logo} aria-hidden="true">CB</div>
+      <nav className={styles.nav} aria-label="Module navigation">
         {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
           return (
@@ -33,8 +33,10 @@ export default function Sidebar() {
               key={href}
               href={href}
               className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}
+              aria-current={active ? 'page' : undefined}
+              aria-label={label}
             >
-              <Icon size={20} />
+              <Icon size={20} aria-hidden="true" />
               <span className={styles.tooltip}>{label}</span>
             </Link>
           );

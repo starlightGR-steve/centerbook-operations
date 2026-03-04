@@ -11,6 +11,7 @@ import { useStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { usePayPeriod } from '@/hooks/usePayPeriod';
 import type { Staff, TimeEntry } from '@/lib/types';
+import StaffSkeleton from './StaffSkeleton';
 import styles from './StaffPage.module.css';
 
 function exportPayrollCSV(
@@ -88,7 +89,7 @@ export default function StaffPage() {
 
       <div className={styles.content}>
         {!staff || !timeEntries ? (
-          <div className={styles.loading}>Loading staff data...</div>
+          <StaffSkeleton />
         ) : (
           <StaffTable
             staff={staff}

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Clock } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import EmptyState from '@/components/ui/EmptyState';
 import { clockInStaff } from '@/hooks/useTimeclock';
 import type { Staff, TimeEntry } from '@/lib/types';
 import { formatTime } from '@/lib/types';
@@ -125,7 +126,7 @@ export default function StaffDetailModal({
         <h4 className={styles.sectionTitle}>Time Entries</h4>
         <div className={styles.entries}>
           {periodEntries.length === 0 && (
-            <p className={styles.empty}>No entries for this period.</p>
+            <EmptyState icon={Clock} title="No entries this period" description="Manual entries can be added below" />
           )}
           {periodEntries.map((entry) => {
             const duration = entry.duration_minutes

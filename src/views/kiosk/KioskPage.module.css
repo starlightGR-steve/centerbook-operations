@@ -82,3 +82,47 @@
   font-size: 14px;
   color: var(--neutral);
 }
+
+@media (max-width: 1024px) {
+  .page {
+    padding: 20px;
+  }
+
+  .scannerWrap {
+    margin: 0 16px;
+  }
+
+  .columns {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .scannerWrap {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .columns {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr auto;
+    overflow: visible;
+  }
+
+  .columns > :last-child {
+    grid-column: 1 / -1;
+  }
+}

@@ -211,3 +211,13 @@
   color: var(--neutral);
   font-style: italic;
 }
+
+@media (max-width: 768px) {
+  .panel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    z-index: 30;
+    border-left: none;
+  }
+}

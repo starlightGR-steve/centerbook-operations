@@ -1,7 +1,8 @@
 'use client';
 
-import { LogIn, Plus } from 'lucide-react';
+import { LogIn, Plus, UserCheck } from 'lucide-react';
 import Card from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
 import StudentRow from '@/components/StudentRow';
 import type { Student } from '@/lib/types';
 import { getSessionDuration } from '@/lib/types';
@@ -27,9 +28,13 @@ export default function CheckInPanel({ students }: CheckInPanelProps) {
       <h3 className={styles.header}>
         <LogIn size={18} color="var(--green)" /> Check-In
       </h3>
-      <div className={styles.list}>
+      <div className={styles.list} role="list" aria-label="Students awaiting check-in">
         {students.length === 0 && (
-          <p className={styles.empty}>All students checked in.</p>
+          <EmptyState
+            icon={UserCheck}
+            title="All students checked in"
+            description="Students scheduled for today will appear when they're ready"
+          />
         )}
         {students.map((s) => (
           <StudentRow

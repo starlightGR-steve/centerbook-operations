@@ -14,7 +14,14 @@ export default function BookCard({ book, loan, onClick }: BookCardProps) {
   const isCheckedOut = book.status === 'checked-out';
 
   return (
-    <div className={styles.card} onClick={onClick}>
+    <div
+      className={styles.card}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      tabIndex={0}
+      role="button"
+      aria-label={`${book.title}${book.author ? ` by ${book.author}` : ''}, ${isCheckedOut ? 'Checked out' : 'Available'}`}
+    >
       <div className={styles.iconWrap}>
         <BookOpen size={18} />
       </div>

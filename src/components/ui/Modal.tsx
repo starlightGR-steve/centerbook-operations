@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useId } from 'react';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import styles from './Modal.module.css';
 
 interface ModalProps {
@@ -21,36 +22,29 @@ export default function Modal({
   children,
   maxWidth,
 }: ModalProps) {
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    },
-    [onClose]
-  );
-
-  useEffect(() => {
-    if (open) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [open, handleKeyDown]);
+  const titleId = useId();
+  const containerRef = useFocusTrap(open, onClose);
 
   if (!open) return null;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div
+        ref={containerRef}
         className={styles.modal}
         style={maxWidth ? { maxWidth } : undefined}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
       >
         <div className={styles.header}>
           <div>
-            <h3 className={styles.headerTitle}>{title}</h3>
+            <h3 id={titleId} className={styles.headerTitle}>{title}</h3>
             {subtitle && <p className={styles.headerSub}>{subtitle}</p>}
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>
-            <X size={20} />
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close dialog">
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
         <div className={styles.body}>{children}</div>

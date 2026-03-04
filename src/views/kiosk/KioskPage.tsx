@@ -12,10 +12,12 @@ import { useCheckedInStudents, checkInStudent, checkOutStudent } from '@/hooks/u
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { getSessionDuration } from '@/lib/types';
+import KioskSkeleton from './KioskSkeleton';
 import styles from './KioskPage.module.css';
 
 export default function KioskPage() {
   const [scan, setScan] = useState('');
+  const [announcement, setAnnouncement] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: allStudents } = useStudents();
@@ -64,6 +66,7 @@ export default function KioskPage() {
     );
 
     if (!student) {
+      setAnnouncement('Student not found');
       setScan('');
       return;
     }
@@ -71,18 +74,20 @@ export default function KioskPage() {
     const isIn = checkedIn?.some((a) => a.student_id === student.id);
     if (isIn) {
       await checkOutStudent({ student_id: student.id });
+      setAnnouncement(`${student.first_name} ${student.last_name} checked out`);
     } else {
       await checkInStudent({
         student_id: student.id,
         source: 'barcode',
         session_duration_minutes: getSessionDuration(student.subjects),
       });
+      setAnnouncement(`${student.first_name} ${student.last_name} checked in`);
     }
     setScan('');
   };
 
   if (!allStudents || !staff || !timeEntries) {
-    return <div className={styles.loading}>Loading...</div>;
+    return <KioskSkeleton />;
   }
 
   return (
@@ -112,6 +117,7 @@ export default function KioskPage() {
         <ClockDisplay size="lg" showIcon={false} />
       </div>
 
+      <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
       <div className={styles.columns}>
         <CheckInPanel students={awaitingCheckIn} />
         <CheckOutPanel

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send } from 'lucide-react';
+import { X, Send, FileText, BookOpen } from 'lucide-react';
 import NoteCard from '@/components/NoteCard';
+import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
 import type { Student, Attendance } from '@/lib/types';
 import { useNotes, createNote } from '@/hooks/useNotes';
@@ -98,7 +99,7 @@ export default function StudentDetailPanel({
             {notes && notes.length > 0 ? (
               notes.map((n) => <NoteCard key={n.id} note={n} />)
             ) : (
-              <p className={styles.empty}>No notes yet.</p>
+              <EmptyState icon={FileText} title="No notes yet" description="Add an observation above" />
             )}
           </div>
         </div>
@@ -136,7 +137,7 @@ export default function StudentDetailPanel({
               </div>
             ))
           ) : (
-            <p className={styles.empty}>No active loans.</p>
+            <EmptyState icon={BookOpen} title="No active loans" />
           )}
         </div>
       </div>

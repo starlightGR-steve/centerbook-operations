@@ -26,6 +26,7 @@ export default function StudentRow({
     <button
       className={styles.row}
       onClick={onClick}
+      aria-label={`${student.first_name} ${student.last_name}`}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = hoverBg;
         e.currentTarget.style.borderColor = hoverBorder;

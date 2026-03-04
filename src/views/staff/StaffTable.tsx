@@ -74,7 +74,7 @@ export default function StaffTable({
 }: StaffTableProps) {
   return (
     <div className={styles.tableWrap}>
-      <table className={styles.table}>
+      <table className={styles.table} aria-label="Staff members">
         <thead>
           <tr>
             <th className={styles.th}>Employee</th>
@@ -94,6 +94,10 @@ export default function StaffTable({
                 key={s.id}
                 className={`${styles.row} ${i % 2 === 0 ? styles.rowEven : styles.rowOdd}`}
                 onClick={() => onSelect(s)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(s); } }}
+                tabIndex={0}
+                role="button"
+                aria-label={`${s.full_name}, ${s.role}, ${isClockedIn ? 'Active' : 'Inactive'}, ${hours.toFixed(1)} hours`}
               >
                 <td className={styles.cell}>
                   <div className={styles.employee}>

@@ -10,3 +10,13 @@
   display: flex;
   flex-direction: column;
 }
+
+.mainEmbedded {
+  margin-left: 0;
+}
+
+@media (max-width: 768px) {
+  .main {
+    margin-left: 0;
+  }
+}

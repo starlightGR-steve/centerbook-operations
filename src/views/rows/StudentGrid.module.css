@@ -10,3 +10,20 @@
 .gridCompact {
   grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
 }
+
+@media (max-width: 1024px) {
+  .gridNormal {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+
+  .gridCompact {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .gridNormal,
+  .gridCompact {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

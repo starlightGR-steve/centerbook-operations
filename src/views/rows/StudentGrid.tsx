@@ -39,10 +39,13 @@ export default function StudentGrid({
   return (
     <div
       className={`${styles.grid} ${compact ? styles.gridCompact : styles.gridNormal}`}
+      role="list"
+      aria-label="Students in row"
     >
       <button
         className={styles.grid}
         onClick={onAssign}
+        aria-label="Assign a student to this row"
         style={{
           aspectRatio: '1',
           borderRadius: '10px',

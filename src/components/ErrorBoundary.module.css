@@ -1,0 +1,66 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--base);
+}
+
+.card {
+  max-width: 480px;
+  width: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+.iconWrap {
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.module {
+  margin: 0 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.errorMessage {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: var(--base);
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--text);
+  text-align: left;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--secondary);
+}
+
+.link:hover {
+  text-decoration: underline;
+}

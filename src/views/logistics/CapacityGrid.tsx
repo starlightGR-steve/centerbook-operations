@@ -43,15 +43,15 @@ export default function CapacityGrid({ data, onCellClick }: CapacityGridProps) {
 
   return (
     <div className={styles.tableWrap}>
-      <table className={styles.table}>
+      <table className={styles.table} role="grid" aria-label="Center capacity by time slot and day">
         <thead>
-          <tr>
-            <th className={styles.th}>Time Slot</th>
+          <tr role="row">
+            <th className={styles.th} scope="col">Time Slot</th>
             {days.map(({ name, date }) => {
               const d = new Date(date + 'T12:00:00');
               const short = `${d.getMonth() + 1}/${d.getDate()}`;
               return (
-                <th key={name} className={styles.th}>
+                <th key={name} className={styles.th} scope="col">
                   {name}
                   <span className={styles.thDate}>{short}</span>
                 </th>
@@ -68,6 +68,10 @@ export default function CapacityGrid({ data, onCellClick }: CapacityGridProps) {
                   key={`${cell.day}-${cell.timeSortKey}`}
                   className={`${styles.cell} ${cell.isOpen ? styles.cellOpen : styles.cellClosed}`}
                   onClick={cell.isOpen ? () => onCellClick(cell) : undefined}
+                  onKeyDown={cell.isOpen ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCellClick(cell); } } : undefined}
+                  tabIndex={cell.isOpen ? 0 : undefined}
+                  role="gridcell"
+                  aria-label={cell.isOpen ? `${cell.day} ${cell.timeDisplay}: ${cell.studentCount} students, ${Math.round(cell.utilization)}% capacity` : `${cell.day} ${cell.timeDisplay}: Closed`}
                 >
                   {cell.isOpen ? (
                     <>

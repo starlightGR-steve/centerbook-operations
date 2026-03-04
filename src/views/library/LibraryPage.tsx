@@ -10,6 +10,7 @@ import BookDetailModal from './BookDetailModal';
 import AddBookModal from './AddBookModal';
 import { useBooks, useOutstandingLoans } from '@/hooks/useLibrary';
 import type { Book } from '@/lib/types';
+import LibrarySkeleton from './LibrarySkeleton';
 import styles from './LibraryPage.module.css';
 
 type StatusFilter = 'all' | 'available' | 'checked-out';
@@ -79,7 +80,7 @@ export default function LibraryPage() {
 
       <div className={styles.content}>
         {!books ? (
-          <div className={styles.loading}>Loading library...</div>
+          <LibrarySkeleton />
         ) : (
           <BookGrid
             books={filteredBooks}

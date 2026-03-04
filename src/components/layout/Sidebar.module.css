@@ -81,3 +81,14 @@
 .navItem:hover .tooltip {
   opacity: 1;
 }
+
+.navItem:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
