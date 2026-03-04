@@ -1,0 +1,72 @@
+.card {
+  padding: 14px 16px;
+  border-radius: 8px;
+}
+
+.cardPortal {
+  background: var(--secondary-ul);
+  border: 1px solid var(--secondary-light);
+}
+
+.cardAdmin {
+  background: var(--primary-ul);
+  border: 1px solid var(--primary-light);
+}
+
+.cardStaff {
+  background: var(--base);
+  border: 1px solid var(--border);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.headerLeft {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.sourceBadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--white);
+}
+
+.sourceBadgePortal {
+  background: var(--secondary);
+}
+
+.sourceBadgeAdmin {
+  background: var(--primary);
+}
+
+.sourceBadgeStaff {
+  background: var(--neutral);
+}
+
+.author {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.timestamp {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.content {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.7;
+}

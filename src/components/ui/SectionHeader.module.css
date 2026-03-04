@@ -1,0 +1,45 @@
+.wrapper {
+  margin-bottom: 28px;
+}
+
+.wrapperCenter {
+  text-align: center;
+}
+
+.script {
+  font-family: var(--font-script);
+  font-size: 34px;
+  color: var(--primary);
+  line-height: 1;
+  margin-bottom: 2px;
+  -webkit-text-stroke-width: 0.6px;
+  -webkit-text-stroke-color: var(--primary);
+}
+
+.scriptLarge {
+  font-size: 38px;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.titleLarge {
+  font-size: 28px;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.subtitleLarge {
+  font-size: 15px;
+}

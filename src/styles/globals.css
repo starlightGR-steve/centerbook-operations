@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Oooh+Baby&display=swap');
+@import './tokens.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-primary);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--base);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.25;
+}
+
+h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--primary);
+  line-height: 1.3;
+}
+
+h5 {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font-primary);
+  cursor: pointer;
+}
+
+input, textarea, select {
+  font-family: var(--font-primary);
+}
+
+/* Pulse animation for time warnings */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

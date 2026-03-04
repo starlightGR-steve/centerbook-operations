@@ -1,0 +1,141 @@
+.tableWrap {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.th {
+  background: var(--primary);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 14px;
+  text-align: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.th:first-child {
+  text-align: left;
+  width: 140px;
+  border-left: none;
+}
+
+.thDate {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.rowEven td {
+  background: var(--white);
+}
+
+.rowOdd td {
+  background: var(--base);
+}
+
+.timeCell {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cell {
+  padding: 10px 14px;
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  text-align: center;
+  transition: background 0.15s;
+}
+
+.cellOpen {
+  cursor: pointer;
+}
+
+.cellOpen:hover {
+  background: var(--secondary-ul) !important;
+}
+
+.cellClosed {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.closedLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral);
+  font-style: italic;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.badge_green {
+  background: var(--green);
+  color: var(--white);
+}
+
+.badge_yellow {
+  background: var(--yellow);
+  color: #713f12;
+}
+
+.badge_red {
+  background: var(--red);
+  color: var(--white);
+}
+
+.staffCount {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 4px;
+}
+
+.staffUnderstaffed {
+  color: var(--red);
+}
+
+.bar {
+  height: 5px;
+  background: var(--base);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.barFill_green {
+  background: var(--green);
+}
+
+.barFill_yellow {
+  background: var(--yellow);
+}
+
+.barFill_red {
+  background: var(--red);
+}

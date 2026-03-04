@@ -1,0 +1,75 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  width: 100%;
+  background: var(--base);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  transition: all 0.15s;
+}
+
+.row:hover {
+  background: rgba(224, 113, 44, 0.03);
+  border-color: rgba(224, 113, 44, 0.15);
+}
+
+.name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.arrival {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.timeLeft {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeLeftWarn {
+  color: var(--red);
+}
+
+.empty {
+  font-size: 14px;
+  color: var(--neutral);
+  font-style: italic;
+  padding: 12px 0;
+}

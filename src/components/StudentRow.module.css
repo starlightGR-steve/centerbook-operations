@@ -1,0 +1,33 @@
+.row {
+  width: 100%;
+  background: var(--base);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  transition: all 0.15s;
+}
+
+.name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.badges {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+}

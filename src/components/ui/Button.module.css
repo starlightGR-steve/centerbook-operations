@@ -1,0 +1,81 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--radius-btn);
+  padding: 8px 20px;
+  font-weight: 600;
+  font-size: 13px;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  min-width: 120px;
+  text-align: center;
+  line-height: 1.4;
+  transition: background 0.15s;
+  border: 2px solid transparent;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary (orange CTA) */
+.primary {
+  background: var(--accent);
+  color: var(--white);
+  border-color: var(--accent);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+/* Secondary (blue) */
+.secondary {
+  background: var(--tertiary);
+  color: var(--white);
+  border-color: var(--tertiary);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--tertiary-dark);
+}
+
+/* Ghost */
+.ghost {
+  background: transparent;
+  color: var(--neutral);
+  border-color: var(--border);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--base);
+  color: var(--primary);
+}
+
+/* Danger */
+.danger {
+  background: var(--red);
+  color: var(--white);
+  border-color: var(--red);
+}
+
+.danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+/* Sizes */
+.sm {
+  padding: 4px 12px;
+  font-size: 12px;
+  min-width: unset;
+}
+
+.lg {
+  padding: 12px 28px;
+  font-size: 15px;
+  min-height: var(--touch-min);
+  min-width: 140px;
+}

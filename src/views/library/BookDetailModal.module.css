@@ -1,0 +1,207 @@
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.iconLarge {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--secondary-ul);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.author {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.headerMeta {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.isbn {
+  font-size: 11px;
+  color: var(--neutral);
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 24px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoValue {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.statusAvail {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.statusOut {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.loanCard {
+  background: var(--base);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loanRow {
+  display: flex;
+  gap: 8px;
+}
+
+.loanLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neutral);
+  min-width: 90px;
+}
+
+.loanValue {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.loanOverdue {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.overdueWarning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.checkoutSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studentList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.studentOption {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--primary);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.studentOption:hover {
+  background: var(--secondary-ul);
+}
+
+.studentSelected {
+  background: var(--secondary-ul);
+  font-weight: 600;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.historyRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--base);
+  border-radius: 6px;
+}
+
+.historyName {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.historyDate {
+  font-size: 11px;
+  color: var(--neutral);
+}

@@ -1,0 +1,58 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: var(--font-primary);
+}
+
+.arrow:hover {
+  background: var(--base);
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 180px;
+  text-align: center;
+}
+
+.todayBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--neutral);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: 4px;
+}
+
+.todayBtn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}

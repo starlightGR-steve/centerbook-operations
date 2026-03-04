@@ -1,0 +1,129 @@
+.card {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  background: var(--white);
+  transition: all 0.15s;
+}
+
+.cardNormal {
+  border: 1px solid var(--border);
+}
+
+.cardSelected {
+  border: 2px solid var(--secondary);
+  box-shadow: 0 0 0 3px rgba(0, 154, 171, 0.08);
+}
+
+.cardWarning {
+  border: 2px solid var(--red);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.07);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pulse {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--primary);
+  line-height: 1.3;
+}
+
+.nameWarning {
+  color: var(--red);
+}
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.timeValue {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeValueWarning {
+  color: var(--red);
+}
+
+.timeUnit {
+  font-size: 14px;
+}
+
+.timeLabel {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.durationLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--neutral);
+  margin-top: 1px;
+}
+
+.addCard {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px dashed var(--border);
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--neutral);
+  transition: all 0.15s;
+  font-family: var(--font-primary);
+}
+
+.addCard:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.addLabel {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+}

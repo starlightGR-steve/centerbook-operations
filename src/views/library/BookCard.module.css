@@ -1,0 +1,84 @@
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.card:hover {
+  border-color: var(--secondary);
+  box-shadow: 0 2px 8px rgba(0, 154, 171, 0.06);
+}
+
+.iconWrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--secondary-ul);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--primary);
+  line-height: 1.3;
+}
+
+.author {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.meta {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--neutral);
+}
+
+.divider {
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  padding-top: 14px;
+}
+
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statusAvail {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.08);
+  color: #16a34a;
+}
+
+.statusOut {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.07);
+  color: var(--red);
+}
+
+.borrower {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral);
+}

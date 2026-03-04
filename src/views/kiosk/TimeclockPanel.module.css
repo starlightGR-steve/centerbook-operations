@@ -1,0 +1,87 @@
+.panel {
+  background: var(--slate);
+  border-radius: 10px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Override Card's white bg + border */
+  border: none;
+}
+
+.header {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.15s;
+}
+
+.rowClockedIn {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.rowClockedOut {
+  background: transparent;
+}
+
+.staffName {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--white);
+}
+
+.staffRole {
+  margin: 1px 0 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.clockBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  min-width: 80px;
+  text-align: center;
+  transition: opacity 0.15s;
+}
+
+.clockBtn:hover {
+  opacity: 0.85;
+}
+
+.clockBtnOut {
+  background: var(--accent);
+  color: var(--white);
+}
+
+.clockBtnIn {
+  background: var(--white);
+  color: var(--slate);
+}

@@ -1,0 +1,54 @@
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — matched to thecenterbookgr.com ACSS config
+   ═══════════════════════════════════════════ */
+
+:root {
+  /* Brand Colors */
+  --primary:        #355caa;
+  --primary-light:  #CFD5E3;
+  --primary-ul:     #F0F2F4;
+
+  --secondary:      #009AAB;
+  --secondary-dark: #005260;
+  --secondary-light:#C6E8EC;
+  --secondary-ul:   #EEF5F6;
+
+  --tertiary:       #4a9ac2;
+  --tertiary-dark:  #25576F;
+
+  --accent:         #E0712C;
+  --accent-dark:    #813D13;
+
+  /* Neutrals */
+  --neutral:        #57727c;
+  --base:           #f2f2f2;
+  --text:           #303030;
+  --white:          #ffffff;
+  --border:         #e8e8e8;
+  --slate:          #3d5a64;
+
+  /* Subject Colors */
+  --math:           #4a9ac2;
+  --math-dark:      #25576F;
+  --reading:        #E0712C;
+  --reading-dark:   #813D13;
+
+  /* Stoplight / Status */
+  --green:          #22c55e;
+  --yellow:         #eab308;
+  --red:            #ef4444;
+
+  /* Layout */
+  --sidebar-width:  72px;
+  --touch-min:      44px;
+
+  /* Radii */
+  --radius-btn:     6px;
+  --radius-card:    10px;
+  --radius-sm:      4px;
+  --radius-md:      8px;
+
+  /* Typography */
+  --font-primary:   'Montserrat', 'Century Gothic', sans-serif;
+  --font-script:    'Oooh Baby', cursive;
+}

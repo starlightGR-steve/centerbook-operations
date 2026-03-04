@@ -1,0 +1,213 @@
+.panel {
+  width: 400px;
+  height: 100%;
+  background: var(--white);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--secondary-ul);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--secondary);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.headerName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.headerSub {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--neutral);
+  padding: 4px;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.labelSpaced {
+  margin-bottom: 10px;
+}
+
+.noteInputWrap {
+  position: relative;
+}
+
+.noteInput {
+  width: 100%;
+  box-sizing: border-box;
+  height: 100px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  padding-right: 48px;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  resize: none;
+  outline: none;
+  line-height: 1.7;
+}
+
+.noteInput:focus {
+  border-color: var(--secondary);
+}
+
+.noteInput::placeholder {
+  color: var(--neutral);
+  font-weight: 400;
+}
+
+.sendBtn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  transition: background 0.15s;
+}
+
+.sendBtn:hover {
+  background: var(--accent-dark);
+}
+
+.notesFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.levels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.levelCard {
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.levelMath {
+  background: rgba(74, 154, 194, 0.04);
+  border: 1px solid rgba(74, 154, 194, 0.12);
+}
+
+.levelReading {
+  background: rgba(224, 113, 44, 0.04);
+  border: 1px solid rgba(224, 113, 44, 0.12);
+}
+
+.levelLabel {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.levelLabelMath {
+  color: var(--tertiary-dark);
+}
+
+.levelLabelReading {
+  color: var(--accent-dark);
+}
+
+.levelValue {
+  margin: 6px 0 0;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.levelValueMath {
+  color: var(--tertiary-dark);
+}
+
+.levelValueReading {
+  color: var(--accent-dark);
+}
+
+.bookRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+
+.bookTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.bookBadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.empty {
+  font-size: 14px;
+  color: var(--neutral);
+  font-style: italic;
+}

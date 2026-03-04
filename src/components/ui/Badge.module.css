@@ -1,0 +1,59 @@
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-btn);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+/* Subject badges */
+.math {
+  background: var(--math);
+}
+
+.reading {
+  background: var(--reading);
+}
+
+/* Status badges */
+.success {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.warning {
+  background: rgba(234, 179, 8, 0.12);
+  color: #713f12;
+}
+
+.danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--red);
+}
+
+.info {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.neutral {
+  background: var(--base);
+  color: var(--neutral);
+}
+
+/* Source badges (for notes) */
+.portal {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.admin {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.staff {
+  background: var(--neutral);
+  color: var(--white);
+}

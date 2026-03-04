@@ -1,0 +1,147 @@
+.tableWrap {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.th {
+  background: var(--primary);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 12px 24px;
+  text-align: left;
+}
+
+.thCenter {
+  text-align: center;
+}
+
+.thRight {
+  text-align: right;
+  width: 60px;
+}
+
+.row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.row:hover {
+  background: var(--secondary-ul) !important;
+}
+
+.rowEven td {
+  background: var(--white);
+}
+
+.rowOdd td {
+  background: var(--base);
+}
+
+.cell {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cellCenter {
+  text-align: center;
+}
+
+.cellRight {
+  text-align: right;
+}
+
+.employee {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--primary-ul);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.role {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral);
+  margin-top: 1px;
+}
+
+.statusActive {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.08);
+  color: #16a34a;
+}
+
+.statusInactive {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--base);
+  color: var(--neutral);
+}
+
+.lastEntry {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.hours {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.hoursUnit {
+  font-size: 11px;
+  color: var(--neutral);
+}
+
+.editBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.editBtn:hover {
+  background: var(--secondary-ul);
+}
