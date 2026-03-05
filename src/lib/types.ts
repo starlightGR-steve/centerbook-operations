@@ -169,10 +169,32 @@ export interface ClockOutRequest {
   staff_id: number;
 }
 
+// ── Classroom Layout ─────────────────────────
+
+export type ClassroomPositionName = 'Early Learners' | 'Main Classroom' | 'Upper Classroom';
+
+export interface ClassroomRow {
+  id: string;               // "el1", "m1", "upper"
+  label: string;            // "EL Row 1", "Row 1", "Upper Row"
+  tables: number;           // tables in this row
+  seatsPerTable: number;    // seats per table
+  teacher: string;          // assigned teacher name
+  ratio?: string;           // e.g. "1:2" for EL rows
+  advanced?: boolean;       // Upper Classroom flag
+}
+
+export interface ClassroomSection {
+  id: string;               // "sec-el", "sec-main", "sec-upper"
+  name: ClassroomPositionName;
+  desc: string;
+  color: string;            // CSS color
+  rows: ClassroomRow[];
+}
+
 // ── Student Notes ──────────────────────────
 
 export type NoteAuthorType = 'staff' | 'admin' | 'portal';
-export type NoteVisibility = 'staff' | 'admin' | 'portal';
+export type NoteVisibility = 'internal' | 'staff' | 'parent';
 
 export interface StudentNote {
   id: number;
@@ -318,6 +340,10 @@ export interface CapacityCell {
   utilization: number; // 0-100
   stoplightColor: 'green' | 'yellow' | 'red';
   isUnderstaffed: boolean;
+  // Classroom position breakdowns
+  elCount: number;
+  mcCount: number;
+  ucCount: number;
 }
 
 export interface CapacityGridData {

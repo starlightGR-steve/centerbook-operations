@@ -10,7 +10,9 @@ type BadgeVariant =
   | 'neutral'
   | 'portal'
   | 'admin'
-  | 'staff';
+  | 'staff'
+  | 'internal'
+  | 'parent';
 
 interface BadgeProps {
   variant: BadgeVariant;

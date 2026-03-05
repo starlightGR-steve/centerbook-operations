@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import { Plus, Scan, UserCheck, CheckCircle } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import Button from '@/components/ui/Button';
 import BookGrid from './BookGrid';
 import BookDetailModal from './BookDetailModal';
 import AddBookModal from './AddBookModal';
-import { useBooks, useOutstandingLoans } from '@/hooks/useLibrary';
+import { useBooks, useOutstandingLoans, checkoutBook, returnBook } from '@/hooks/useLibrary';
+import { useStudents } from '@/hooks/useStudents';
 import type { Book } from '@/lib/types';
 import LibrarySkeleton from './LibrarySkeleton';
 import styles from './LibraryPage.module.css';
@@ -21,8 +22,83 @@ export default function LibraryPage() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [showAddBook, setShowAddBook] = useState(false);
 
+  // Scan-to-checkout state
+  const [bookScan, setBookScan] = useState('');
+  const [studentScan, setStudentScan] = useState('');
+  const [scanBook, setScanBook] = useState<Book | null>(null); // Book awaiting student scan
+  const [scanFeedback, setScanFeedback] = useState<string | null>(null);
+  const studentInputRef = useRef<HTMLInputElement>(null);
+
   const { data: books } = useBooks();
   const { data: loans } = useOutstandingLoans();
+  const { data: students } = useStudents();
+
+  const clearFeedback = useCallback(() => {
+    setTimeout(() => setScanFeedback(null), 3000);
+  }, []);
+
+  // Step 1: Scan book barcode
+  function handleBookScan(e: React.FormEvent) {
+    e.preventDefault();
+    if (!bookScan.trim() || !books) return;
+    const q = bookScan.trim().toLowerCase();
+    const book = books.find(
+      (b) => b.barcode?.toLowerCase() === q || String(b.id) === q
+    );
+    if (!book) {
+      setScanFeedback('Book not found');
+      setBookScan('');
+      clearFeedback();
+      return;
+    }
+    if (book.status === 'checked-out') {
+      // Auto-return
+      returnBook({ book_id: book.id, returned_to: 'Scan' });
+      setScanFeedback(`Returned "${book.title}"`);
+      setBookScan('');
+      clearFeedback();
+      return;
+    }
+    // Available → prompt for student scan
+    setScanBook(book);
+    setBookScan('');
+    setScanFeedback(null);
+    setTimeout(() => studentInputRef.current?.focus(), 50);
+  }
+
+  // Step 2: Scan student folder barcode
+  function handleStudentScan(e: React.FormEvent) {
+    e.preventDefault();
+    if (!studentScan.trim() || !scanBook || !students) return;
+    const q = studentScan.trim().toLowerCase();
+    const student = students.find(
+      (s) =>
+        s.student_id?.toLowerCase() === q ||
+        s.first_name.toLowerCase() === q ||
+        `${s.first_name} ${s.last_name}`.toLowerCase() === q
+    );
+    if (!student) {
+      setScanFeedback('Student not found');
+      setStudentScan('');
+      clearFeedback();
+      return;
+    }
+    checkoutBook({
+      book_id: scanBook.id,
+      student_id: student.id,
+      checked_out_by: 'Scan',
+    });
+    setScanFeedback(`Checked out "${scanBook.title}" to ${student.first_name}`);
+    setScanBook(null);
+    setStudentScan('');
+    clearFeedback();
+  }
+
+  function cancelScan() {
+    setScanBook(null);
+    setStudentScan('');
+    setScanFeedback(null);
+  }
 
   const filteredBooks = useMemo(() => {
     if (!books) return [];
@@ -47,14 +123,55 @@ export default function LibraryPage() {
     return filtered;
   }, [books, search, filter]);
 
+  const checkedOutCount = books?.filter((b) => b.status === 'checked-out').length ?? 0;
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <SectionHeader
           script="Browse the"
           title="Center Library"
-          subtitle="Early reader inventory for student checkout"
+          subtitle={`${books?.length ?? 0} books · ${checkedOutCount} checked out · Scan barcode or use manual checkout`}
         />
+
+        {/* Scan Bar */}
+        <div className={styles.scanBar}>
+          <form onSubmit={handleBookScan} className={styles.scanForm}>
+            <div className={styles.scanInputWrap}>
+              <Scan size={16} className={styles.scanIcon} />
+              <input
+                value={bookScan}
+                onChange={(e) => setBookScan(e.target.value)}
+                placeholder="Scan book barcode to checkout or return..."
+                className={styles.scanInput}
+              />
+            </div>
+          </form>
+          {scanBook && (
+            <form onSubmit={handleStudentScan} className={styles.scanForm}>
+              <div className={`${styles.scanInputWrap} ${styles.scanInputStudent}`}>
+                <UserCheck size={16} className={styles.scanIconAccent} />
+                <input
+                  ref={studentInputRef}
+                  value={studentScan}
+                  onChange={(e) => setStudentScan(e.target.value)}
+                  placeholder={`Scan student folder for "${scanBook.title}"...`}
+                  className={`${styles.scanInput} ${styles.scanInputAccentBorder}`}
+                />
+                <button type="button" onClick={cancelScan} className={styles.cancelScan}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+          {scanFeedback && (
+            <div className={styles.scanFeedback}>
+              <CheckCircle size={14} />
+              {scanFeedback}
+            </div>
+          )}
+        </div>
+
         <div className={styles.toolbar}>
           <SearchInput
             placeholder="Search books..."

@@ -11,6 +11,102 @@
   padding: 24px 40px 20px;
 }
 
+/* Scan Bar */
+.scanBar {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.scanForm {
+  flex: 1;
+  min-width: 250px;
+}
+
+.scanInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.scanIcon {
+  position: absolute;
+  left: 14px;
+  color: var(--neutral);
+  pointer-events: none;
+}
+
+.scanIconAccent {
+  position: absolute;
+  left: 14px;
+  color: var(--accent);
+  pointer-events: none;
+}
+
+.scanInput {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px 12px 40px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-primary);
+  color: var(--primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.scanInput:focus {
+  border-color: var(--secondary);
+}
+
+.scanInputAccentBorder {
+  border-color: var(--accent);
+  padding-right: 70px;
+}
+
+.scanInputAccentBorder:focus {
+  border-color: var(--accent);
+}
+
+.cancelScan {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neutral);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.cancelScan:hover {
+  color: var(--red);
+}
+
+.scanFeedback {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+  white-space: nowrap;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .toolbar {
   display: flex;
   align-items: center;

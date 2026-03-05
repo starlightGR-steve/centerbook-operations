@@ -102,12 +102,46 @@
   color: var(--white);
 }
 
+.cellTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
 .staffCount {
-  display: block;
   font-size: 10px;
   font-weight: 600;
   color: var(--primary);
-  margin-top: 4px;
+}
+
+.posBadges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.posEl, .posMc, .posUc {
+  font-size: 8px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.posEl {
+  background: var(--secondary-ul);
+  color: var(--secondary);
+}
+
+.posMc {
+  background: var(--primary-ul);
+  color: var(--primary);
+}
+
+.posUc {
+  background: rgba(224, 113, 44, 0.08);
+  color: var(--accent);
 }
 
 .staffUnderstaffed {

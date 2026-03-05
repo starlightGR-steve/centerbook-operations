@@ -1,0 +1,36 @@
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  user-select: none;
+}
+
+.monogram {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1;
+  letter-spacing: -3px;
+  font-family: var(--font-primary);
+}
+
+.textWrap {
+  text-align: center;
+  line-height: 1.15;
+}
+
+.the {
+  font-family: var(--font-script);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  display: block;
+}
+
+.name {
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: 1.5px;
+}

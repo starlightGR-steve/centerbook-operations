@@ -21,50 +21,59 @@ import {
   getRecommendedStaff,
 } from '@/lib/types';
 
-function computeStudentCount(
+interface StudentCounts {
+  total: number;
+  el: number;
+  mc: number;
+  uc: number;
+}
+
+function computeStudentCounts(
   students: Student[],
   day: string,
   timeSortKey: number,
   overrides: ScheduleOverride[],
   targetDate: string
-): number {
-  // 1. Count students with this day + time in their regular schedule
-  let count = students.filter(
+): StudentCounts {
+  // 1. Students with this day + time in their regular schedule
+  const scheduled = students.filter(
     (s) =>
       s.enrollment_status === 'Active' &&
       parseScheduleDays(s.class_schedule_days).includes(day) &&
       s.class_time_sort_key !== null &&
       bucketTimeKey(s.class_time_sort_key) === timeSortKey
-  ).length;
+  );
+
+  let total = scheduled.length;
+  const el = scheduled.filter((s) => s.classroom_position === 'Early Learners').length;
+  const mc = scheduled.filter((s) => s.classroom_position === 'Main Classroom').length;
+  const uc = scheduled.filter((s) => s.classroom_position === 'Upper Classroom').length;
 
   // 2. Apply overrides for this specific date
   const dateOverrides = overrides.filter((o) => o.effective_date === targetDate);
 
-  // Removals
-  count -= dateOverrides.filter(
+  total -= dateOverrides.filter(
     (o) =>
       o.override_type === 'remove' &&
       o.original_day === day &&
       o.original_time === timeSortKey
   ).length;
 
-  // Additions (add + move-to)
-  count += dateOverrides.filter(
+  total += dateOverrides.filter(
     (o) =>
       (o.override_type === 'add' || o.override_type === 'move') &&
       o.new_day === day &&
       o.new_time === timeSortKey
   ).length;
 
-  // Move-outs (move-from)
-  count -= dateOverrides.filter(
+  total -= dateOverrides.filter(
     (o) =>
       o.override_type === 'move' &&
       o.original_day === day &&
       o.original_time === timeSortKey
   ).length;
 
-  return Math.max(0, count);
+  return { total: Math.max(0, total), el, mc, uc };
 }
 
 function countStaffAssigned(
@@ -107,16 +116,16 @@ export function useCapacityGrid(weekReferenceDate: Date): {
     const cells: CapacityCell[][] = time_slots.map((slot) =>
       days.map(({ name, date }) => {
         const isOpen = slot.open_days.includes(name);
-        const studentCount = isOpen
-          ? computeStudentCount(students, name, slot.sort_key, overrides, date)
-          : 0;
+        const counts = isOpen
+          ? computeStudentCounts(students, name, slot.sort_key, overrides, date)
+          : { total: 0, el: 0, mc: 0, uc: 0 };
         const staffAssigned = isOpen
           ? countStaffAssigned(staffSlots, name, slot.sort_key)
           : 0;
-        const staffRecommended = getRecommendedStaff(studentCount, staff_student_ratio);
+        const staffRecommended = getRecommendedStaff(counts.total, staff_student_ratio);
         const utilization =
           center_capacity > 0
-            ? Math.round((studentCount / center_capacity) * 100)
+            ? Math.round((counts.total / center_capacity) * 100)
             : 0;
 
         return {
@@ -125,12 +134,15 @@ export function useCapacityGrid(weekReferenceDate: Date): {
           timeSortKey: slot.sort_key,
           timeDisplay: slot.display,
           isOpen,
-          studentCount,
+          studentCount: counts.total,
           staffAssigned,
           staffRecommended,
           utilization,
           stoplightColor: getStoplightColor(utilization),
           isUnderstaffed: isOpen && staffAssigned < staffRecommended,
+          elCount: counts.el,
+          mcCount: counts.mc,
+          ucCount: counts.uc,
         };
       })
     );

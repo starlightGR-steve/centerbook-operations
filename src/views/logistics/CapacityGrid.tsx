@@ -75,9 +75,24 @@ export default function CapacityGrid({ data, onCellClick }: CapacityGridProps) {
                 >
                   {cell.isOpen ? (
                     <>
-                      <StoplightBadge cell={cell} />
-                      <StaffCount cell={cell} />
+                      <div className={styles.cellTop}>
+                        <StoplightBadge cell={cell} />
+                        <StaffCount cell={cell} />
+                      </div>
                       <CapacityBar cell={cell} />
+                      {cell.studentCount > 0 && (
+                        <div className={styles.posBadges}>
+                          {cell.elCount > 0 && (
+                            <span className={styles.posEl}>EL:{cell.elCount}</span>
+                          )}
+                          {cell.mcCount > 0 && (
+                            <span className={styles.posMc}>MC:{cell.mcCount}</span>
+                          )}
+                          {cell.ucCount > 0 && (
+                            <span className={styles.posUc}>UC:{cell.ucCount}</span>
+                          )}
+                        </div>
+                      )}
                     </>
                   ) : (
                     <span className={styles.closedLabel}>Closed</span>

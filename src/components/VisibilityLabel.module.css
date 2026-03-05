@@ -1,0 +1,24 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.internal {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--red);
+}
+
+.staff {
+  background: rgba(224, 113, 44, 0.08);
+  color: var(--accent);
+}
+
+.parent {
+  background: rgba(34, 197, 94, 0.08);
+  color: #16a34a;
+}

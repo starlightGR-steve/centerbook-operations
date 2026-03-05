@@ -57,3 +57,14 @@
   background: var(--neutral);
   color: var(--white);
 }
+
+/* Visibility badges (three-tier note visibility) */
+.internal {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--red);
+}
+
+.parent {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}

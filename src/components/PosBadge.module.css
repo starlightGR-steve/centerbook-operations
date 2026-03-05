@@ -1,0 +1,25 @@
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.el {
+  background: var(--secondary-ul);
+  color: var(--secondary);
+  border: 1px solid var(--secondary-light);
+}
+
+.main {
+  background: var(--primary-ul);
+  color: var(--primary);
+  border: 1px solid var(--primary-light);
+}
+
+.upper {
+  background: rgba(224, 113, 44, 0.08);
+  color: var(--accent);
+  border: 1px solid rgba(224, 113, 44, 0.19);
+}
