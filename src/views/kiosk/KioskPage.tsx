@@ -94,14 +94,11 @@ export default function KioskPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.logo}>
-          <div className={styles.logoMark}>CB</div>
-          <div className={styles.logoText}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-              <span className={styles.logoThe}>the</span>
-              <span className={styles.logoName}>CENTER BOOK</span>
-            </div>
-            <div className={styles.logoCenter}>Kumon Grand Rapids North</div>
-          </div>
+          <img
+            src="/images/the_center_book_logo_with_GR_north_text_horiz.svg"
+            alt="The Center Book"
+            className={styles.logoImg}
+          />
         </div>
 
         <form onSubmit={handleScan} className={styles.scannerWrap}>

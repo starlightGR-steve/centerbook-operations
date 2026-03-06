@@ -3,11 +3,11 @@ import styles from './Logo.module.css';
 export default function Logo() {
   return (
     <div className={styles.logo}>
-      <div className={styles.monogram}>CB</div>
-      <div className={styles.textWrap}>
-        <span className={styles.the}>the</span>
-        <span className={styles.name}>CENTER BOOK</span>
-      </div>
+      <img
+        src="/images/the_center_book_logo_sq_mark_white.svg"
+        alt="The Center Book"
+        className={styles.mark}
+      />
     </div>
   );
 }
