@@ -1,10 +1,30 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Shell from '@/components/layout/Shell';
 import '@/styles/globals.css';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: 'CenterBook Operations',
   description: 'In-center operations app for Kumon educational centers',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'CenterBook',
+  },
+  other: {
+    'theme-color': '#355caa',
+  },
+  icons: {
+    apple: '/images/the_center_book_logo_sq.png',
+  },
 };
 
 export default function RootLayout({

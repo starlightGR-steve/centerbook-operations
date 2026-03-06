@@ -1,0 +1,14 @@
+{
+  "name": "CenterBook Operations",
+  "short_name": "CenterBook",
+  "description": "In-center management for educational centers",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#355caa",
+  "theme_color": "#355caa",
+  "icons": [
+    { "src": "/images/the_center_book_logo_sq_mark.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/images/the_center_book_logo_sq.png", "sizes": "1024x1024", "type": "image/png" }
+  ]
+}
