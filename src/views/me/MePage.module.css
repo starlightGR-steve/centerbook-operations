@@ -67,6 +67,9 @@
   font-weight: 700;
   color: var(--text);
   margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .sectionDesc {
@@ -74,6 +77,74 @@
   font-size: 12px;
   color: var(--neutral);
   margin: 0 0 16px;
+}
+
+.fieldGroup {
+  margin-bottom: 12px;
+}
+
+.fieldLabel {
+  display: block;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.passwordWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 8px 36px 8px 10px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.fieldInput:focus {
+  border-color: var(--secondary);
+}
+
+.toggleVis {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--neutral);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.toggleVis:hover {
+  color: var(--text);
+}
+
+.msgSuccess {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--green);
+  margin: 0 0 12px;
+}
+
+.msgError {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--red);
+  margin: 0 0 12px;
 }
 
 @media (max-width: 1024px) {
