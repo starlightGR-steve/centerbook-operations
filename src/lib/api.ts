@@ -2,9 +2,9 @@
    API Client — cb/v1 REST API
 
    - Basic Auth via env vars
-   - Mock toggle via NEXT_PUBLIC_USE_MOCK
    - Rate-limited batch queue for bulk operations
    - Response envelope unwrapping
+   - Library endpoints fall back to mock data (no API yet)
    ═══════════════════════════════════════════ */
 
 import type {
@@ -27,6 +27,7 @@ import type {
   RowAssignment,
   AssignRowRequest,
 } from './types';
+import { MOCK_BOOKS, MOCK_BOOK_LOANS } from './mock-data';
 
 // ── Configuration ──────────────────────────
 
@@ -155,20 +156,20 @@ function directFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
 export const api = {
   // ── Students ──
   students: {
-    list: () => directFetch<Student[]>('/student'),
-    get: (id: number) => directFetch<Student>(`/student/${id}`),
+    list: () => directFetch<Student[]>('/students'),
+    get: (id: number) => directFetch<Student>(`/students/${id}`),
     create: (data: Partial<Student>) =>
-      directFetch<Student>('/student', {
+      directFetch<Student>('/students', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     update: (id: number, data: Partial<Student>) =>
-      directFetch<Student>(`/student/${id}`, {
+      directFetch<Student>(`/students/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
     search: (params: Record<string, string>) =>
-      directFetch<Student[]>('/student/search', {
+      directFetch<Student[]>('/students/search', {
         method: 'POST',
         body: JSON.stringify(params),
       }),
@@ -176,10 +177,10 @@ export const api = {
 
   // ── Contacts ──
   contacts: {
-    list: () => directFetch<Contact[]>('/contact'),
-    get: (id: number) => directFetch<Contact>(`/contact/${id}`),
+    list: () => directFetch<Contact[]>('/contacts'),
+    get: (id: number) => directFetch<Contact>(`/contacts/${id}`),
     search: (params: Record<string, string>) =>
-      directFetch<Contact[]>('/contact/search', {
+      directFetch<Contact[]>('/contacts/search', {
         method: 'POST',
         body: JSON.stringify(params),
       }),
@@ -270,33 +271,32 @@ export const api = {
       directFetch<void>(`/note/${id}`, { method: 'DELETE' }),
   },
 
-  // ── Library ──
+  // ── Library (no API yet — falls back to mock data) ──
   library: {
-    books: () => directFetch<Book[]>('/library/book'),
-    createBook: (data: Partial<Book>) =>
-      directFetch<Book>('/library/book', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    updateBook: (id: number, data: Partial<Book>) =>
-      directFetch<Book>(`/library/book/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    loans: (status?: 'outstanding') => {
-      const qs = status ? `?status=${status}` : '';
-      return directFetch<BookLoan[]>(`/library/loans${qs}`);
+    books: async (): Promise<Book[]> => {
+      try { return await directFetch<Book[]>('/library/books'); }
+      catch { return [...MOCK_BOOKS]; }
     },
-    checkout: (data: CheckoutBookRequest) =>
-      directFetch<BookLoan>('/library/checkout', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    returnBook: (data: ReturnBookRequest) =>
-      directFetch<BookLoan>('/library/return', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+    createBook: async (data: Partial<Book>): Promise<Book> => {
+      try { return await directFetch<Book>('/library/books', { method: 'POST', body: JSON.stringify(data) }); }
+      catch { const book: Book = { id: Date.now(), ...data } as Book; MOCK_BOOKS.push(book); return book; }
+    },
+    updateBook: async (id: number, data: Partial<Book>): Promise<Book> => {
+      try { return await directFetch<Book>(`/library/books/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
+      catch { const idx = MOCK_BOOKS.findIndex((b) => b.id === id); if (idx >= 0) Object.assign(MOCK_BOOKS[idx], data); return MOCK_BOOKS[idx] ?? ({} as Book); }
+    },
+    loans: async (status?: 'outstanding'): Promise<BookLoan[]> => {
+      try { const qs = status ? `?status=${status}` : ''; return await directFetch<BookLoan[]>(`/library/loans${qs}`); }
+      catch { return status === 'outstanding' ? MOCK_BOOK_LOANS.filter((l) => !l.returned_at) : [...MOCK_BOOK_LOANS]; }
+    },
+    checkout: async (data: CheckoutBookRequest): Promise<BookLoan> => {
+      try { return await directFetch<BookLoan>('/library/checkout', { method: 'POST', body: JSON.stringify(data) }); }
+      catch { const loan: BookLoan = { id: Date.now(), book_id: data.book_id, student_id: data.student_id, checked_out_at: new Date().toISOString(), due_date: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0], returned_at: null, checked_out_by: null, returned_to: null, created_at: new Date().toISOString() }; MOCK_BOOK_LOANS.push(loan); return loan; }
+    },
+    returnBook: async (data: ReturnBookRequest): Promise<BookLoan> => {
+      try { return await directFetch<BookLoan>('/library/return', { method: 'POST', body: JSON.stringify(data) }); }
+      catch { const loan = MOCK_BOOK_LOANS.find((l) => l.book_id === data.book_id && !l.returned_at); if (loan) loan.returned_at = new Date().toISOString(); return loan ?? ({} as BookLoan); }
+    },
   },
 
   // ── Row Assignments ──
@@ -318,7 +318,7 @@ export const api = {
 
   // ── Batch utility for bulk operations ──
   batch: {
-    fetchStudents: () => batchFetch<Student[]>('/student'),
+    fetchStudents: () => batchFetch<Student[]>('/students'),
     fetchStaff: () => batchFetch<Staff[]>('/staff'),
   },
 };
