@@ -4,32 +4,6 @@ import bcrypt from 'bcryptjs';
 
 export type AppRole = 'superuser' | 'admin' | 'staff';
 
-// Mock staff credentials for development
-// TODO: Replace with cb/v1 API lookup or direct DB query
-const MOCK_AUTH_USERS = [
-  {
-    id: '1',
-    name: 'Bincy Sines',
-    email: 'bincyteo@gmail.com',
-    passwordHash: bcrypt.hashSync('CenterBook2026!', 12),
-    role: 'admin' as AppRole,
-  },
-  {
-    id: '2',
-    name: 'Nicole Edmondson',
-    email: 'nicoleedmo@gmail.com',
-    passwordHash: bcrypt.hashSync('CenterBook2026!', 12),
-    role: 'admin' as AppRole,
-  },
-  {
-    id: '3',
-    name: 'Steve Edmondson',
-    email: 'steve@starlightgr.com',
-    passwordHash: bcrypt.hashSync('Starlight2026!', 12),
-    role: 'superuser' as AppRole,
-  },
-];
-
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -41,20 +15,39 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // TODO: Replace with GET /cb/v1/staff?email=... or direct DB query
-        const user = MOCK_AUTH_USERS.find(
-          (u) => u.email.toLowerCase() === credentials.email.toLowerCase()
-        );
-        if (!user) return null;
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+        const apiUser = process.env.WP_API_USER;
+        const apiPass = process.env.WP_API_PASSWORD;
 
-        const valid = await bcrypt.compare(credentials.password, user.passwordHash);
+        if (!apiBase || !apiUser || !apiPass) {
+          console.error('Missing WP API credentials for staff auth');
+          return null;
+        }
+
+        // Fetch staff record from WordPress REST API
+        const res = await fetch(`${apiBase}/staff/auth`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + Buffer.from(`${apiUser}:${apiPass}`).toString('base64'),
+          },
+          body: JSON.stringify({ email: credentials.email }),
+        });
+
+        if (!res.ok) return null;
+
+        const envelope = await res.json();
+        const staff = envelope.data ?? envelope;
+
+        // Verify password against bcrypt hash
+        const valid = await bcrypt.compare(credentials.password, staff.password_hash);
         if (!valid) return null;
 
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
+          id: String(staff.id),
+          name: `${staff.first_name} ${staff.last_name}`,
+          email: staff.email,
+          role: staff.role as AppRole,
         };
       },
     }),

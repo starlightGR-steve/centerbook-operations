@@ -7,7 +7,8 @@ import Button from '@/components/ui/Button';
 import PayPeriodNavigator from './PayPeriodNavigator';
 import StaffTable from './StaffTable';
 import StaffDetailModal from './StaffDetailModal';
-import { useStaff } from '@/hooks/useStaff';
+import TimeclockPanel from './TimeclockPanel';
+import { useStaff, useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { usePayPeriod } from '@/hooks/usePayPeriod';
 import type { Staff, TimeEntry } from '@/lib/types';
@@ -46,6 +47,7 @@ function exportPayrollCSV(
 export default function StaffPage() {
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const { data: staff } = useStaff();
+  const { data: activeStaff } = useActiveStaff();
   const { data: timeEntries } = useTimeclock();
   const { start, end, label, goPrev, goNext, goToCurrent } = usePayPeriod();
 
@@ -91,14 +93,21 @@ export default function StaffPage() {
         {!staff || !timeEntries ? (
           <StaffSkeleton />
         ) : (
-          <StaffTable
-            staff={staff}
-            timeEntries={timeEntries}
-            clockedInIds={clockedInIds}
-            periodStart={start}
-            periodEnd={end}
-            onSelect={setSelectedStaff}
-          />
+          <>
+            <StaffTable
+              staff={staff}
+              timeEntries={timeEntries}
+              clockedInIds={clockedInIds}
+              periodStart={start}
+              periodEnd={end}
+              onSelect={setSelectedStaff}
+            />
+            {activeStaff && (
+              <div className={styles.timeclockWrap}>
+                <TimeclockPanel staff={activeStaff} timeEntries={timeEntries} />
+              </div>
+            )}
+          </>
         )}
       </div>
 

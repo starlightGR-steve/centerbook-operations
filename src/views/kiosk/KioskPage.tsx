@@ -6,11 +6,8 @@ import SearchInput from '@/components/ui/SearchInput';
 import ClockDisplay from '@/components/ClockDisplay';
 import CheckInPanel from './CheckInPanel';
 import CheckOutPanel from './CheckOutPanel';
-import TimeclockPanel from './TimeclockPanel';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents, checkInStudent, checkOutStudent } from '@/hooks/useAttendance';
-import { useActiveStaff } from '@/hooks/useStaff';
-import { useTimeclock } from '@/hooks/useTimeclock';
 import { getSessionDuration } from '@/lib/types';
 import KioskSkeleton from './KioskSkeleton';
 import styles from './KioskPage.module.css';
@@ -22,9 +19,6 @@ export default function KioskPage() {
 
   const { data: allStudents } = useStudents();
   const { data: checkedIn } = useCheckedInStudents(undefined, 5000);
-  const { data: staff } = useActiveStaff();
-  const { data: timeEntries } = useTimeclock();
-
   // Auto-focus scanner input
   useEffect(() => {
     inputRef.current?.focus();
@@ -86,7 +80,7 @@ export default function KioskPage() {
     setScan('');
   };
 
-  if (!allStudents || !staff || !timeEntries) {
+  if (!allStudents) {
     return <KioskSkeleton />;
   }
 
@@ -121,7 +115,6 @@ export default function KioskPage() {
           attendance={checkedIn || []}
           students={allStudents}
         />
-        <TimeclockPanel staff={staff} timeEntries={timeEntries} />
       </div>
     </div>
   );

@@ -26,6 +26,11 @@
   padding: 28px 36px;
 }
 
+.timeclockWrap {
+  margin-top: 24px;
+  max-width: 400px;
+}
+
 .loading {
   display: flex;
   align-items: center;
