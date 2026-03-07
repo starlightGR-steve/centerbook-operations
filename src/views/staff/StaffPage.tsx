@@ -420,7 +420,7 @@ function StaffManagement({ staff }: MgmtProps) {
    MAIN PAGE
    ═══════════════════════════════════════════ */
 export default function StaffPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const { data: staff } = useStaff();
   const { data: activeStaff } = useActiveStaff();
@@ -428,7 +428,7 @@ export default function StaffPage() {
   const { start, end, label, goPrev, goNext, goToCurrent } = usePayPeriod();
 
   const userRole = (session?.user as { role?: string } | undefined)?.role;
-  const isManager = userRole === 'admin' || userRole === 'superuser';
+  const isManager = status === 'authenticated' && (userRole === 'admin' || userRole === 'superuser');
 
   const clockedInIds = useMemo(() => {
     const ids = new Set<number>();
