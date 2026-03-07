@@ -438,6 +438,8 @@ export default function StaffPage() {
     return ids;
   }, [timeEntries]);
 
+  console.log('isManager:', isManager, 'status:', status, 'role:', (session?.user as { role?: string } | undefined)?.role);
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
