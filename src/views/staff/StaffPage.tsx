@@ -430,6 +430,8 @@ export default function StaffPage() {
   const userRole = (session?.user as { role?: string } | undefined)?.role;
   const isManager = status === 'authenticated' && (userRole === 'admin' || userRole === 'superuser');
 
+  console.log('[StaffPage] staff:', staff?.length ?? 'undefined', 'timeEntries:', timeEntries?.length ?? 'undefined', 'isManager:', isManager, 'session status:', status);
+
   const clockedInIds = useMemo(() => {
     const ids = new Set<number>();
     timeEntries?.forEach((e) => {
@@ -486,10 +488,9 @@ export default function StaffPage() {
                 <TimeclockPanel staff={activeStaff} timeEntries={timeEntries} />
               </div>
             )}
-            {isManager && <div id="mgmt-debug" style={{background:'red',padding:'20px',color:'white',fontSize:'24px'}}>MANAGER SECTION</div>}
-            {isManager && <StaffManagement staff={staff} />}
           </>
         )}
+        {isManager && staff && <StaffManagement staff={staff} />}
       </div>
 
       {selectedStaff && (
