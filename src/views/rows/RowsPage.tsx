@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { ChevronRight, Users, Heart, RefreshCw, AlertCircle } from 'lucide-react';
+import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
 import PosBadge from '@/components/PosBadge';
 import VisibilityLabel from '@/components/VisibilityLabel';
@@ -35,10 +35,23 @@ function buildRows(sections: ClassroomSection[]): FlatRow[] {
 
 function distributeStudents(
   checkedIn: Student[],
-  rows: FlatRow[]
+  rows: FlatRow[],
+  overrides: Record<string, string> = {}
 ): Record<string, Student[]> {
   const assignments: Record<string, Student[]> = {};
   rows.forEach((r) => (assignments[r.id] = []));
+
+  // Place overridden students first
+  const overridden = new Set<number>();
+  checkedIn.forEach((s) => {
+    const targetRow = overrides[String(s.id)];
+    if (targetRow && assignments[targetRow]) {
+      assignments[targetRow].push(s);
+      overridden.add(s.id);
+    }
+  });
+
+  const remaining = checkedIn.filter((s) => !overridden.has(s.id));
 
   const distribute = (studs: Student[], sectionRows: FlatRow[]) => {
     studs.forEach((s, i) => {
@@ -65,15 +78,15 @@ function distributeStudents(
   const ucRows = rows.filter((r) => r.section === 'Upper Classroom');
 
   distribute(
-    checkedIn.filter((s) => s.classroom_position === 'Early Learners'),
+    remaining.filter((s) => s.classroom_position === 'Early Learners'),
     elRows
   );
   distribute(
-    checkedIn.filter((s) => s.classroom_position === 'Main Classroom'),
+    remaining.filter((s) => s.classroom_position === 'Main Classroom'),
     mcRows
   );
   distribute(
-    checkedIn.filter((s) => s.classroom_position === 'Upper Classroom'),
+    remaining.filter((s) => s.classroom_position === 'Upper Classroom'),
     ucRows
   );
 
@@ -84,6 +97,10 @@ export default function RowsPage() {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [dragStudent, setDragStudent] = useState<Student | null>(null);
+  const [rowOverrides, setRowOverrides] = useState<Record<string, string>>({});
+  const [rowCompleteIds, setRowCompleteIds] = useState<Set<number>>(new Set());
+  const [assigningToRow, setAssigningToRow] = useState(false);
+  const [movingStudent, setMovingStudent] = useState<number | null>(null);
   const [, setTick] = useState(0);
 
   const { data: allStudents } = useStudents();
@@ -106,12 +123,26 @@ export default function RowsPage() {
   const checkedInStudents = useMemo(() => {
     if (!allStudents || !checkedIn) return [];
     const ids = new Set(checkedIn.map((a) => a.student_id));
-    return allStudents.filter((s) => ids.has(s.id));
-  }, [allStudents, checkedIn]);
+    return allStudents.filter((s) => ids.has(s.id) && !rowCompleteIds.has(s.id));
+  }, [allStudents, checkedIn, rowCompleteIds]);
+
+  const moveStudentToRow = (studentId: number, rowId: string) => {
+    setRowOverrides((prev) => ({ ...prev, [String(studentId)]: rowId }));
+  };
+
+  const handleRowCheckout = (studentId: number) => {
+    setRowCompleteIds((prev) => new Set(prev).add(studentId));
+    // Remove any row override for this student
+    setRowOverrides((prev) => {
+      const next = { ...prev };
+      delete next[String(studentId)];
+      return next;
+    });
+  };
 
   const assignments = useMemo(
-    () => distributeStudents(checkedInStudents, rows),
-    [checkedInStudents, rows]
+    () => distributeStudents(checkedInStudents, rows, rowOverrides),
+    [checkedInStudents, rows, rowOverrides]
   );
 
   if (!allStudents || !checkedIn) {
@@ -131,7 +162,8 @@ export default function RowsPage() {
           setSelectedStudentId(null);
         }}
         onSetup={() => {/* TODO: ClassroomSetup modal */}}
-        onMoveStudent={() => {/* TODO: row override */}}
+        onMoveStudent={moveStudentToRow}
+        rowOverrides={rowOverrides}
         dragStudent={dragStudent}
         onDragStart={setDragStudent}
         onDragEnd={() => setDragStudent(null)}
@@ -186,6 +218,55 @@ export default function RowsPage() {
             className={styles.cardGrid}
             data-compact={selectedStudent ? '' : undefined}
           >
+            {/* Assign Student card */}
+            <div
+              className={styles.assignCard}
+              onClick={() => setAssigningToRow(!assigningToRow)}
+            >
+              <Plus size={24} />
+              <span className={styles.assignLabel}>Assign Student</span>
+              {assigningToRow && (
+                <div
+                  className={styles.assignPopover}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {(() => {
+                    const assignedIds = new Set(rowStudents.map((s) => s.id));
+                    const available = checkedInStudents.filter(
+                      (s) => !assignedIds.has(s.id)
+                    );
+                    if (available.length === 0) {
+                      return (
+                        <p className={styles.popoverEmpty}>
+                          No available students to add.
+                        </p>
+                      );
+                    }
+                    return available.map((s) => (
+                      <button
+                        key={s.id}
+                        className={styles.popoverItem}
+                        onClick={() => {
+                          moveStudentToRow(s.id, selectedRowId);
+                          setAssigningToRow(false);
+                        }}
+                      >
+                        <span className={styles.popoverName}>
+                          {s.first_name} {s.last_name}
+                        </span>
+                        <span className={styles.popoverMeta}>
+                          <SubjectBadges subjects={parseSubjects(s.subjects)} />
+                          {s.classroom_position && (
+                            <PosBadge position={s.classroom_position} />
+                          )}
+                        </span>
+                      </button>
+                    ));
+                  })()}
+                </div>
+              )}
+            </div>
+
             {rowStudents.map((s) => {
               const att = attendanceMap.get(s.id);
               const remaining = att
@@ -203,6 +284,7 @@ export default function RowsPage() {
                       ? '0'
                       : `+${Math.abs(remaining)}`
                     : String(remaining);
+              const isMoveOpen = movingStudent === s.id;
 
               return (
                 <div
@@ -271,6 +353,57 @@ export default function RowsPage() {
                       >
                         {isOver ? 'over time' : 'remaining'}
                       </p>
+                    </div>
+                  </div>
+                  <div className={styles.cardActions}>
+                    <button
+                      className={styles.rowCheckoutBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowCheckout(s.id);
+                      }}
+                    >
+                      <LogOut size={12} /> Row Checkout
+                    </button>
+                    <div className={styles.moveWrap}>
+                      <button
+                        className={styles.moveBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMovingStudent(isMoveOpen ? null : s.id);
+                        }}
+                      >
+                        <RefreshCw size={12} /> Move
+                      </button>
+                      {isMoveOpen && (
+                        <div
+                          className={styles.movePopover}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {rows
+                            .filter((r) => r.id !== selectedRowId)
+                            .map((r) => {
+                              const count = (assignments[r.id] || []).length;
+                              const isFull = count >= r.seats;
+                              return (
+                                <button
+                                  key={r.id}
+                                  className={`${styles.moveItem} ${isFull ? styles.moveItemFull : ''}`}
+                                  disabled={isFull}
+                                  onClick={() => {
+                                    moveStudentToRow(s.id, r.id);
+                                    setMovingStudent(null);
+                                  }}
+                                >
+                                  <span>{r.label}</span>
+                                  <span className={styles.moveSeatCount}>
+                                    {count}/{r.seats}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

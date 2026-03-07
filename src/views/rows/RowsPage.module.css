@@ -201,6 +201,192 @@
   color: var(--neutral);
 }
 
+/* Assign Student Card */
+.assignCard {
+  border-radius: 10px;
+  border: 2px dashed #dde3ec;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--neutral);
+  transition: all 0.15s;
+  font-family: var(--font-primary);
+  min-height: 180px;
+  position: relative;
+}
+
+.assignCard:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.assignLabel {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.assignPopover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.popoverEmpty {
+  padding: 16px;
+  text-align: center;
+  color: var(--neutral);
+  font-size: 12px;
+  margin: 0;
+}
+
+.popoverItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  text-align: left;
+  color: var(--text);
+  transition: background 0.1s;
+}
+
+.popoverItem:hover {
+  background: var(--primary-ul);
+}
+
+.popoverName {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.popoverMeta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Card Actions (Row Checkout + Move) */
+.cardActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.rowCheckoutBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.rowCheckoutBtn:hover {
+  opacity: 0.85;
+}
+
+.moveWrap {
+  position: relative;
+}
+
+.moveBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--neutral);
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.moveBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.movePopover {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+  min-width: 180px;
+  padding: 4px;
+}
+
+.moveItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--text);
+  transition: background 0.1s;
+}
+
+.moveItem:hover:not(:disabled) {
+  background: var(--primary-ul);
+}
+
+.moveItemFull {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.moveSeatCount {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--neutral);
+}
+
 @media (max-width: 1024px) {
   .header {
     padding: 14px 20px;

@@ -20,6 +20,7 @@ interface ClassroomOverviewProps {
   onSelectRow: (rowId: string) => void;
   onSetup: () => void;
   onMoveStudent: (studentId: number, targetRowId: string) => void;
+  rowOverrides: Record<string, string>;
   dragStudent: Student | null;
   onDragStart: (student: Student) => void;
   onDragEnd: () => void;
@@ -104,6 +105,7 @@ export default function ClassroomOverview({
   onSelectRow,
   onSetup,
   onMoveStudent,
+  rowOverrides,
   dragStudent,
   onDragStart,
   onDragEnd,
@@ -111,8 +113,8 @@ export default function ClassroomOverview({
   const rows = useMemo(() => buildRows(sections), [sections]);
 
   const assignments = useMemo(
-    () => distributeStudents(checkedInStudents, rows, {}),
-    [checkedInStudents, rows]
+    () => distributeStudents(checkedInStudents, rows, rowOverrides),
+    [checkedInStudents, rows, rowOverrides]
   );
 
   const totalIn = checkedInStudents.length;

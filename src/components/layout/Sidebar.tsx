@@ -7,6 +7,7 @@ import {
   Scan,
   Users,
   CalendarDays,
+  ClipboardList,
   Briefcase,
   BookOpen,
   BarChart2,
@@ -28,6 +29,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/kiosk', icon: Scan, label: 'Kiosk' },
   { href: '/rows', icon: Users, label: 'Live Class' },
+  { href: '/attendance', icon: ClipboardList, label: 'Attendance' },
   { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
   { href: '/staff', icon: Briefcase, label: 'Staff', roles: ['superuser', 'admin'] },
   { href: '/library', icon: BookOpen, label: 'Library' },
