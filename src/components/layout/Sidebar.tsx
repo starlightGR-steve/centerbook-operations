@@ -9,6 +9,7 @@ import {
   Briefcase,
   BookOpen,
   BarChart2,
+  TrendingUp,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import styles from './Sidebar.module.css';
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { href: '/staff', icon: Briefcase, label: 'Staff' },
   { href: '/library', icon: BookOpen, label: 'Library' },
   { href: '/progress', icon: BarChart2, label: 'Progress' },
+  { href: '/intelligence', icon: TrendingUp, label: 'Insights' },
 ];
 
 export default function Sidebar() {
