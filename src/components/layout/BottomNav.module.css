@@ -1,0 +1,121 @@
+/* Hidden on desktop, visible on mobile */
+.wrapper {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .wrapper {
+    display: block;
+  }
+
+  /* Bottom Tab Bar */
+  .bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--primary);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1;
+    height: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.15s;
+    padding: 0;
+  }
+
+  .tab:hover {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .tabActive {
+    color: var(--secondary);
+  }
+
+  .tabLabel {
+    font-family: var(--font-primary);
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  /* Overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .overlayOpen {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Drawer */
+  .drawer {
+    position: fixed;
+    bottom: 64px;
+    left: 0;
+    right: 0;
+    background: #1e3a6e;
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+    z-index: 101;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .drawerOpen {
+    transform: translateY(0);
+  }
+
+  .drawerItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    text-decoration: none;
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+
+  .drawerItem:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+  }
+
+  .drawerItemActive {
+    color: var(--secondary);
+    background: rgba(0, 154, 171, 0.12);
+  }
+}

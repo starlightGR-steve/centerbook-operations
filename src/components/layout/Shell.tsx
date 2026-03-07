@@ -3,6 +3,7 @@
 import { useSearchParams, usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import Sidebar from './Sidebar';
+import BottomNav from './BottomNav';
 import styles from './Shell.module.css';
 
 function ShellInner({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       <main id="main-content" className={`${styles.main} ${hideSidebar ? styles.mainEmbedded : ''}`}>
         {children}
       </main>
+      {!hideSidebar && <BottomNav />}
     </div>
   );
 }
