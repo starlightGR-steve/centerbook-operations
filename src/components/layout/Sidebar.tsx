@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Briefcase,
   BookOpen,
+  BarChart2,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import styles from './Sidebar.module.css';
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
   { href: '/staff', icon: Briefcase, label: 'Staff' },
   { href: '/library', icon: BookOpen, label: 'Library' },
+  { href: '/progress', icon: BarChart2, label: 'Progress' },
 ];
 
 export default function Sidebar() {
