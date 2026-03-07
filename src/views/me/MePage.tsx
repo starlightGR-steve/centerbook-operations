@@ -97,7 +97,7 @@ export default function MePage() {
             <Key size={15} /> Change Password
           </h4>
           <p className={styles.sectionDesc}>
-            Update your CenterBook Operations password.
+            Update your Center Book Operations password.
           </p>
 
           <div className={styles.fieldGroup}>
@@ -174,7 +174,7 @@ export default function MePage() {
         <Card className={styles.actionsCard}>
           <h4 className={styles.sectionTitle}>Session</h4>
           <p className={styles.sectionDesc}>
-            Sign out of CenterBook Operations on this device.
+            Sign out of The Center Book Operations on this device.
           </p>
           <Button
             variant="secondary"

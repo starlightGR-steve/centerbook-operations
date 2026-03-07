@@ -53,7 +53,7 @@ export default function LoginPage() {
         </div>
 
         <h1 className={styles.title}>Sign In</h1>
-        <p className={styles.subtitle}>CenterBook Operations</p>
+        <p className={styles.subtitle}>The Center Book Operations</p>
 
         {error && <div className={styles.error}>{error}</div>}
 

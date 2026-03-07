@@ -12,13 +12,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'CenterBook Operations',
+  title: 'The Center Book Operations',
   description: 'In-center operations app for Kumon educational centers',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'CenterBook',
+    title: 'The Center Book',
   },
   other: {
     'theme-color': '#355caa',

@@ -1,6 +1,6 @@
 {
-  "name": "CenterBook Operations",
-  "short_name": "CenterBook",
+  "name": "The Center Book Operations",
+  "short_name": "The Center Book",
   "description": "In-center management for educational centers",
   "start_url": "/",
   "display": "standalone",
