@@ -486,6 +486,7 @@ export default function StaffPage() {
                 <TimeclockPanel staff={activeStaff} timeEntries={timeEntries} />
               </div>
             )}
+            {isManager && <div id="mgmt-debug" style={{background:'red',padding:'20px',color:'white',fontSize:'24px'}}>MANAGER SECTION</div>}
             {isManager && <StaffManagement staff={staff} />}
           </>
         )}
