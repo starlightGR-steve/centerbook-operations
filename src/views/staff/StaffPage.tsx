@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Download, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Download, Eye, EyeOff, UserPlus, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { mutate } from 'swr';
 import SectionHeader from '@/components/ui/SectionHeader';
@@ -422,15 +422,21 @@ function StaffManagement({ staff }: MgmtProps) {
 export default function StaffPage() {
   const { data: session, status } = useSession();
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const { data: staff } = useStaff();
+  const { data: staff, isLoading: staffLoading } = useStaff();
   const { data: activeStaff } = useActiveStaff();
-  const { data: timeEntries } = useTimeclock();
+  const { data: timeEntries, error: timeError, isLoading: timeLoading } = useTimeclock();
   const { start, end, label, goPrev, goNext, goToCurrent } = usePayPeriod();
+  const [timeclockOpen, setTimeclockOpen] = useState(false);
 
   const userRole = (session?.user as { role?: string } | undefined)?.role;
   const isManager = status === 'authenticated' && (userRole === 'admin' || userRole === 'superuser');
 
-  console.log('[StaffPage] staff:', staff?.length ?? 'undefined', 'timeEntries:', timeEntries?.length ?? 'undefined', 'isManager:', isManager, 'session status:', status);
+  const hasEntries = !!timeEntries && timeEntries.length > 0;
+  const timeReady = !timeLoading;
+
+  useEffect(() => {
+    if (hasEntries) setTimeclockOpen(true);
+  }, [hasEntries]);
 
   const clockedInIds = useMemo(() => {
     const ids = new Set<number>();
@@ -471,25 +477,53 @@ export default function StaffPage() {
       </div>
 
       <div className={styles.content}>
-        {!staff || !timeEntries ? (
+        {staffLoading ? (
           <StaffSkeleton />
-        ) : (
+        ) : staff ? (
           <>
-            <StaffTable
-              staff={staff}
-              timeEntries={timeEntries}
-              clockedInIds={clockedInIds}
-              periodStart={start}
-              periodEnd={end}
-              onSelect={setSelectedStaff}
-            />
-            {activeStaff && (
-              <div className={styles.timeclockWrap}>
-                <TimeclockPanel staff={activeStaff} timeEntries={timeEntries} />
+            <div className={styles.collapsibleSection}>
+              <button
+                className={styles.collapsibleHeader}
+                onClick={() => setTimeclockOpen(!timeclockOpen)}
+              >
+                <span className={styles.collapsibleTitle}>
+                  <Clock size={16} />
+                  Timeclock &amp; Payroll
+                  {hasEntries && (
+                    <span className={styles.entryCount}>{timeEntries.length} entries</span>
+                  )}
+                </span>
+                {timeclockOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </button>
+              <div className={`${styles.collapsibleContent} ${timeclockOpen ? styles.collapsibleOpen : ''}`}>
+                {!timeReady ? (
+                  <StaffSkeleton />
+                ) : hasEntries ? (
+                  <>
+                    <StaffTable
+                      staff={staff}
+                      timeEntries={timeEntries}
+                      clockedInIds={clockedInIds}
+                      periodStart={start}
+                      periodEnd={end}
+                      onSelect={setSelectedStaff}
+                    />
+                    {activeStaff && (
+                      <div className={styles.timeclockWrap}>
+                        <TimeclockPanel staff={activeStaff} timeEntries={timeEntries} />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className={styles.emptyState}>
+                    <Clock size={32} />
+                    <p>No timeclock entries for this pay period.</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </>
-        )}
+        ) : null}
         {isManager && staff && <StaffManagement staff={staff} />}
       </div>
 
