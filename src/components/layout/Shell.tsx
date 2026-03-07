@@ -1,18 +1,21 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import Sidebar from './Sidebar';
 import styles from './Shell.module.css';
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const isEmbedded = searchParams.get('embedded') === 'true';
+  const isLogin = pathname === '/login';
+  const hideSidebar = isEmbedded || isLogin;
 
   return (
-    <div className={`${styles.shell} ${isEmbedded ? styles.shellEmbedded : ''}`}>
-      {!isEmbedded && <Sidebar />}
-      <main id="main-content" className={`${styles.main} ${isEmbedded ? styles.mainEmbedded : ''}`}>
+    <div className={`${styles.shell} ${hideSidebar ? styles.shellEmbedded : ''}`}>
+      {!hideSidebar && <Sidebar />}
+      <main id="main-content" className={`${styles.main} ${hideSidebar ? styles.mainEmbedded : ''}`}>
         {children}
       </main>
     </div>

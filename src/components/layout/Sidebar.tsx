@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
   Scan,
@@ -10,22 +11,39 @@ import {
   BookOpen,
   BarChart2,
   TrendingUp,
+  UserCircle,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type { AppRole } from '@/lib/auth';
 import Logo from '@/components/Logo';
 import styles from './Sidebar.module.css';
 
-const NAV_ITEMS = [
+interface NavItem {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  roles?: AppRole[];
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: '/kiosk', icon: Scan, label: 'Kiosk' },
   { href: '/rows', icon: Users, label: 'Live Class' },
   { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
-  { href: '/staff', icon: Briefcase, label: 'Staff' },
+  { href: '/staff', icon: Briefcase, label: 'Staff', roles: ['superuser', 'admin'] },
   { href: '/library', icon: BookOpen, label: 'Library' },
-  { href: '/progress', icon: BarChart2, label: 'Progress' },
-  { href: '/intelligence', icon: TrendingUp, label: 'Insights' },
+  { href: '/progress', icon: BarChart2, label: 'Progress', roles: ['superuser', 'admin'] },
+  { href: '/intelligence', icon: TrendingUp, label: 'Insights', roles: ['superuser', 'admin'] },
+  { href: '/me', icon: UserCircle, label: 'Me' },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const role = (session?.user as { role?: AppRole } | undefined)?.role;
+
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.roles || (role && item.roles.includes(role))
+  );
 
   return (
     <aside className={styles.sidebar} aria-label="Module navigation">
@@ -33,7 +51,7 @@ export default function Sidebar() {
         <Logo />
       </div>
       <nav className={styles.nav} aria-label="Module navigation">
-        {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
+        {visibleItems.map(({ href, icon: Icon, label }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
           return (
             <Link

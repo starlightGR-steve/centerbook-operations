@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import AuthProvider from '@/components/AuthProvider';
 import Shell from '@/components/layout/Shell';
 import '@/styles/globals.css';
 
@@ -35,8 +36,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <a href="#main-content" className="skip-link">Skip to main content</a>
-        <Shell>{children}</Shell>
+        <AuthProvider>
+          <a href="#main-content" className="skip-link">Skip to main content</a>
+          <Shell>{children}</Shell>
+        </AuthProvider>
       </body>
     </html>
   );
