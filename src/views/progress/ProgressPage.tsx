@@ -8,6 +8,8 @@ import {
 import SectionHeader from '@/components/ui/SectionHeader';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import { useStudents } from '@/hooks/useStudents';
+import type { Student } from '@/lib/types';
 import styles from './ProgressPage.module.css';
 
 /* ═══════════════════════════════════════════
@@ -38,8 +40,7 @@ const ASHR_SHORT: Record<number, string> = {
 };
 
 /* ═══════════════════════════════════════════
-   MOCK STUDENT DATA — Kumon Progress Map, January 2026
-   TODO: Replace with GET /cb/v1/progress/map
+   PROGRESS STUDENT TYPE & MAPPING
    ═══════════════════════════════════════════ */
 interface ProgressStudent {
   name: string;
@@ -52,229 +53,48 @@ interface ProgressStudent {
   read_los: number | null;
 }
 
-const MOCK_STUDENTS: ProgressStudent[] = [
-  { name: 'Alice Wang', band: 'K-2', math_ashr: 3, math_grade: '4A', math_los: 42, read_ashr: 3, read_grade: '3A', read_los: 38 },
-  { name: 'Ben Torres', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 30, read_ashr: 2, read_grade: '2A', read_los: 28 },
-  { name: 'Chloe Kim', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 18, read_ashr: 0, read_grade: 'A1', read_los: 12 },
-  { name: 'Daniel Obi', band: '3-5', math_ashr: 9, math_grade: '3A', math_los: 36, read_ashr: 9, read_grade: '2A', read_los: 30 },
-  { name: 'Emma Liu', band: 'K-2', math_ashr: 3, math_grade: '5A', math_los: 48, read_ashr: 2, read_grade: '3A', read_los: 36 },
-  { name: 'Felix Brown', band: '3-5', math_ashr: 0, math_grade: 'B', math_los: 14, read_ashr: 1, read_grade: 'A2', read_los: 16 },
-  { name: 'Grace Park', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 24, read_ashr: 3, read_grade: '4A', read_los: 30 },
-  { name: 'Henry Cho', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 20, read_ashr: 9, read_grade: 'A1', read_los: 24 },
-  { name: 'Isla Nguyen', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 28, read_ashr: 0, read_grade: 'A1', read_los: 10 },
-  { name: 'Jack Miller', band: '6-8', math_ashr: 3, math_grade: 'H', math_los: 54, read_ashr: 2, read_grade: 'F', read_los: 48 },
-  { name: 'Kira Patel', band: '3-5', math_ashr: 2, math_grade: 'E', math_los: 30, read_ashr: 1, read_grade: 'C', read_los: 22 },
-  { name: 'Liam Chen', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 8, read_ashr: 0, read_grade: 'A1', read_los: 6 },
-  { name: 'Mia Johnson', band: '3-5', math_ashr: 3, math_grade: 'G', math_los: 40, read_ashr: 3, read_grade: 'E', read_los: 36 },
-  { name: 'Noah Davis', band: '6-8', math_ashr: 9, math_grade: 'C', math_los: 44, read_ashr: 9, read_grade: 'B', read_los: 40 },
-  { name: 'Olivia Lee', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 16, read_ashr: 2, read_grade: '3A', read_los: 20 },
-  { name: 'Paul Santos', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 26, read_ashr: 0, read_grade: 'B', read_los: 14 },
-  { name: 'Quinn Adams', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 32, read_ashr: 9, read_grade: 'A1', read_los: 26 },
-  { name: 'Ruby Singh', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 18, read_ashr: 1, read_grade: 'B', read_los: 16 },
-  { name: 'Sam Wright', band: '6-8', math_ashr: 2, math_grade: 'G', math_los: 36, read_ashr: 3, read_grade: 'G', read_los: 42 },
-  { name: 'Tara Gupta', band: 'K-2', math_ashr: 3, math_grade: '4A', math_los: 38, read_ashr: 1, read_grade: '2A', read_los: 18 },
-  { name: 'Uma Reyes', band: '3-5', math_ashr: 0, math_grade: 'B', math_los: 10, read_ashr: 9, read_grade: 'A1', read_los: 30 },
-  { name: 'Victor Tran', band: '6-8', math_ashr: 9, math_grade: 'D', math_los: 50, read_ashr: 2, read_grade: 'E', read_los: 34 },
-  { name: 'Wendy Zhou', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 22, read_ashr: 2, read_grade: '2A', read_los: 20 },
-  { name: 'Xander Cole', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 16, read_ashr: 0, read_grade: 'A2', read_los: 12 },
-  { name: 'Yara Hassan', band: 'K-2', math_ashr: 3, math_grade: '5A', math_los: 46, read_ashr: 3, read_grade: '4A', read_los: 40 },
-  { name: 'Zach Reed', band: '6-8', math_ashr: 0, math_grade: 'E', math_los: 12, read_ashr: 0, read_grade: 'C', read_los: 10 },
-  { name: 'Ava Martin', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 34, read_ashr: 1, read_grade: 'A2', read_los: 14 },
-  { name: 'Blake Foster', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 28, read_ashr: 2, read_grade: 'C', read_los: 26 },
-  { name: 'Clara Wood', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 14, read_ashr: 9, read_grade: 'A1', read_los: 28 },
-  { name: 'Diego Ruiz', band: '3-5', math_ashr: 3, math_grade: 'F', math_los: 36, read_ashr: 0, read_grade: 'B', read_los: 12 },
-  { name: 'Elena Volkov', band: '6-8', math_ashr: 2, math_grade: 'G', math_los: 32, read_ashr: 1, read_grade: 'D', read_los: 20 },
-  { name: 'Finn Murphy', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 6, read_ashr: 2, read_grade: '2A', read_los: 18 },
-  { name: 'Gia Romano', band: '3-5', math_ashr: 9, math_grade: 'B', math_los: 38, read_ashr: 9, read_grade: 'A2', read_los: 32 },
-  { name: 'Hugo Lane', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 20, read_ashr: 1, read_grade: 'A2', read_los: 16 },
-  { name: 'Iris Young', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 24, read_ashr: 3, read_grade: 'D', read_los: 30 },
-  { name: 'Jake Hill', band: '6-8', math_ashr: 3, math_grade: 'I', math_los: 60, read_ashr: 2, read_grade: 'F', read_los: 40 },
-  { name: 'Kaia Bell', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 4, read_ashr: 0, read_grade: 'A1', read_los: 4 },
-  { name: 'Leo Varga', band: '3-5', math_ashr: 9, math_grade: 'B', math_los: 40, read_ashr: 1, read_grade: 'B', read_los: 18 },
-  { name: 'Maya Scott', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 26, read_ashr: 9, read_grade: 'A1', read_los: 24 },
-  { name: 'Nathan Cruz', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 22, read_ashr: 2, read_grade: 'C', read_los: 24 },
-  { name: 'Olive Hart', band: 'K-2', math_ashr: 3, math_grade: '4A', math_los: 44, read_ashr: 0, read_grade: 'A1', read_los: 8 },
-  { name: 'Peter Lam', band: '6-8', math_ashr: 0, math_grade: 'E', math_los: 10, read_ashr: 9, read_grade: 'B', read_los: 36 },
-  { name: 'Rosa Diaz', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 30, read_ashr: 1, read_grade: 'C', read_los: 20 },
-  { name: 'Sean Burke', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 30, read_ashr: 0, read_grade: 'A1', read_los: 8 },
-  { name: 'Tina Yao', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 16, read_ashr: 2, read_grade: 'C', read_los: 22 },
-  { name: 'Uri Moss', band: '6-8', math_ashr: 3, math_grade: 'H', math_los: 52, read_ashr: 3, read_grade: 'G', read_los: 48 },
-  { name: 'Vera Hunt', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 6, read_ashr: 1, read_grade: 'A2', read_los: 12 },
-  { name: 'Will Soto', band: '3-5', math_ashr: 9, math_grade: 'B', math_los: 36, read_ashr: 9, read_grade: 'A2', read_los: 34 },
-  { name: 'Xia Feng', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 28, read_ashr: 2, read_grade: '2A', read_los: 24 },
-  { name: 'Yusuf Ali', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 18, read_ashr: 0, read_grade: 'B', read_los: 10 },
-  { name: 'Zoe Nash', band: '6-8', math_ashr: 2, math_grade: 'F', math_los: 34, read_ashr: 1, read_grade: 'D', read_los: 22 },
-  { name: 'Amir Khan', band: '3-5', math_ashr: 3, math_grade: 'F', math_los: 38, read_ashr: 2, read_grade: 'D', read_los: 28 },
-  { name: 'Bella Stone', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 8, read_ashr: 9, read_grade: 'A1', read_los: 26 },
-  { name: 'Caleb Roth', band: '3-5', math_ashr: 2, math_grade: 'E', math_los: 26, read_ashr: 0, read_grade: 'B', read_los: 12 },
-  { name: 'Dana Price', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 28, read_ashr: 2, read_grade: '2A', read_los: 22 },
-  { name: 'Eli Grant', band: '6-8', math_ashr: 1, math_grade: 'E', math_los: 20, read_ashr: 1, read_grade: 'D', read_los: 18 },
-  { name: 'Faye Long', band: 'K-2', math_ashr: 3, math_grade: '4A', math_los: 40, read_ashr: 2, read_grade: '3A', read_los: 26 },
-  { name: 'Gabe Fox', band: '3-5', math_ashr: 0, math_grade: 'B', math_los: 12, read_ashr: 1, read_grade: 'B', read_los: 16 },
-  { name: 'Hana West', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 14, read_ashr: 3, read_grade: '3A', read_los: 32 },
-  { name: 'Ivan Marsh', band: '3-5', math_ashr: 9, math_grade: 'B', math_los: 42, read_ashr: 9, read_grade: 'A1', read_los: 38 },
-  { name: 'Jade Walsh', band: '6-8', math_ashr: 2, math_grade: 'G', math_los: 30, read_ashr: 0, read_grade: 'C', read_los: 10 },
-  { name: 'Kai Tanaka', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 18, read_ashr: 1, read_grade: 'A2', read_los: 14 },
-  { name: 'Luna Perez', band: '3-5', math_ashr: 3, math_grade: 'G', math_los: 42, read_ashr: 1, read_grade: 'C', read_los: 18 },
-  { name: 'Max Otto', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 4, read_ashr: 0, read_grade: 'A1', read_los: 4 },
-  { name: 'Nora Crane', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 24, read_ashr: 2, read_grade: 'C', read_los: 22 },
-  { name: 'Omar Farid', band: '6-8', math_ashr: 9, math_grade: 'D', math_los: 48, read_ashr: 9, read_grade: 'C', read_los: 42 },
-  { name: 'Pia Bloom', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 26, read_ashr: 1, read_grade: '2A', read_los: 16 },
-  { name: 'Ray Sharp', band: '3-5', math_ashr: 0, math_grade: 'C', math_los: 10, read_ashr: 9, read_grade: 'A2', read_los: 30 },
-  { name: 'Sara Ito', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 16, read_ashr: 0, read_grade: 'A1', read_los: 8 },
-  { name: 'Tony Gibbs', band: '6-8', math_ashr: 3, math_grade: 'I', math_los: 56, read_ashr: 2, read_grade: 'F', read_los: 38 },
-  { name: 'Uma Chen', band: '3-5', math_ashr: 9, math_grade: 'C', math_los: 34, read_ashr: 0, read_grade: 'B', read_los: 12 },
-  { name: 'Val Horn', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 22, read_ashr: 3, read_grade: '3A', read_los: 28 },
-  { name: 'Walt Dean', band: '3-5', math_ashr: 1, math_grade: 'D', math_los: 20, read_ashr: 1, read_grade: 'B', read_los: 16 },
-  { name: 'Xena Lloyd', band: '6-8', math_ashr: 0, math_grade: 'E', math_los: 8, read_ashr: 2, read_grade: 'D', read_los: 24 },
-  { name: 'Yuki Sato', band: 'K-2', math_ashr: 3, math_grade: '5A', math_los: 44, read_ashr: 0, read_grade: 'A1', read_los: 6 },
-  { name: 'Zain Malik', band: '3-5', math_ashr: 2, math_grade: 'E', math_los: 28, read_ashr: 9, read_grade: 'A2', read_los: 28 },
-  { name: 'Amy Grant', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 26, read_ashr: 1, read_grade: 'A2', read_los: 14 },
-  { name: 'Brett Hull', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 14, read_ashr: 2, read_grade: 'C', read_los: 20 },
-  { name: 'Cara Moon', band: '6-8', math_ashr: 2, math_grade: 'F', math_los: 32, read_ashr: 3, read_grade: 'F', read_los: 36 },
-  { name: 'Drew Hale', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 6, read_ashr: 0, read_grade: 'A1', read_los: 8 },
-  { name: 'Eve Cross', band: '3-5', math_ashr: 3, math_grade: 'F', math_los: 34, read_ashr: 1, read_grade: 'B', read_los: 16 },
-  { name: 'Fred Bass', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 18, read_ashr: 9, read_grade: 'A1', read_los: 30 },
-  { name: 'Gwen Kerr', band: '3-5', math_ashr: 9, math_grade: 'B', math_los: 36, read_ashr: 2, read_grade: 'C', read_los: 22 },
-  { name: 'Hank Snow', band: '6-8', math_ashr: 0, math_grade: 'E', math_los: 12, read_ashr: 0, read_grade: 'C', read_los: 10 },
-  { name: 'Ivy Dunn', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 24, read_ashr: 1, read_grade: '2A', read_los: 14 },
-  { name: 'Joel Kirk', band: '3-5', math_ashr: 1, math_grade: 'D', math_los: 20, read_ashr: 0, read_grade: 'B', read_los: 12 },
-  { name: 'Kate Byrd', band: 'K-2', math_ashr: 3, math_grade: '4A', math_los: 42, read_ashr: 2, read_grade: '3A', read_los: 24 },
-  { name: 'Luis Vega', band: '3-5', math_ashr: 0, math_grade: 'B', math_los: 10, read_ashr: 1, read_grade: 'A2', read_los: 14 },
-  { name: 'Mira Shah', band: '6-8', math_ashr: 9, math_grade: 'D', math_los: 46, read_ashr: 9, read_grade: 'B', read_los: 44 },
-  { name: 'Nate Palm', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 22, read_ashr: 0, read_grade: 'A1', read_los: 10 },
-  { name: 'Opal Wise', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 16, read_ashr: 9, read_grade: 'A1', read_los: 32 },
-  { name: 'Pete York', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 30, read_ashr: 2, read_grade: '2A', read_los: 20 },
-  { name: 'Ria Lowe', band: '3-5', math_ashr: 3, math_grade: 'G', math_los: 38, read_ashr: 3, read_grade: 'E', read_los: 34 },
-  { name: 'Scott Day', band: '6-8', math_ashr: 1, math_grade: 'F', math_los: 22, read_ashr: 1, read_grade: 'D', read_los: 18 },
-  { name: 'Thea Bond', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 4, read_ashr: 3, read_grade: '3A', read_los: 26 },
-  { name: 'Ugo Neri', band: '3-5', math_ashr: 2, math_grade: 'E', math_los: 26, read_ashr: 0, read_grade: 'B', read_los: 10 },
-  { name: 'Viv Penn', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 32, read_ashr: 9, read_grade: 'A1', read_los: 28 },
-  { name: 'Wren Koch', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 18, read_ashr: 2, read_grade: 'C', read_los: 24 },
-  { name: 'Xara Gale', band: '6-8', math_ashr: 2, math_grade: 'G', math_los: 34, read_ashr: 1, read_grade: 'D', read_los: 20 },
-  { name: 'Yale Todd', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 8, read_ashr: 1, read_grade: 'A2', read_los: 14 },
-  { name: 'Zara Finn', band: '3-5', math_ashr: 3, math_grade: 'F', math_los: 40, read_ashr: 2, read_grade: 'D', read_los: 26 },
-  { name: 'Ada Blake', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 16, read_ashr: 0, read_grade: 'A1', read_los: 8 },
-  { name: 'Bo Chang', band: '6-8', math_ashr: 9, math_grade: 'C', math_los: 42, read_ashr: 0, read_grade: 'C', read_los: 12 },
-  { name: 'Cora Webb', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 24, read_ashr: 1, read_grade: 'B', read_los: 16 },
-  { name: 'Dane York', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 6, read_ashr: 2, read_grade: '2A', read_los: 18 },
-  { name: 'Ella Rowe', band: '3-5', math_ashr: 9, math_grade: 'B', math_los: 38, read_ashr: 1, read_grade: 'B', read_los: 18 },
-  { name: 'Ford Nash', band: '6-8', math_ashr: 3, math_grade: 'H', math_los: 50, read_ashr: 0, read_grade: 'C', read_los: 10 },
-  { name: 'Gail Ruiz', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 14, read_ashr: 9, read_grade: 'A1', read_los: 26 },
-  { name: 'Hal Ortiz', band: '3-5', math_ashr: 0, math_grade: 'B', math_los: 10, read_ashr: 0, read_grade: 'B', read_los: 10 },
-  { name: 'Iris Quinn', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 28, read_ashr: 3, read_grade: '4A', read_los: 34 },
-  { name: 'Jay Marsh', band: '3-5', math_ashr: 9, math_grade: 'C', math_los: 36, read_ashr: 9, read_grade: 'A2', read_los: 30 },
-  { name: 'Kim Avery', band: '6-8', math_ashr: 1, math_grade: 'F', math_los: 24, read_ashr: 2, read_grade: 'E', read_los: 28 },
-  { name: 'Lee Stark', band: 'K-2', math_ashr: 3, math_grade: '5A', math_los: 46, read_ashr: 1, read_grade: '2A', read_los: 16 },
-  { name: 'Mae Potter', band: '3-5', math_ashr: 0, math_grade: 'C', math_los: 12, read_ashr: 2, read_grade: 'C', read_los: 22 },
-  { name: 'Ned Cross', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 20, read_ashr: 0, read_grade: 'A1', read_los: 8 },
-  { name: 'Ora Vance', band: '6-8', math_ashr: 9, math_grade: 'D', math_los: 44, read_ashr: 2, read_grade: 'D', read_los: 26 },
-  { name: 'Pat Doyle', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 18, read_ashr: 1, read_grade: 'B', read_los: 14 },
-  { name: 'Quinn Ray', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 4, read_ashr: 0, read_grade: 'A1', read_los: 6 },
-  { name: 'Rex Boone', band: '3-5', math_ashr: 3, math_grade: 'G', math_los: 44, read_ashr: 9, read_grade: 'A2', read_los: 26 },
-  { name: 'Sky Wolfe', band: '6-8', math_ashr: 2, math_grade: 'G', math_los: 30, read_ashr: 1, read_grade: 'D', read_los: 20 },
-  { name: 'Ty Brock', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 28, read_ashr: 0, read_grade: 'A1', read_los: 10 },
-  { name: 'Una Field', band: '3-5', math_ashr: 1, math_grade: 'D', math_los: 20, read_ashr: 3, read_grade: 'D', read_los: 30 },
-  { name: 'Van Poole', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 24, read_ashr: 2, read_grade: '2A', read_los: 20 },
-  { name: 'Wes Hogan', band: '6-8', math_ashr: 0, math_grade: 'E', math_los: 14, read_ashr: 9, read_grade: 'B', read_los: 38 },
-  { name: 'Ximena Paz', band: '3-5', math_ashr: 3, math_grade: 'F', math_los: 36, read_ashr: 2, read_grade: 'D', read_los: 24 },
-  { name: 'Yael Stern', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 34, read_ashr: 9, read_grade: 'A1', read_los: 30 },
-  { name: 'Zion Wade', band: '3-5', math_ashr: 0, math_grade: 'B', math_los: 8, read_ashr: 1, read_grade: 'A2', read_los: 12 },
-  { name: 'Aria Cook', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 22, read_ashr: 0, read_grade: 'A1', read_los: 6 },
-  { name: 'Beck Neal', band: '6-8', math_ashr: 1, math_grade: 'F', math_los: 22, read_ashr: 2, read_grade: 'E', read_los: 26 },
-  // Math-only students (no reading)
-  { name: 'Cole Fritz', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 24, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Dawn Stein', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 16, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Evan Peck', band: '3-5', math_ashr: 3, math_grade: 'F', math_los: 36, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Fern Hall', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 6, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Glen Drake', band: '6-8', math_ashr: 9, math_grade: 'D', math_los: 40, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Hope Lane', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 20, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Ira Floyd', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 18, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'June Frost', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 8, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Kent Pace', band: '6-8', math_ashr: 3, math_grade: 'H', math_los: 48, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Lena Marx', band: '3-5', math_ashr: 9, math_grade: 'B', math_los: 34, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Mark Sage', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 26, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Nell Ford', band: '3-5', math_ashr: 0, math_grade: 'C', math_los: 12, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Otto Huff', band: '6-8', math_ashr: 1, math_grade: 'E', math_los: 20, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Pip Garza', band: 'K-2', math_ashr: 3, math_grade: '4A', math_los: 38, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Rae Downs', band: '3-5', math_ashr: 9, math_grade: 'C', math_los: 36, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Sol Cuevas', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 22, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Tad Briggs', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 14, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Ursa Pham', band: '6-8', math_ashr: 0, math_grade: 'E', math_los: 10, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Vito Agee', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 24, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Wynn Odom', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 16, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Xavi Luna', band: '3-5', math_ashr: 3, math_grade: 'G', math_los: 42, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Yoko Sosa', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 30, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Zeke Holt', band: '6-8', math_ashr: 0, math_grade: 'F', math_los: 12, read_ashr: null, read_grade: null, read_los: null },
-  // Reading-only students (no math)
-  { name: 'Anna Bates', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 2, read_grade: '2A', read_los: 20 },
-  { name: 'Benny Cooke', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 0, read_grade: 'B', read_los: 10 },
-  { name: 'Cece Rivera', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 3, read_grade: '3A', read_los: 28 },
-  { name: 'Dale Prince', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 9, read_grade: 'A2', read_los: 32 },
-  { name: 'Etta James', band: '6-8', math_ashr: null, math_grade: null, math_los: null, read_ashr: 1, read_grade: 'D', read_los: 18 },
-  { name: 'Flip Mason', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 2, read_grade: '2A', read_los: 22 },
-  { name: 'Gigi Wu', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 0, read_grade: 'B', read_los: 12 },
-  { name: 'Hugh Boyer', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 9, read_grade: 'A1', read_los: 24 },
-  { name: 'Ida Kemp', band: '6-8', math_ashr: null, math_grade: null, math_los: null, read_ashr: 1, read_grade: 'D', read_los: 20 },
-  { name: 'Jim Hines', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 3, read_grade: 'E', read_los: 34 },
-  { name: 'Kit Lomax', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 2, read_grade: '3A', read_los: 26 },
-  { name: 'Lex Pryor', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 0, read_grade: 'C', read_los: 14 },
-  { name: 'Moe Tripp', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 1, read_grade: 'A2', read_los: 16 },
-  { name: 'Nia Powers', band: '6-8', math_ashr: null, math_grade: null, math_los: null, read_ashr: 9, read_grade: 'B', read_los: 36 },
-  { name: 'Odie Small', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 2, read_grade: 'C', read_los: 24 },
-  { name: 'Pearl Nixon', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 0, read_grade: 'A1', read_los: 8 },
-  { name: 'Reed Klein', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 1, read_grade: 'B', read_los: 14 },
-  { name: 'Sue Tabor', band: '6-8', math_ashr: null, math_grade: null, math_los: null, read_ashr: 3, read_grade: 'F', read_los: 32 },
-  { name: 'Tim Yates', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 9, read_grade: 'A1', read_los: 28 },
-  { name: 'Ula Craig', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 2, read_grade: 'C', read_los: 22 },
-  { name: 'Vic Truong', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 0, read_grade: 'A1', read_los: 6 },
-  { name: 'Willa Dean', band: '6-8', math_ashr: null, math_grade: null, math_los: null, read_ashr: 1, read_grade: 'E', read_los: 22 },
-  // Extra math-only to hit 246 math enrolled
-  { name: 'Axel Bower', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 22, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Bria Gibbs', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 6, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Cruz Stone', band: '6-8', math_ashr: 9, math_grade: 'D', math_los: 42, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Dina Reese', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 16, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Ebon Clay', band: 'K-2', math_ashr: 3, math_grade: '4A', math_los: 40, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Faye Drake', band: '3-5', math_ashr: 2, math_grade: 'E', math_los: 28, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Gray Novak', band: '6-8', math_ashr: 0, math_grade: 'F', math_los: 14, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Haru Ikeda', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 18, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Ines Rocha', band: '3-5', math_ashr: 9, math_grade: 'B', math_los: 32, read_ashr: null, read_grade: null, read_los: null },
-  { name: 'Joss Plumb', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 20, read_ashr: null, read_grade: null, read_los: null },
-  // Extra reading-only to hit 206 reading enrolled
-  { name: 'Kade Ellis', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 1, read_grade: 'B', read_los: 14 },
-  { name: 'Lux Berry', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 0, read_grade: 'A1', read_los: 6 },
-  { name: 'Mack Quinn', band: '6-8', math_ashr: null, math_grade: null, math_los: null, read_ashr: 2, read_grade: 'E', read_los: 26 },
-  { name: 'Nyla Sims', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 9, read_grade: 'A1', read_los: 30 },
-  { name: 'Olaf Brand', band: 'K-2', math_ashr: null, math_grade: null, math_los: null, read_ashr: 3, read_grade: '3A', read_los: 30 },
-  { name: 'Paz Nunez', band: '3-5', math_ashr: null, math_grade: null, math_los: null, read_ashr: 1, read_grade: 'C', read_los: 18 },
-  // Extra dual to balance out — last 26 students
-  { name: 'Remy Gold', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 18, read_ashr: 2, read_grade: '2A', read_los: 22 },
-  { name: 'Shay Nolan', band: '3-5', math_ashr: 0, math_grade: 'B', math_los: 10, read_ashr: 0, read_grade: 'A2', read_los: 10 },
-  { name: 'Trey Hurst', band: '6-8', math_ashr: 9, math_grade: 'D', math_los: 46, read_ashr: 1, read_grade: 'D', read_los: 20 },
-  { name: 'Uriah Colon', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 26, read_ashr: 9, read_grade: 'A1', read_los: 26 },
-  { name: 'Viola Keane', band: '3-5', math_ashr: 3, math_grade: 'G', math_los: 40, read_ashr: 0, read_grade: 'B', read_los: 12 },
-  { name: 'Wyatt Lynch', band: '6-8', math_ashr: 1, math_grade: 'F', math_los: 24, read_ashr: 2, read_grade: 'E', read_los: 28 },
-  { name: 'Yara Brandt', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 6, read_ashr: 1, read_grade: 'A2', read_los: 14 },
-  { name: 'Zola Peters', band: '3-5', math_ashr: 9, math_grade: 'C', math_los: 38, read_ashr: 3, read_grade: 'D', read_los: 30 },
-  { name: 'Aldo Voss', band: '6-8', math_ashr: 2, math_grade: 'G', math_los: 32, read_ashr: 0, read_grade: 'C', read_los: 10 },
-  { name: 'Bea Colvin', band: 'K-2', math_ashr: 3, math_grade: '5A', math_los: 44, read_ashr: 1, read_grade: '2A', read_los: 16 },
-  { name: 'Cain Murphy', band: '3-5', math_ashr: 0, math_grade: 'C', math_los: 12, read_ashr: 9, read_grade: 'A1', read_los: 28 },
-  { name: 'Diya Arora', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 14, read_ashr: 2, read_grade: '2A', read_los: 20 },
-  { name: 'Esme Rivas', band: '6-8', math_ashr: 9, math_grade: 'D', math_los: 48, read_ashr: 9, read_grade: 'C', read_los: 40 },
-  { name: 'Flynn Weber', band: '3-5', math_ashr: 2, math_grade: 'E', math_los: 28, read_ashr: 1, read_grade: 'C', read_los: 18 },
-  { name: 'Gita Mehta', band: 'K-2', math_ashr: 0, math_grade: 'A', math_los: 4, read_ashr: 0, read_grade: 'A1', read_los: 4 },
-  { name: 'Hans Berger', band: '3-5', math_ashr: 1, math_grade: 'C', math_los: 16, read_ashr: 2, read_grade: 'C', read_los: 22 },
-  { name: 'Ines Correa', band: '6-8', math_ashr: 3, math_grade: 'H', math_los: 52, read_ashr: 3, read_grade: 'G', read_los: 46 },
-  { name: 'Jude Watts', band: 'K-2', math_ashr: 9, math_grade: '2A', math_los: 30, read_ashr: 0, read_grade: 'A1', read_los: 8 },
-  { name: 'Kora Liang', band: '3-5', math_ashr: 2, math_grade: 'D', math_los: 22, read_ashr: 1, read_grade: 'B', read_los: 14 },
-  { name: 'Lars Bohm', band: '6-8', math_ashr: 0, math_grade: 'E', math_los: 10, read_ashr: 9, read_grade: 'B', read_los: 34 },
-  { name: 'Mila Ramos', band: 'K-2', math_ashr: 1, math_grade: '2A', math_los: 18, read_ashr: 3, read_grade: '3A', read_los: 28 },
-  { name: 'Nico Vidal', band: '3-5', math_ashr: 3, math_grade: 'F', math_los: 36, read_ashr: 2, read_grade: 'D', read_los: 24 },
-  { name: 'Opal Greer', band: '6-8', math_ashr: 9, math_grade: 'C', math_los: 40, read_ashr: 0, read_grade: 'C', read_los: 12 },
-  { name: 'Penn Adler', band: 'K-2', math_ashr: 2, math_grade: '3A', math_los: 24, read_ashr: 2, read_grade: '2A', read_los: 20 },
-  { name: 'Rosa Cheng', band: '3-5', math_ashr: 0, math_grade: 'B', math_los: 8, read_ashr: 1, read_grade: 'B', read_los: 16 },
-  { name: 'Seth Noble', band: '6-8', math_ashr: 1, math_grade: 'F', math_los: 22, read_ashr: 0, read_grade: 'C', read_los: 10 },
-];
+const ASHR_STATUS_TO_NUM: Record<string, number> = {
+  'Platinum': 3,
+  'Gold': 3,
+  'Silver': 2,
+  'Bronze': 1,
+  'Not Yet ASHR': 0,
+};
+
+function gradeToBand(grade: string | null): string {
+  if (!grade) return 'K-2';
+  const g = grade.toLowerCase().trim();
+  if (['k', 'pk', 'prek', 'pre-k', '1', '2', '1st', '2nd', 'kindergarten'].some((v) => g.includes(v))) return 'K-2';
+  if (['3', '4', '5', '3rd', '4th', '5th'].some((v) => g.includes(v))) return '3-5';
+  if (['6', '7', '8', '6th', '7th', '8th'].some((v) => g.includes(v))) return '6-8';
+  if (['9', '10', '11', '12', '9th', '10th', '11th', '12th'].some((v) => g.includes(v))) return '9-12';
+  return 'K-2';
+}
+
+function monthsSince(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  const now = new Date();
+  return (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+}
+
+function mapStudent(s: Student): ProgressStudent {
+  const hasMath = s.subjects?.toLowerCase().includes('math');
+  const hasRead = s.subjects?.toLowerCase().includes('reading');
+  const los = monthsSince(s.enroll_date);
+  return {
+    name: `${s.first_name} ${s.last_name}`,
+    band: gradeToBand(s.grade_level),
+    math_ashr: hasMath && s.ashr_math_status ? (ASHR_STATUS_TO_NUM[s.ashr_math_status] ?? 0) : hasMath ? 0 : null,
+    math_grade: hasMath ? s.current_level_math : null,
+    math_los: hasMath ? los : null,
+    read_ashr: hasRead && s.ashr_reading_status ? (ASHR_STATUS_TO_NUM[s.ashr_reading_status] ?? 0) : hasRead ? 0 : null,
+    read_grade: hasRead ? s.current_level_reading : null,
+    read_los: hasRead ? los : null,
+  };
+}
+
 
 /* ═══════════════════════════════════════════
    TOOLTIP / POPOVER
@@ -314,6 +134,9 @@ const LOS_BUCKETS = [
    COMPONENT
    ═══════════════════════════════════════════ */
 export default function ProgressPage() {
+  const { data: rawStudents } = useStudents();
+  const students = useMemo(() => rawStudents?.map(mapStudent) ?? [], [rawStudents]);
+
   const [popover, setPopover] = useState<PopoverState>({ visible: false, x: 0, y: 0, content: null });
 
   const showPopover = useCallback((e: React.MouseEvent, content: React.ReactNode) => {
@@ -332,16 +155,16 @@ export default function ProgressPage() {
 
   // Computed stats
   const stats = useMemo(() => {
-    const total = MOCK_STUDENTS.length;
-    const mathEnrolled = MOCK_STUDENTS.filter((s) => s.math_ashr !== null);
-    const readEnrolled = MOCK_STUDENTS.filter((s) => s.read_ashr !== null);
-    const dual = MOCK_STUDENTS.filter((s) => s.math_ashr !== null && s.read_ashr !== null);
-    const atRisk = MOCK_STUDENTS.filter(
+    const total = students.length;
+    const mathEnrolled = students.filter((s) => s.math_ashr !== null);
+    const readEnrolled = students.filter((s) => s.read_ashr !== null);
+    const dual = students.filter((s) => s.math_ashr !== null && s.read_ashr !== null);
+    const atRisk = students.filter(
       (s) => (s.math_ashr === 9 && (s.math_los ?? 0) >= 24) || (s.read_ashr === 9 && (s.read_los ?? 0) >= 24)
     );
-    const stars = MOCK_STUDENTS.filter((s) => s.math_ashr === 3 || s.read_ashr === 3);
+    const stars = students.filter((s) => s.math_ashr === 3 || s.read_ashr === 3);
     return { total, mathEnrolled, readEnrolled, dual, atRisk, stars };
-  }, []);
+  }, [students]);
 
   // ASHR distribution for donuts
   const mathDonut = useMemo(() => {
@@ -363,7 +186,7 @@ export default function ProgressPage() {
   // Tenure vs Performance bar data
   const tenureData = useMemo(() => {
     return LOS_BUCKETS.map((bucket) => {
-      const inBucket = MOCK_STUDENTS.filter((s) => {
+      const inBucket = students.filter((s) => {
         const los = Math.max(s.math_los ?? 0, s.read_los ?? 0);
         return los >= bucket.min && los <= bucket.max;
       });
@@ -384,7 +207,7 @@ export default function ProgressPage() {
         belowStudents: below,
       };
     });
-  }, []);
+  }, [students]);
 
   // Cross-subject matrix (dual-enrolled only)
   const matrix = useMemo(() => {
@@ -424,6 +247,16 @@ export default function ProgressPage() {
     });
   }, [stats]);
 
+  if (!rawStudents) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <SectionHeader script="Track the" title="Progress Dashboard" subtitle="Loading..." />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <Popover state={popover} />
@@ -432,7 +265,7 @@ export default function ProgressPage() {
         <SectionHeader
           script="Track the"
           title="Progress Dashboard"
-          subtitle="Kumon Progress Map — January 2026"
+          subtitle={`Kumon Progress Map — ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`}
         />
       </div>
 

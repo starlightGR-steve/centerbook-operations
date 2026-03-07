@@ -12,7 +12,7 @@ import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { useNotes } from '@/hooks/useNotes';
-import { MOCK_CLASSROOM_CONFIG } from '@/lib/mock-data';
+import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
 import type { Student, Attendance, ClassroomSection, ClassroomRow } from '@/lib/types';
 import { getTimeRemaining, parseSubjects } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
@@ -94,7 +94,7 @@ export default function RowsPage() {
     return () => clearInterval(id);
   }, []);
 
-  const sections = MOCK_CLASSROOM_CONFIG;
+  const sections = CLASSROOM_CONFIG;
   const rows = useMemo(() => buildRows(sections), [sections]);
 
   const attendanceMap = useMemo(() => {

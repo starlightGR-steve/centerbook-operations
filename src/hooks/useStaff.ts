@@ -1,16 +1,12 @@
 import useSWR from 'swr';
-import { api, useMockFor } from '@/lib/api';
-import { MOCK_STAFF } from '@/lib/mock-data';
+import { api } from '@/lib/api';
 import type { Staff } from '@/lib/types';
-
-const MOCK = useMockFor('staff');
 
 /** Fetch all staff */
 export function useStaff() {
   return useSWR<Staff[]>(
     'staff',
     async () => {
-      if (MOCK) return MOCK_STAFF;
       return api.staff.list();
     },
     { dedupingInterval: 5000 }
@@ -30,7 +26,6 @@ export function useStaffMember(id: number | null) {
     id ? `staff-${id}` : null,
     async () => {
       if (!id) return null;
-      if (MOCK) return MOCK_STAFF.find((s) => s.id === id) ?? null;
       return api.staff.get(id);
     },
     { dedupingInterval: 5000 }
