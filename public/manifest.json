@@ -4,7 +4,7 @@
   "description": "In-center management for educational centers",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#355caa",
   "theme_color": "#355caa",
   "icons": [

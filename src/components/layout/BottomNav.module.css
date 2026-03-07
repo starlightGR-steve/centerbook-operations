@@ -19,8 +19,10 @@
     border-top: 1px solid rgba(255, 255, 255, 0.15);
     z-index: 100;
     display: flex;
+    flex-direction: row;
+    width: 100%;
     align-items: center;
-    justify-content: space-around;
+    overflow: hidden;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
@@ -31,6 +33,7 @@
     justify-content: center;
     gap: 3px;
     flex: 1;
+    min-width: 0;
     height: 100%;
     background: none;
     border: none;
@@ -39,6 +42,7 @@
     color: rgba(255, 255, 255, 0.6);
     transition: color 0.15s;
     padding: 0;
+    overflow: hidden;
   }
 
   .tab:hover {
@@ -54,6 +58,10 @@
     font-size: 9px;
     font-weight: 600;
     line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 
   /* Overlay */
