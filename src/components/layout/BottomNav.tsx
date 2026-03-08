@@ -43,71 +43,12 @@ const MORE_ITEMS: NavItem[] = [
 ];
 
 export default function BottomNav() {
-  const pathname = usePathname();
-  const { data: session } = useSession();
-  const role = (session?.user as { role?: AppRole } | undefined)?.role;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  console.log('BottomNav mounted');
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + '/');
-
-  // Check if any "More" item is active (to highlight the More tab)
-  const visibleMore = MORE_ITEMS.filter(
-    (item) => !item.roles || (role && item.roles.includes(role))
-  );
-  const moreActive = visibleMore.some((item) => isActive(item.href));
-
+  // DIAGNOSTIC: raw inline styles, no CSS Modules
   return (
-    <div className={styles.wrapper}>
-      {/* Overlay */}
-      <div
-        className={`${styles.overlay} ${drawerOpen ? styles.overlayOpen : ''}`}
-        onClick={() => setDrawerOpen(false)}
-      />
-
-      {/* Drawer */}
-      <div className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ''}`}>
-        {visibleMore.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`${styles.drawerItem} ${isActive(href) ? styles.drawerItemActive : ''}`}
-            onClick={() => setDrawerOpen(false)}
-          >
-            <Icon size={20} />
-            {label}
-          </Link>
-        ))}
-      </div>
-
-      {/* Tab Bar */}
-      <nav className={styles.bar} aria-label="Mobile navigation">
-        {PRIMARY_TABS.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`${styles.tab} ${isActive(href) ? styles.tabActive : ''}`}
-            onClick={() => setDrawerOpen(false)}
-          >
-            <Icon size={20} />
-            <span className={styles.tabLabel}>{label}</span>
-          </Link>
-        ))}
-        <button
-          className={`${styles.tab} ${moreActive || drawerOpen ? styles.tabActive : ''}`}
-          onClick={() => setDrawerOpen(!drawerOpen)}
-          aria-label="More navigation items"
-        >
-          <ChevronUp
-            size={20}
-            style={{
-              transform: drawerOpen ? 'rotate(180deg)' : undefined,
-              transition: 'transform 0.25s',
-            }}
-          />
-          <span className={styles.tabLabel}>More</span>
-        </button>
-      </nav>
+    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: '64px', background: 'red', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'space-around', color: 'white', fontFamily: 'Montserrat, sans-serif', fontSize: '12px', fontWeight: 700 }}>
+      BOTTOM NAV TEST
     </div>
   );
 }
