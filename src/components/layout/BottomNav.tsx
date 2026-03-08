@@ -42,16 +42,6 @@ const MORE_ITEMS: NavItem[] = [
   { href: '/me', icon: UserCircle, label: 'Me' },
 ];
 
-const COLORS = {
-  primary: '#355caa',
-  secondary: '#009AAB',
-  drawerBg: '#1e3a6e',
-  tabInactive: 'rgba(255,255,255,0.6)',
-  white: '#ffffff',
-  overlayBg: 'rgba(0,0,0,0.4)',
-  drawerItemActiveBg: 'rgba(0,154,171,0.12)',
-};
-
 export default function BottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -76,134 +66,160 @@ export default function BottomNav() {
   );
   const moreActive = visibleMore.some((item) => isActive(item.href));
 
-  const tabStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '3px',
-    minWidth: 0,
-    height: '100%',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    color: active ? COLORS.secondary : COLORS.tabInactive,
-    padding: 0,
-    overflow: 'hidden',
-  });
-
-  const tabLabelStyle: React.CSSProperties = {
-    fontFamily: "'Montserrat', 'Century Gothic', sans-serif",
-    fontSize: '9px',
-    fontWeight: 600,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    maxWidth: '100%',
-  };
-
-  const drawerItemStyle = (active: boolean): React.CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    width: '100%',
-    padding: '14px 16px',
-    border: 'none',
-    borderRadius: '10px',
-    background: active ? COLORS.drawerItemActiveBg : 'transparent',
-    color: active ? COLORS.secondary : 'rgba(255,255,255,0.7)',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    fontFamily: "'Montserrat', 'Century Gothic', sans-serif",
-    fontSize: '14px',
-    fontWeight: 600,
-  });
-
-  return createPortal(
-    <>
+  const content = (
+    <div
+      id="bottom-nav-root"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        width: '100vw',
+        zIndex: 99,
+        pointerEvents: 'none',
+      }}
+    >
       {/* Overlay */}
-      <div
-        onClick={() => setDrawerOpen(false)}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: COLORS.overlayBg,
-          zIndex: 99,
-          opacity: drawerOpen ? 1 : 0,
-          pointerEvents: drawerOpen ? 'auto' : 'none',
-          transition: 'opacity 0.25s',
-        }}
-      />
+      {drawerOpen && (
+        <div
+          onClick={() => setDrawerOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 99,
+            pointerEvents: 'auto',
+          }}
+        />
+      )}
 
       {/* Drawer */}
       <div
         style={{
           position: 'fixed',
-          bottom: '64px',
+          bottom: 64,
           left: 0,
-          right: 0,
-          background: COLORS.drawerBg,
+          width: '100vw',
+          background: '#1e3a6e',
           borderRadius: '16px 16px 0 0',
-          padding: '16px',
-          paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          padding: 16,
           zIndex: 101,
           transform: drawerOpen ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.25s ease',
+          boxSizing: 'border-box',
+          pointerEvents: 'auto',
         }}
       >
-        {visibleMore.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            style={drawerItemStyle(isActive(href))}
-            onClick={() => setDrawerOpen(false)}
-          >
-            <Icon size={20} />
-            {label}
-          </Link>
-        ))}
+        {visibleMore.map(({ href, icon: Icon, label }) => {
+          const active = isActive(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setDrawerOpen(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                width: '100%',
+                padding: '14px 16px',
+                border: 'none',
+                borderRadius: 10,
+                background: active ? 'rgba(0,154,171,0.12)' : 'transparent',
+                color: active ? '#009AAB' : 'rgba(255,255,255,0.7)',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                fontFamily: "'Montserrat', 'Century Gothic', sans-serif",
+                fontSize: 14,
+                fontWeight: 600,
+                boxSizing: 'border-box',
+              }}
+            >
+              <Icon size={20} />
+              {label}
+            </Link>
+          );
+        })}
       </div>
 
-      {/* Tab Bar */}
+      {/* Tab Bar — CSS Grid for guaranteed equal columns */}
       <nav
         aria-label="Mobile navigation"
         style={{
           position: 'fixed',
           bottom: 0,
           left: 0,
-          right: 0,
-          height: '64px',
           width: '100vw',
-          background: COLORS.primary,
+          height: 64,
+          background: '#355caa',
           borderTop: '1px solid rgba(255,255,255,0.15)',
           zIndex: 100,
-          display: 'flex',
-          flexDirection: 'row',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
           alignItems: 'center',
-          padding: 0,
           margin: 0,
+          padding: 0,
           boxSizing: 'border-box',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          pointerEvents: 'auto',
         }}
       >
-        {PRIMARY_TABS.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            style={tabStyle(isActive(href))}
-            onClick={() => setDrawerOpen(false)}
-          >
-            <Icon size={20} />
-            <span style={tabLabelStyle}>{label}</span>
-          </Link>
-        ))}
+        {PRIMARY_TABS.map(({ href, icon: Icon, label }) => {
+          const active = isActive(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setDrawerOpen(false)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 3,
+                height: '100%',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                color: active ? '#009AAB' : 'rgba(255,255,255,0.6)',
+                padding: 0,
+                overflow: 'hidden',
+              }}
+            >
+              <Icon size={20} />
+              <span
+                style={{
+                  fontFamily: "'Montserrat', 'Century Gothic', sans-serif",
+                  fontSize: 9,
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {label}
+              </span>
+            </Link>
+          );
+        })}
         <button
-          style={tabStyle(moreActive || drawerOpen)}
           onClick={() => setDrawerOpen(!drawerOpen)}
           aria-label="More navigation items"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 3,
+            height: '100%',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: moreActive || drawerOpen ? '#009AAB' : 'rgba(255,255,255,0.6)',
+            padding: 0,
+            overflow: 'hidden',
+          }}
         >
           <ChevronUp
             size={20}
@@ -212,10 +228,21 @@ export default function BottomNav() {
               transition: 'transform 0.25s',
             }}
           />
-          <span style={tabLabelStyle}>More</span>
+          <span
+            style={{
+              fontFamily: "'Montserrat', 'Century Gothic', sans-serif",
+              fontSize: 9,
+              fontWeight: 600,
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            More
+          </span>
         </button>
       </nav>
-    </>,
-    document.body
+    </div>
   );
+
+  return createPortal(content, document.body);
 }
