@@ -3,7 +3,7 @@
 import { useSearchParams, usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import Sidebar from './Sidebar';
-import BottomNav from './BottomNav';
+import MobileNav from './BottomNav';
 import styles from './Shell.module.css';
 
 function ShellInner({ children }: { children: React.ReactNode }) {
@@ -14,15 +14,15 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const hideSidebar = isEmbedded || isLogin;
 
   return (
-    <>
-      <div className={`${styles.shell} ${hideSidebar ? styles.shellEmbedded : ''}`}>
-        {!hideSidebar && <Sidebar />}
+    <div className={`${styles.shell} ${hideSidebar ? styles.shellEmbedded : ''}`}>
+      {!hideSidebar && <Sidebar />}
+      <div className={styles.mainColumn}>
+        {!hideSidebar && <MobileNav />}
         <main id="main-content" className={`${styles.main} ${hideSidebar ? styles.mainEmbedded : ''}`}>
           {children}
         </main>
       </div>
-      {!hideSidebar && <BottomNav />}
-    </>
+    </div>
   );
 }
 

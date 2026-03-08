@@ -5,11 +5,12 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
+  Menu,
+  X,
   Scan,
   Users,
   ClipboardList,
   CalendarDays,
-  ChevronUp,
   Briefcase,
   BookOpen,
   BarChart2,
@@ -26,14 +27,11 @@ interface NavItem {
   roles?: AppRole[];
 }
 
-const PRIMARY_TABS: NavItem[] = [
+const NAV_ITEMS: NavItem[] = [
   { href: '/kiosk', icon: Scan, label: 'Kiosk' },
   { href: '/rows', icon: Users, label: 'Live Class' },
-  { href: '/attendance', icon: ClipboardList, label: 'Attend' },
-  { href: '/logistics', icon: CalendarDays, label: 'Schedule' },
-];
-
-const MORE_ITEMS: NavItem[] = [
+  { href: '/attendance', icon: ClipboardList, label: 'Attendance' },
+  { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
   { href: '/staff', icon: Briefcase, label: 'Staff', roles: ['superuser', 'admin'] },
   { href: '/library', icon: BookOpen, label: 'Library' },
   { href: '/progress', icon: BarChart2, label: 'Progress', roles: ['superuser', 'admin'] },
@@ -41,11 +39,11 @@ const MORE_ITEMS: NavItem[] = [
   { href: '/me', icon: UserCircle, label: 'Me' },
 ];
 
-export default function BottomNav() {
+export default function MobileNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = (session?.user as { role?: AppRole } | undefined)?.role;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -55,142 +53,126 @@ export default function BottomNav() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   if (!isMobile) return null;
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/');
 
-  const visibleMore = MORE_ITEMS.filter(
+  const visibleItems = NAV_ITEMS.filter(
     (item) => !item.roles || (role && item.roles.includes(role))
   );
-  const moreActive = visibleMore.some((item) => isActive(item.href));
+
+  // Find current page label
+  const currentPage = visibleItems.find((item) => isActive(item.href));
 
   return (
-    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000 }}>
+    <>
+      {/* Top bar */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 48,
+          background: '#355caa',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          zIndex: 900,
+        }}
+      >
+        <span
+          style={{
+            color: '#fff',
+            fontFamily: 'Montserrat, sans-serif',
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          {currentPage?.label || 'The Center Book'}
+        </span>
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#fff',
+            padding: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
       {/* Overlay */}
-      {drawerOpen && (
+      {menuOpen && (
         <div
-          onClick={() => setDrawerOpen(false)}
+          onClick={() => setMenuOpen(false)}
           style={{
             position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             background: 'rgba(0,0,0,0.4)',
-            zIndex: 998,
+            zIndex: 950,
           }}
         />
       )}
 
-      {/* Drawer */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 64,
-          left: 0, right: 0,
-          background: '#1e3a6e',
-          borderRadius: '16px 16px 0 0',
-          padding: 16,
-          zIndex: 1000,
-          transform: drawerOpen ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 0.25s ease',
-        }}
-      >
-        {visibleMore.map(({ href, icon: Icon, label }) => {
-          const active = isActive(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setDrawerOpen(false)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '14px 16px',
-                borderRadius: 10,
-                background: active ? 'rgba(0,154,171,0.12)' : 'transparent',
-                color: active ? '#009AAB' : 'rgba(255,255,255,0.7)',
-                textDecoration: 'none',
-                fontFamily: 'Montserrat, sans-serif',
-                fontSize: 14,
-                fontWeight: 600,
-              }}
-            >
-              <Icon size={20} />
-              {label}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Tab Bar */}
-      <nav
-        style={{
-          position: 'relative',
-          height: 64,
-          background: '#355caa',
-          borderTop: '1px solid rgba(255,255,255,0.15)',
-          zIndex: 999,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
-          alignItems: 'stretch',
-        }}
-      >
-        {PRIMARY_TABS.map(({ href, icon: Icon, label }) => {
-          const active = isActive(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setDrawerOpen(false)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 3,
-                color: active ? '#009AAB' : 'rgba(255,255,255,0.6)',
-                textDecoration: 'none',
-              }}
-            >
-              <Icon size={20} />
-              <span style={{
-                fontFamily: 'Montserrat, sans-serif',
-                fontSize: 9,
-                fontWeight: 600,
-                lineHeight: 1,
-              }}>{label}</span>
-            </Link>
-          );
-        })}
-        <button
-          onClick={() => setDrawerOpen(!drawerOpen)}
+      {/* Slide-down menu */}
+      {menuOpen && (
+        <nav
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 3,
-            background: 'none',
-            border: 'none',
-            color: moreActive || drawerOpen ? '#009AAB' : 'rgba(255,255,255,0.6)',
-            cursor: 'pointer',
+            position: 'fixed',
+            top: 48,
+            left: 0,
+            right: 0,
+            background: '#1e3a6e',
+            zIndex: 960,
+            padding: '8px 0',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
           }}
         >
-          <ChevronUp
-            size={20}
-            style={{
-              transform: drawerOpen ? 'rotate(180deg)' : undefined,
-              transition: 'transform 0.25s',
-            }}
-          />
-          <span style={{
-            fontFamily: 'Montserrat, sans-serif',
-            fontSize: 9,
-            fontWeight: 600,
-            lineHeight: 1,
-          }}>More</span>
-        </button>
-      </nav>
-    </div>
+          {visibleItems.map(({ href, icon: Icon, label }) => {
+            const active = isActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 20px',
+                  color: active ? '#009AAB' : 'rgba(255,255,255,0.8)',
+                  background: active ? 'rgba(0,154,171,0.1)' : 'transparent',
+                  textDecoration: 'none',
+                  fontFamily: 'Montserrat, sans-serif',
+                  fontSize: 14,
+                  fontWeight: active ? 700 : 500,
+                }}
+              >
+                <Icon size={18} />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+    </>
   );
 }
