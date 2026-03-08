@@ -1,18 +1,11 @@
-/* Hidden on desktop by default */
+/* Hidden on desktop by default — position:fixed so it doesn't affect flex layout */
 .wrapper {
   display: none;
-}
-
-.bar {
-  display: none;
-}
-
-.overlay {
-  display: none;
-}
-
-.drawer {
-  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 /* Show on mobile */
@@ -27,16 +20,17 @@
     left: 0;
     right: 0;
     height: 64px;
+    width: 100vw;
     background: var(--primary);
     border-top: 1px solid rgba(255, 255, 255, 0.15);
     z-index: 100;
     display: flex;
     flex-direction: row;
-    width: 100%;
     align-items: center;
-    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    border: 3px solid red; /* DEBUG — remove after confirming visibility */
   }
 
   .tab {
