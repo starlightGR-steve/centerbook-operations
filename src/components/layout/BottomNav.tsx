@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -121,7 +122,7 @@ export default function BottomNav() {
     fontWeight: 600,
   });
 
-  return (
+  return createPortal(
     <>
       {/* Overlay */}
       <div
@@ -175,6 +176,7 @@ export default function BottomNav() {
           left: 0,
           right: 0,
           height: '64px',
+          width: '100vw',
           background: COLORS.primary,
           borderTop: '1px solid rgba(255,255,255,0.15)',
           zIndex: 100,
@@ -213,6 +215,7 @@ export default function BottomNav() {
           <span style={tabLabelStyle}>More</span>
         </button>
       </nav>
-    </>
+    </>,
+    document.body
   );
 }
