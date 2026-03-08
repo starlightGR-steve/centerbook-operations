@@ -146,22 +146,62 @@
   background: var(--secondary-ul);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
+  .tableWrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    min-width: 0;
+  }
+
   .avatar {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .name {
     font-size: 12px;
   }
 
+  .role {
+    font-size: 10px;
+  }
+
   .hours {
-    font-size: 16px;
+    font-size: 14px;
+  }
+
+  .hoursUnit {
+    font-size: 10px;
+  }
+
+  .lastEntry {
+    font-size: 11px;
   }
 
   .cell {
-    padding: 12px 16px;
+    padding: 10px 8px;
   }
 
   .th {
-    padding: 10px 16px;
+    padding: 8px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .employee {
+    gap: 6px;
+  }
+
+  .editBtn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .thRight {
+    width: 36px;
   }
 }

@@ -14,13 +14,15 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const hideSidebar = isEmbedded || isLogin;
 
   return (
-    <div className={`${styles.shell} ${hideSidebar ? styles.shellEmbedded : ''}`}>
-      {!hideSidebar && <Sidebar />}
-      <main id="main-content" className={`${styles.main} ${hideSidebar ? styles.mainEmbedded : ''}`}>
-        {children}
-      </main>
+    <>
+      <div className={`${styles.shell} ${hideSidebar ? styles.shellEmbedded : ''}`}>
+        {!hideSidebar && <Sidebar />}
+        <main id="main-content" className={`${styles.main} ${hideSidebar ? styles.mainEmbedded : ''}`}>
+          {children}
+        </main>
+      </div>
       {!hideSidebar && <BottomNav />}
-    </div>
+    </>
   );
 }
 

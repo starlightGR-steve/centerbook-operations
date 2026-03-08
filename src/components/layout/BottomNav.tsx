@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -30,8 +29,8 @@ interface NavItem {
 const PRIMARY_TABS: NavItem[] = [
   { href: '/kiosk', icon: Scan, label: 'Kiosk' },
   { href: '/rows', icon: Users, label: 'Live Class' },
-  { href: '/attendance', icon: ClipboardList, label: 'Attendance' },
-  { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
+  { href: '/attendance', icon: ClipboardList, label: 'Attend' },
+  { href: '/logistics', icon: CalendarDays, label: 'Schedule' },
 ];
 
 const MORE_ITEMS: NavItem[] = [
@@ -66,31 +65,17 @@ export default function BottomNav() {
   );
   const moreActive = visibleMore.some((item) => isActive(item.href));
 
-  const content = (
-    <div
-      id="bottom-nav-root"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        width: '100vw',
-        zIndex: 99,
-        pointerEvents: 'none',
-      }}
-    >
+  return (
+    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000 }}>
       {/* Overlay */}
       {drawerOpen && (
         <div
           onClick={() => setDrawerOpen(false)}
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
+            top: 0, left: 0, right: 0, bottom: 0,
             background: 'rgba(0,0,0,0.4)',
-            zIndex: 99,
-            pointerEvents: 'auto',
+            zIndex: 998,
           }}
         />
       )}
@@ -98,18 +83,15 @@ export default function BottomNav() {
       {/* Drawer */}
       <div
         style={{
-          position: 'fixed',
+          position: 'absolute',
           bottom: 64,
-          left: 0,
-          width: '100vw',
+          left: 0, right: 0,
           background: '#1e3a6e',
           borderRadius: '16px 16px 0 0',
           padding: 16,
-          zIndex: 101,
+          zIndex: 1000,
           transform: drawerOpen ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.25s ease',
-          boxSizing: 'border-box',
-          pointerEvents: 'auto',
         }}
       >
         {visibleMore.map(({ href, icon: Icon, label }) => {
@@ -123,18 +105,14 @@ export default function BottomNav() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
-                width: '100%',
                 padding: '14px 16px',
-                border: 'none',
                 borderRadius: 10,
                 background: active ? 'rgba(0,154,171,0.12)' : 'transparent',
                 color: active ? '#009AAB' : 'rgba(255,255,255,0.7)',
-                cursor: 'pointer',
                 textDecoration: 'none',
-                fontFamily: "'Montserrat', 'Century Gothic', sans-serif",
+                fontFamily: 'Montserrat, sans-serif',
                 fontSize: 14,
                 fontWeight: 600,
-                boxSizing: 'border-box',
               }}
             >
               <Icon size={20} />
@@ -144,25 +122,17 @@ export default function BottomNav() {
         })}
       </div>
 
-      {/* Tab Bar — CSS Grid for guaranteed equal columns */}
+      {/* Tab Bar */}
       <nav
-        aria-label="Mobile navigation"
         style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          width: '100vw',
+          position: 'relative',
           height: 64,
           background: '#355caa',
           borderTop: '1px solid rgba(255,255,255,0.15)',
-          zIndex: 100,
+          zIndex: 999,
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
-          alignItems: 'center',
-          margin: 0,
-          padding: 0,
-          boxSizing: 'border-box',
-          pointerEvents: 'auto',
+          gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
+          alignItems: 'stretch',
         }}
       >
         {PRIMARY_TABS.map(({ href, icon: Icon, label }) => {
@@ -178,47 +148,32 @@ export default function BottomNav() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 3,
-                height: '100%',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                textDecoration: 'none',
                 color: active ? '#009AAB' : 'rgba(255,255,255,0.6)',
-                padding: 0,
-                overflow: 'hidden',
+                textDecoration: 'none',
               }}
             >
               <Icon size={20} />
-              <span
-                style={{
-                  fontFamily: "'Montserrat', 'Century Gothic', sans-serif",
-                  fontSize: 9,
-                  fontWeight: 600,
-                  lineHeight: 1,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {label}
-              </span>
+              <span style={{
+                fontFamily: 'Montserrat, sans-serif',
+                fontSize: 9,
+                fontWeight: 600,
+                lineHeight: 1,
+              }}>{label}</span>
             </Link>
           );
         })}
         <button
           onClick={() => setDrawerOpen(!drawerOpen)}
-          aria-label="More navigation items"
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 3,
-            height: '100%',
             background: 'none',
             border: 'none',
-            cursor: 'pointer',
             color: moreActive || drawerOpen ? '#009AAB' : 'rgba(255,255,255,0.6)',
-            padding: 0,
-            overflow: 'hidden',
+            cursor: 'pointer',
           }}
         >
           <ChevronUp
@@ -228,21 +183,14 @@ export default function BottomNav() {
               transition: 'transform 0.25s',
             }}
           />
-          <span
-            style={{
-              fontFamily: "'Montserrat', 'Century Gothic', sans-serif",
-              fontSize: 9,
-              fontWeight: 600,
-              lineHeight: 1,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            More
-          </span>
+          <span style={{
+            fontFamily: 'Montserrat, sans-serif',
+            fontSize: 9,
+            fontWeight: 600,
+            lineHeight: 1,
+          }}>More</span>
         </button>
       </nav>
     </div>
   );
-
-  return createPortal(content, document.body);
 }
