@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Clock } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Plus, Clock, MapPin, Calendar } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -42,6 +42,10 @@ export default function StaffDetailModal({
   const [manualDate, setManualDate] = useState('');
   const [manualIn, setManualIn] = useState('15:00');
   const [manualOut, setManualOut] = useState('18:00');
+  const [rowOverride, setRowOverride] = useState<string | null | undefined>(undefined);
+  const [showRowDropdown, setShowRowDropdown] = useState(false);
+
+  const effectiveRow = rowOverride !== undefined ? rowOverride : (staff.assigned_row || null);
 
   const periodEntries = timeEntries
     .filter(
@@ -117,6 +121,109 @@ export default function StaffDetailModal({
           <div className={styles.summaryMeta}>
             {completedEntries.length} entries over {uniqueDays.size} days
             {uniqueDays.size > 0 && ` · ${avgHours.toFixed(1)} hrs/day avg`}
+          </div>
+        </div>
+      </div>
+
+      {/* Today's Schedule & Assigned Row */}
+      <div className={styles.section}>
+        <h4 className={styles.sectionTitle}>Today&apos;s Schedule</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Calendar size={14} color="var(--neutral)" />
+            <span style={{ fontSize: 13, fontWeight: 500, color: staff.scheduled_shift ? 'var(--text)' : 'var(--neutral)' }}>
+              {staff.scheduled_shift || 'No schedule set'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+            <MapPin size={14} color="var(--neutral)" />
+            {effectiveRow ? (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  background: effectiveRow === 'EL' ? 'rgba(139,92,246,0.15)' :
+                    effectiveRow === 'MC' ? 'rgba(14,165,233,0.15)' :
+                    'rgba(245,158,11,0.15)',
+                  color: effectiveRow === 'EL' ? '#8b5cf6' :
+                    effectiveRow === 'MC' ? '#0ea5e9' :
+                    '#92400e',
+                }}
+              >
+                {effectiveRow === 'EL' ? 'EL (Early Learners)' :
+                  effectiveRow === 'MC' ? 'MC (Main Classroom)' :
+                  'UC (Upper Classroom)'}
+              </span>
+            ) : (
+              <span style={{ fontSize: 13, color: 'var(--neutral)' }}>Not assigned to a row</span>
+            )}
+            <button
+              onClick={() => setShowRowDropdown(!showRowDropdown)}
+              style={{
+                marginLeft: 'auto',
+                padding: '3px 10px',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                background: 'var(--white)',
+                color: 'var(--neutral)',
+                fontFamily: 'Montserrat, sans-serif',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Change
+            </button>
+            {showRowDropdown && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: 4,
+                  background: 'var(--white)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                  zIndex: 20,
+                  minWidth: 160,
+                  padding: 4,
+                }}
+              >
+                {[
+                  { value: 'EL', label: 'EL (Early Learners)', color: '#8b5cf6' },
+                  { value: 'MC', label: 'MC (Main Classroom)', color: '#0ea5e9' },
+                  { value: 'UC', label: 'UC (Upper Classroom)', color: '#92400e' },
+                  { value: null, label: 'None', color: 'var(--neutral)' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value || 'none'}
+                    onClick={() => {
+                      setRowOverride(opt.value);
+                      setShowRowDropdown(false);
+                    }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: 'none',
+                      borderRadius: 6,
+                      background: effectiveRow === opt.value ? 'var(--base)' : 'transparent',
+                      textAlign: 'left',
+                      fontFamily: 'Montserrat, sans-serif',
+                      fontSize: 12,
+                      fontWeight: effectiveRow === opt.value ? 700 : 500,
+                      color: opt.color,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

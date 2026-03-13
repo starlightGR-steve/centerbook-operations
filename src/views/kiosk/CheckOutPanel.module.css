@@ -27,19 +27,30 @@
   background: var(--base);
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 6px 10px 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-primary);
+  transition: all 0.15s;
+}
+
+.row:hover {
+  background: rgba(22, 163, 74, 0.03);
+  border-color: rgba(22, 163, 74, 0.15);
+}
+
+.rowContent {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px 6px 8px 16px;
   text-align: left;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
   font-family: var(--font-primary);
-  transition: all 0.15s;
-}
-
-.row:hover {
-  background: rgba(224, 113, 44, 0.03);
-  border-color: rgba(224, 113, 44, 0.15);
 }
 
 .name {

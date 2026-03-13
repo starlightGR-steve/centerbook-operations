@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen } from 'lucide-react';
+import { BookOpen, KeyRound } from 'lucide-react';
 import type { Book, BookLoan } from '@/lib/types';
 import styles from './BookCard.module.css';
 
@@ -12,25 +12,30 @@ interface BookCardProps {
 
 export default function BookCard({ book, loan, onClick }: BookCardProps) {
   const isCheckedOut = book.status === 'checked-out';
+  const isAnswerKey = book.type === 'answer_key';
 
   return (
     <div
-      className={styles.card}
+      className={`${styles.card} ${isAnswerKey ? styles.cardAnswerKey : ''}`}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       tabIndex={0}
       role="button"
       aria-label={`${book.title}${book.author ? ` by ${book.author}` : ''}, ${isCheckedOut ? 'Checked out' : 'Available'}`}
     >
-      <div className={styles.iconWrap}>
-        <BookOpen size={18} />
+      <div className={isAnswerKey ? styles.iconWrapKey : styles.iconWrap}>
+        {isAnswerKey ? <KeyRound size={18} /> : <BookOpen size={18} />}
       </div>
       <h3 className={styles.title}>{book.title}</h3>
-      {book.author && <p className={styles.author}>{book.author}</p>}
+      {isAnswerKey ? (
+        <p className={styles.answerKeyLabel}>Answer Key</p>
+      ) : (
+        book.author && <p className={styles.author}>{book.author}</p>
+      )}
       {(book.category || book.reading_level) && (
         <p className={styles.meta}>
-          {book.category}
-          {book.category && book.reading_level && ' · '}
+          {!isAnswerKey && book.category}
+          {!isAnswerKey && book.category && book.reading_level && ' · '}
           {book.reading_level && `Level ${book.reading_level}`}
         </p>
       )}

@@ -15,10 +15,12 @@ import LibrarySkeleton from './LibrarySkeleton';
 import styles from './LibraryPage.module.css';
 
 type StatusFilter = 'all' | 'available' | 'checked-out';
+type TypeFilter = 'books' | 'answer_keys';
 
 export default function LibraryPage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('books');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [showAddBook, setShowAddBook] = useState(false);
 
@@ -104,6 +106,13 @@ export default function LibraryPage() {
     if (!books) return [];
     let filtered = books;
 
+    // Filter by type
+    if (typeFilter === 'answer_keys') {
+      filtered = filtered.filter((b) => b.type === 'answer_key');
+    } else {
+      filtered = filtered.filter((b) => b.type !== 'answer_key');
+    }
+
     if (search) {
       const q = search.toLowerCase();
       filtered = filtered.filter(
@@ -121,9 +130,13 @@ export default function LibraryPage() {
     }
 
     return filtered;
-  }, [books, search, filter]);
+  }, [books, search, filter, typeFilter]);
 
-  const checkedOutCount = books?.filter((b) => b.status === 'checked-out').length ?? 0;
+  const booksOnly = books?.filter((b) => b.type !== 'answer_key') || [];
+  const answerKeysOnly = books?.filter((b) => b.type === 'answer_key') || [];
+  const checkedOutCount = typeFilter === 'answer_keys'
+    ? answerKeysOnly.filter((b) => b.status === 'checked-out').length
+    : booksOnly.filter((b) => b.status === 'checked-out').length;
 
   return (
     <div className={styles.page}>
@@ -131,7 +144,10 @@ export default function LibraryPage() {
         <SectionHeader
           script="Browse the"
           title="Center Library"
-          subtitle={`${books?.length ?? 0} books · ${checkedOutCount} checked out · Scan barcode or use manual checkout`}
+          subtitle={typeFilter === 'answer_keys'
+            ? `${answerKeysOnly.length} answer keys · ${checkedOutCount} checked out`
+            : `${booksOnly.length} books · ${checkedOutCount} checked out · Scan barcode or use manual checkout`
+          }
         />
 
         {/* Scan Bar */}
@@ -173,8 +189,22 @@ export default function LibraryPage() {
         </div>
 
         <div className={styles.toolbar}>
+          <div className={styles.typeToggle}>
+            <button
+              className={`${styles.typeBtn} ${typeFilter === 'books' ? styles.typeBtnActive : ''}`}
+              onClick={() => setTypeFilter('books')}
+            >
+              Books
+            </button>
+            <button
+              className={`${styles.typeBtn} ${typeFilter === 'answer_keys' ? styles.typeBtnActive : ''}`}
+              onClick={() => setTypeFilter('answer_keys')}
+            >
+              Answer Keys
+            </button>
+          </div>
           <SearchInput
-            placeholder="Search books..."
+            placeholder={typeFilter === 'answer_keys' ? 'Search answer keys...' : 'Search books...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={styles.search}

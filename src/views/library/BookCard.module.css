@@ -12,6 +12,10 @@
   box-shadow: 0 2px 8px rgba(0, 154, 171, 0.06);
 }
 
+.cardAnswerKey {
+  border-left: 3px solid var(--secondary);
+}
+
 .iconWrap {
   width: 40px;
   height: 40px;
@@ -37,6 +41,25 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--accent);
+}
+
+.answerKeyLabel {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.iconWrapKey {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(0, 154, 171, 0.1);
+  color: var(--secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
 }
 
 .meta {

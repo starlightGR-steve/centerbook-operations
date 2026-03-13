@@ -44,6 +44,10 @@ export interface Student {
   billing_contact_id: number | null;
   created_at: string;
   updated_at: string;
+  // UI-only fields (populated by mock data, not from API)
+  pertinent_note?: string | null;
+  tasks?: Array<{ id: string; label: string; completed: boolean }>;
+  flags?: string[]; // "new_concept" | "needs_help"
 }
 
 // Parsed subjects as array for UI consumption
@@ -106,6 +110,9 @@ export interface Staff {
   status: StaffStatus;
   created_at: string;
   updated_at: string;
+  // UI-only fields (populated by mock data, not from API)
+  scheduled_shift?: string | null; // e.g., "3:00 PM - 6:00 PM"
+  assigned_row?: string | null;    // e.g., "EL", "MC", "UC"
 }
 
 // ── Attendance (Kiosk) ─────────────────────
@@ -222,6 +229,8 @@ export interface CreateNoteRequest {
 
 export type BookStatus = 'available' | 'checked-out' | 'lost' | 'retired';
 
+export type BookType = 'book' | 'answer_key';
+
 export interface Book {
   id: number;
   title: string;
@@ -231,6 +240,7 @@ export interface Book {
   category: string | null;
   reading_level: string | null;
   status: BookStatus;
+  type?: BookType;
   created_at: string;
   updated_at: string;
 }

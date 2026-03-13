@@ -56,3 +56,27 @@
   color: var(--primary);
   border-color: var(--primary);
 }
+
+@media (max-width: 768px) {
+  .nav {
+    padding: 4px 8px;
+    gap: 4px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .arrow {
+    width: 28px;
+    height: 28px;
+  }
+
+  .label {
+    min-width: 0;
+    font-size: 12px;
+  }
+
+  .todayBtn {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+}

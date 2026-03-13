@@ -1,28 +1,36 @@
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import { MOCK_STUDENTS } from '@/lib/mock-data';
+import { useDemoMode } from '@/context/MockDataContext';
 import type { Student } from '@/lib/types';
 
 /** Fetch all active students */
 export function useStudents() {
+  const { isDemoMode } = useDemoMode();
+
   return useSWR<Student[]>(
-    'students',
+    isDemoMode ? 'demo-students' : 'students',
     async () => {
+      if (isDemoMode) return MOCK_STUDENTS.filter((s) => s.enrollment_status === 'Active');
       const all = await api.students.list();
       return all.filter((s) => s.enrollment_status === 'Active');
     },
-    { dedupingInterval: 5000 }
+    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
   );
 }
 
 /** Fetch a single student by ID */
 export function useStudent(id: number | null) {
+  const { isDemoMode } = useDemoMode();
+
   return useSWR<Student | null>(
-    id ? `student-${id}` : null,
+    id ? (isDemoMode ? `demo-student-${id}` : `student-${id}`) : null,
     async () => {
       if (!id) return null;
+      if (isDemoMode) return MOCK_STUDENTS.find((s) => s.id === id) || null;
       return api.students.get(id);
     },
-    { dedupingInterval: 5000 }
+    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
   );
 }
 

@@ -174,26 +174,111 @@
   background: var(--red);
 }
 
-@media (max-width: 768px) {
-  .tableWrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+/* ── Mobile: Day pills + card layout ── */
 
-  .table {
-    table-layout: auto;
-    min-width: 600px;
-  }
+.dayPills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
 
-  .th:first-child,
-  .timeCell {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: inherit;
-  }
+.dayPill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  cursor: pointer;
+  font-family: var(--font-primary);
+  transition: all 0.15s;
+}
 
-  .th:first-child {
-    background: var(--primary);
-  }
+.dayPill:hover {
+  border-color: var(--secondary);
+}
+
+.dayPillActive {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.dayPillName {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.dayPillActive .dayPillName {
+  color: var(--white);
+}
+
+.dayPillDate {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.dayPillActive .dayPillDate {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.mobileCards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobileCard {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+  overflow: hidden;
+  text-align: left;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.mobileCardOpen:hover {
+  border-color: var(--secondary);
+}
+
+.mobileCardClosed {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.mobileCardTime {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  padding: 12px 10px;
+  background: var(--primary);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mobileCardBody {
+  flex: 1;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.mobileCardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }

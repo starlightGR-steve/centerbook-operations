@@ -26,7 +26,7 @@ export default function CheckInPanel({ students }: CheckInPanelProps) {
   return (
     <Card className={styles.panel}>
       <h3 className={styles.header}>
-        <LogIn size={18} color="var(--green)" /> Check-In
+        <LogIn size={18} color="var(--green)" /> Expected Students
       </h3>
       <div className={styles.list} role="list" aria-label="Students awaiting check-in">
         {students.length === 0 && (
@@ -42,6 +42,7 @@ export default function CheckInPanel({ students }: CheckInPanelProps) {
             student={s}
             onClick={() => handleCheckIn(s)}
             showDuration
+            showScheduledTime
             rightElement={<Plus size={16} color="var(--green)" />}
           />
         ))}

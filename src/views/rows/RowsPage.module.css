@@ -387,6 +387,278 @@
   color: var(--neutral);
 }
 
+/* ── Pertinent Note Banner ── */
+.pertinentBanner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  margin: -20px -20px 8px;
+  border-radius: 10px 10px 0 0;
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pertinentLabel {
+  flex: 1;
+}
+
+.pertinentText {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #dc2626;
+  line-height: 1.4;
+  padding: 4px 8px;
+  background: rgba(220, 38, 38, 0.04);
+  border-radius: 4px;
+}
+
+/* ── Status Flags ── */
+.flagRow {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.flagNewConcept {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(74, 154, 194, 0.15);
+  color: #4a9ac2;
+}
+
+.flagNeedsHelp {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(224, 113, 44, 0.15);
+  color: #E0712C;
+}
+
+/* ── Task Chips ── */
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.taskChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f2f2f2;
+  border: none;
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: opacity 0.15s;
+  text-align: left;
+}
+
+.taskChip:hover {
+  background: #e8e8e8;
+}
+
+.taskDone {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.taskNoteWrap {
+  display: flex;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.taskNoteInput {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-family: var(--font-primary);
+  font-size: 10px;
+  outline: none;
+}
+
+.taskNoteInput:focus {
+  border-color: var(--secondary);
+}
+
+.taskNoteSave {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 4px;
+  background: var(--secondary);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Flag Toggle Buttons ── */
+.flagToggleRow {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.flagToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.flagToggleBtn:hover {
+  border-color: #4a9ac2;
+  color: #4a9ac2;
+}
+
+.flagToggleActive {
+  background: rgba(74, 154, 194, 0.15);
+  border-color: #4a9ac2;
+  color: #4a9ac2;
+}
+
+.flagToggleHelpActive {
+  background: rgba(224, 113, 44, 0.15);
+  border-color: #E0712C;
+  color: #E0712C;
+}
+
+/* ── Session Time Adjust ── */
+.sessionAdjustWrap {
+  position: relative;
+}
+
+.sessionAdjustBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sessionAdjustBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.sessionPopover {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 6px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+  padding: 10px;
+  min-width: 160px;
+}
+
+.sessionPopoverTitle {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neutral);
+  text-align: center;
+}
+
+.sessionBtnRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sessionDelta {
+  width: 32px;
+  height: 28px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--border);
+  background: var(--white);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.sessionDelta:hover {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+.sessionCurrent {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 40px;
+  text-align: center;
+}
+
+.sessionPresets {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.sessionPreset {
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--base);
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.sessionPreset:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
 @media (max-width: 1024px) {
   .header {
     padding: 14px 20px;

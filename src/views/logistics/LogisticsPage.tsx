@@ -6,6 +6,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import Button from '@/components/ui/Button';
 import WeekNavigator from './WeekNavigator';
 import CapacityGrid from './CapacityGrid';
+import WeeklyPlanGrid from './WeeklyPlanGrid';
 import SlotDetailModal from './SlotDetailModal';
 import SettingsModal from './SettingsModal';
 import RescheduleFlow from './RescheduleFlow';
@@ -18,6 +19,7 @@ import LogisticsSkeleton from './LogisticsSkeleton';
 import styles from './LogisticsPage.module.css';
 
 export default function LogisticsPage() {
+  const [viewMode, setViewMode] = useState<'live' | 'weekly'>('live');
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedCell, setSelectedCell] = useState<CapacityCell | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -59,25 +61,45 @@ export default function LogisticsPage() {
           />
         </div>
         <div className={styles.controls}>
-          <WeekNavigator
-            weekLabel={gridData?.weekLabel || ''}
-            onPrev={() => setWeekOffset((o) => o - 1)}
-            onNext={() => setWeekOffset((o) => o + 1)}
-            onToday={() => setWeekOffset(0)}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSettings(true)}
-          >
-            <Settings size={16} />
-            Settings
-          </Button>
+          <div className={styles.controlsRow}>
+            <div className={styles.segmented}>
+              <button
+                className={`${styles.segBtn} ${viewMode === 'live' ? styles.segActive : ''}`}
+                onClick={() => setViewMode('live')}
+              >
+                Live
+              </button>
+              <button
+                className={`${styles.segBtn} ${viewMode === 'weekly' ? styles.segActive : ''}`}
+                onClick={() => setViewMode('weekly')}
+              >
+                Weekly Plan
+              </button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSettings(true)}
+            >
+              <Settings size={16} />
+              Settings
+            </Button>
+          </div>
+          {viewMode === 'live' && (
+            <WeekNavigator
+              weekLabel={gridData?.weekLabel || ''}
+              onPrev={() => setWeekOffset((o) => o - 1)}
+              onNext={() => setWeekOffset((o) => o + 1)}
+              onToday={() => setWeekOffset(0)}
+            />
+          )}
         </div>
       </div>
 
       <div className={styles.content}>
-        {isLoading ? (
+        {viewMode === 'weekly' ? (
+          <WeeklyPlanGrid />
+        ) : isLoading ? (
           <LogisticsSkeleton />
         ) : gridData ? (
           <CapacityGrid data={gridData} onCellClick={handleCellClick} />

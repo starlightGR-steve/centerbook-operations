@@ -107,6 +107,39 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+.typeToggle {
+  display: flex;
+  background: var(--base);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.typeBtn {
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.typeBtn:hover {
+  color: var(--primary);
+}
+
+.typeBtnActive {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.typeBtnActive:hover {
+  color: var(--white);
+}
+
 .toolbar {
   display: flex;
   align-items: center;

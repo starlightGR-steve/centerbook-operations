@@ -35,15 +35,19 @@ export default function KioskPage() {
     return new Date().toLocaleDateString('en-US', { weekday: 'long' });
   }, []);
 
-  // Students scheduled for today who haven't checked in
+  // Students scheduled for today who haven't checked in (sorted by last name)
   const awaitingCheckIn = useMemo(() => {
     if (!allStudents || !checkedIn) return [];
     const checkedInIds = new Set(checkedIn.map((a) => a.student_id));
-    return allStudents.filter((s) => {
-      if (!s.class_schedule_days) return false;
-      const days = s.class_schedule_days.split(',').map((d) => d.trim());
-      return days.includes(todayDay) && !checkedInIds.has(s.id);
-    });
+    return allStudents
+      .filter((s) => {
+        if (!s.class_schedule_days) return false;
+        const days = s.class_schedule_days.split(',').map((d) => d.trim());
+        return days.includes(todayDay) && !checkedInIds.has(s.id);
+      })
+      .sort((a, b) =>
+        a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name)
+      );
   }, [allStudents, checkedIn, todayDay]);
 
   // Handle barcode scan (Enter key)

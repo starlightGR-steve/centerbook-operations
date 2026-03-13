@@ -1,6 +1,7 @@
 'use client';
 
 import type { Student } from '@/lib/types';
+import { formatTimeKey } from '@/lib/types';
 import SubjectBadges from './SubjectBadges';
 import DurationBadge from './DurationBadge';
 import styles from './StudentRow.module.css';
@@ -12,6 +13,7 @@ interface StudentRowProps {
   hoverBg?: string;
   hoverBorder?: string;
   showDuration?: boolean;
+  showScheduledTime?: boolean;
 }
 
 export default function StudentRow({
@@ -21,6 +23,7 @@ export default function StudentRow({
   hoverBg = 'var(--secondary-ul)',
   hoverBorder = 'var(--secondary-light)',
   showDuration = false,
+  showScheduledTime = false,
 }: StudentRowProps) {
   return (
     <button
@@ -40,6 +43,11 @@ export default function StudentRow({
         <p className={styles.name}>
           {student.first_name} {student.last_name}
         </p>
+        {showScheduledTime && student.class_time_sort_key && (
+          <p style={{ margin: '1px 0 0', fontSize: 11, fontWeight: 500, color: '#57727c' }}>
+            {formatTimeKey(student.class_time_sort_key)}
+          </p>
+        )}
         <div className={styles.badges}>
           <SubjectBadges subjects={student.subjects} />
           {showDuration && <DurationBadge subjects={student.subjects} />}

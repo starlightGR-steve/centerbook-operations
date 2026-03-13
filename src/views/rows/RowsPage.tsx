@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Lightbulb, HelpCircle, Circle, CheckCircle2, Clock } from 'lucide-react';
+import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClockDisplay from '@/components/ClockDisplay';
 import PosBadge from '@/components/PosBadge';
 import VisibilityLabel from '@/components/VisibilityLabel';
@@ -14,7 +15,7 @@ import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { useNotes } from '@/hooks/useNotes';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
 import type { Student, Attendance, ClassroomSection, ClassroomRow } from '@/lib/types';
-import { getTimeRemaining, parseSubjects } from '@/lib/types';
+import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
 import styles from './RowsPage.module.css';
 
@@ -103,6 +104,15 @@ export default function RowsPage() {
   const [movingStudent, setMovingStudent] = useState<number | null>(null);
   const [, setTick] = useState(0);
 
+  // Live Class feature state (local/in-memory)
+  const [taskCompletions, setTaskCompletions] = useState<Record<string, boolean>>({});
+  const [taskNoteInput, setTaskNoteInput] = useState<string | null>(null); // task id being noted
+  const [taskNoteText, setTaskNoteText] = useState('');
+  const [studentFlags, setStudentFlags] = useState<Record<number, string[]>>({});
+  const { adjustments: sessionAdjustments, adjustBy: adjustSessionBy, setAdjustment: setSessionAdjustment } = useSessionAdjust();
+  const [sessionPopoverStudent, setSessionPopoverStudent] = useState<number | null>(null);
+  const [expandedNoteStudent, setExpandedNoteStudent] = useState<number | null>(null);
+
   const { data: allStudents } = useStudents();
   const { data: checkedIn } = useCheckedInStudents(undefined, 10000);
 
@@ -144,6 +154,50 @@ export default function RowsPage() {
     () => distributeStudents(checkedInStudents, rows, rowOverrides),
     [checkedInStudents, rows, rowOverrides]
   );
+
+  // Helper: get effective flags for a student (mock data + local toggles)
+  const getFlags = useCallback((s: Student): string[] => {
+    if (studentFlags[s.id] !== undefined) return studentFlags[s.id];
+    return s.flags || [];
+  }, [studentFlags]);
+
+  const toggleFlag = useCallback((studentId: number, flag: string) => {
+    setStudentFlags((prev) => {
+      const current = prev[studentId] !== undefined
+        ? prev[studentId]
+        : (allStudents?.find((s) => s.id === studentId)?.flags || []);
+      const next = current.includes(flag)
+        ? current.filter((f) => f !== flag)
+        : [...current, flag];
+      return { ...prev, [studentId]: next };
+    });
+  }, [allStudents]);
+
+  // Helper: toggle task completion
+  const toggleTask = useCallback((taskId: string) => {
+    setTaskCompletions((prev) => {
+      const wasDone = prev[taskId];
+      if (!wasDone) {
+        // Just completed — show note input
+        setTaskNoteInput(taskId);
+        setTaskNoteText('');
+      }
+      return { ...prev, [taskId]: !wasDone };
+    });
+  }, []);
+
+  const dismissTaskNote = useCallback(() => {
+    setTaskNoteInput(null);
+    setTaskNoteText('');
+  }, []);
+
+  // Helper: get adjusted time remaining
+  const getAdjustedTimeRemaining = useCallback((s: Student, att: Attendance | undefined): number => {
+    if (!att) return getSessionDuration(s.subjects);
+    const base = getTimeRemaining(s.subjects, att.check_in);
+    const adj = sessionAdjustments[s.id] || 0;
+    return base + adj;
+  }, [sessionAdjustments]);
 
   if (!allStudents || !checkedIn) {
     return <RowsSkeleton />;
@@ -269,15 +323,13 @@ export default function RowsPage() {
 
             {rowStudents.map((s) => {
               const att = attendanceMap.get(s.id);
-              const remaining = att
-                ? getTimeRemaining(s.subjects, att.check_in)
-                : null;
-              const isOver = remaining !== null && remaining <= 0;
-              const isWarn = remaining !== null && remaining > 0 && remaining <= 5;
+              const remaining = getAdjustedTimeRemaining(s, att);
+              const isOver = att ? remaining <= 0 : false;
+              const isWarn = att ? remaining > 0 && remaining <= 5 : false;
               const isAlert = isOver || isWarn;
               const isSel = selectedStudentId === s.id;
               const timeStr =
-                remaining === null
+                !att
                   ? '—'
                   : isOver
                     ? remaining === 0
@@ -285,6 +337,12 @@ export default function RowsPage() {
                       : `+${Math.abs(remaining)}`
                     : String(remaining);
               const isMoveOpen = movingStudent === s.id;
+              const flags = getFlags(s);
+              const hasPertinentNote = !!s.pertinent_note;
+              const tasks = s.tasks || [];
+              const adj = sessionAdjustments[s.id] || 0;
+              const isSessionOpen = sessionPopoverStudent === s.id;
+              const isNoteExpanded = expandedNoteStudent === s.id;
 
               return (
                 <div
@@ -296,17 +354,39 @@ export default function RowsPage() {
                     setSelectedStudentId(isSel ? null : s.id)
                   }
                 >
+                  {/* 1. Pertinent note alert banner */}
+                  {hasPertinentNote && (
+                    <div
+                      className={styles.pertinentBanner}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedNoteStudent(isNoteExpanded ? null : s.id);
+                      }}
+                    >
+                      <Flag size={10} />
+                      <span className={styles.pertinentLabel}>Note</span>
+                    </div>
+                  )}
+                  {hasPertinentNote && isNoteExpanded && (
+                    <p className={styles.pertinentText}>{s.pertinent_note}</p>
+                  )}
+
                   <div>
+                    {/* 2. Subject badges + alert icons */}
                     <div className={styles.cardTop}>
                       <SubjectBadges subjects={parseSubjects(s.subjects)} />
-                      {isAlert && (
-                        <AlertCircle
-                          size={16}
-                          color={isOver ? 'var(--red)' : '#92400e'}
-                          className={styles.pulseIcon}
-                        />
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {isAlert && (
+                          <AlertCircle
+                            size={16}
+                            color={isOver ? 'var(--red)' : '#92400e'}
+                            className={styles.pulseIcon}
+                          />
+                        )}
+                      </div>
                     </div>
+
+                    {/* 3. Student name + medical alert */}
                     <h3
                       className={styles.cardName}
                       style={{
@@ -329,7 +409,63 @@ export default function RowsPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* 4. Status flags */}
+                    {flags.length > 0 && (
+                      <div className={styles.flagRow}>
+                        {flags.includes('new_concept') && (
+                          <span className={styles.flagNewConcept}>
+                            <Lightbulb size={10} /> New Concept
+                          </span>
+                        )}
+                        {flags.includes('needs_help') && (
+                          <span className={styles.flagNeedsHelp}>
+                            <HelpCircle size={10} /> Needs Help
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 5. Task assignments */}
+                    {tasks.length > 0 && (
+                      <div className={styles.taskList} onClick={(e) => e.stopPropagation()}>
+                        {tasks.map((task) => {
+                          const isDone = taskCompletions[task.id] ?? task.completed;
+                          return (
+                            <div key={task.id}>
+                              <button
+                                className={`${styles.taskChip} ${isDone ? styles.taskDone : ''}`}
+                                onClick={() => toggleTask(task.id)}
+                              >
+                                {isDone
+                                  ? <CheckCircle2 size={10} color="#16a34a" />
+                                  : <Circle size={10} />
+                                }
+                                <span>{task.label}</span>
+                              </button>
+                              {taskNoteInput === task.id && isDone && (
+                                <div className={styles.taskNoteWrap}>
+                                  <input
+                                    className={styles.taskNoteInput}
+                                    placeholder="Quick note (optional)"
+                                    value={taskNoteText}
+                                    onChange={(e) => setTaskNoteText(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={(e) => { if (e.key === 'Enter') dismissTaskNote(); }}
+                                  />
+                                  <button className={styles.taskNoteSave} onClick={dismissTaskNote}>
+                                    OK
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
+
+                  {/* 6. Time info + session adjust */}
                   <div className={styles.cardBottom}>
                     <div>
                       <p
@@ -344,6 +480,18 @@ export default function RowsPage() {
                       >
                         {timeStr}
                         <span className={styles.timeUnit}>m</span>
+                        {adj !== 0 && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 600,
+                              marginLeft: 4,
+                              color: adj > 0 ? '#16a34a' : 'var(--red)',
+                            }}
+                          >
+                            {adj > 0 ? `+${adj}` : adj}
+                          </span>
+                        )}
                       </p>
                       <p
                         className={styles.timeLabel}
@@ -354,7 +502,71 @@ export default function RowsPage() {
                         {isOver ? 'over time' : 'remaining'}
                       </p>
                     </div>
+                    <div className={styles.sessionAdjustWrap} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className={styles.sessionAdjustBtn}
+                        onClick={() => setSessionPopoverStudent(isSessionOpen ? null : s.id)}
+                        aria-label="Adjust session time"
+                      >
+                        <Clock size={14} />
+                      </button>
+                      {isSessionOpen && (
+                        <div className={styles.sessionPopover}>
+                          <p className={styles.sessionPopoverTitle}>Session Time</p>
+                          <div className={styles.sessionBtnRow}>
+                            <button
+                              className={styles.sessionDelta}
+                              onClick={() => adjustSessionBy(s.id, -15)}
+                            >
+                              -15
+                            </button>
+                            <span className={styles.sessionCurrent}>
+                              {getSessionDuration(s.subjects) + (sessionAdjustments[s.id] || 0)}m
+                            </span>
+                            <button
+                              className={styles.sessionDelta}
+                              onClick={() => adjustSessionBy(s.id, 15)}
+                            >
+                              +15
+                            </button>
+                          </div>
+                          <div className={styles.sessionPresets}>
+                            {[30, 45, 60, 75, 90].map((d) => (
+                              <button
+                                key={d}
+                                className={styles.sessionPreset}
+                                onClick={() => {
+                                  const base = getSessionDuration(s.subjects);
+                                  setSessionAdjustment(s.id, d - base);
+                                }}
+                              >
+                                {d}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Flag toggle buttons */}
+                  <div className={styles.flagToggleRow} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className={`${styles.flagToggleBtn} ${flags.includes('new_concept') ? styles.flagToggleActive : ''}`}
+                      onClick={() => toggleFlag(s.id, 'new_concept')}
+                      title="Working on New Concept"
+                    >
+                      <Lightbulb size={10} />
+                    </button>
+                    <button
+                      className={`${styles.flagToggleBtn} ${flags.includes('needs_help') ? styles.flagToggleHelpActive : ''}`}
+                      onClick={() => toggleFlag(s.id, 'needs_help')}
+                      title="Needs Teacher Help"
+                    >
+                      <HelpCircle size={10} />
+                    </button>
+                  </div>
+
                   <div className={styles.cardActions}>
                     <button
                       className={styles.rowCheckoutBtn}

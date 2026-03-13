@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Send, CheckCircle2, Clock, AlertTriangle, UserCheck } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Send, CheckCircle2, Clock, AlertTriangle, UserCheck, CalendarPlus } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import SubjectBadges from '@/components/SubjectBadges';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { parseSubjects, formatTimeKey } from '@/lib/types';
@@ -35,6 +37,11 @@ export default function AttendancePage() {
   const [sendingMissedYou, setSendingMissedYou] = useState<Set<string>>(new Set());
   const [sendErrors, setSendErrors] = useState<Record<string, string>>({});
   const [excusedStudents, setExcusedStudents] = useState<Set<string>>(new Set());
+  const [makeupPopupStudent, setMakeupPopupStudent] = useState<Student | null>(null);
+  const [makeupDay, setMakeupDay] = useState<string | null>(null);
+  const [makeupTime, setMakeupTime] = useState('16:00');
+  const [makeupScheduled, setMakeupScheduled] = useState<Record<string, string>>({});
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const today = getToday();
 
@@ -105,9 +112,37 @@ export default function AttendancePage() {
     }
   };
 
-  const handleExcuse = (studentId: number) => {
-    setExcusedStudents((prev) => new Set(prev).add(String(studentId)));
+  const handleExcuse = (student: Student) => {
+    setMakeupPopupStudent(student);
+    setMakeupDay(null);
+    setMakeupTime('16:00');
   };
+
+  const MAKEUP_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const MAKEUP_DAY_SHORT: Record<string, string> = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri' };
+
+  const handleScheduleMakeup = useCallback(() => {
+    if (!makeupPopupStudent || !makeupDay) return;
+    const sid = String(makeupPopupStudent.id);
+    // Format time for display
+    const [h, m] = makeupTime.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    const displayTime = `${displayH}:${m.toString().padStart(2, '0')} ${ampm}`;
+    const label = `${MAKEUP_DAY_SHORT[makeupDay]} ${displayTime}`;
+
+    setMakeupScheduled((prev) => ({ ...prev, [sid]: label }));
+    setExcusedStudents((prev) => new Set(prev).add(sid));
+    setMakeupPopupStudent(null);
+    setToastMessage(`Makeup scheduled: ${makeupPopupStudent.first_name} ${makeupPopupStudent.last_name} — ${label}`);
+    setTimeout(() => setToastMessage(null), 3000);
+  }, [makeupPopupStudent, makeupDay, makeupTime]);
+
+  const handleSkipMakeup = useCallback(() => {
+    if (!makeupPopupStudent) return;
+    setExcusedStudents((prev) => new Set(prev).add(String(makeupPopupStudent.id)));
+    setMakeupPopupStudent(null);
+  }, [makeupPopupStudent]);
 
   const isLoading = !allStudents || !checkedIn;
 
@@ -182,7 +217,7 @@ export default function AttendancePage() {
                         )}
                         <button
                           className={styles.excuseBtn}
-                          onClick={() => handleExcuse(s.id)}
+                          onClick={() => handleExcuse(s)}
                         >
                           Mark Excused
                         </button>
@@ -191,19 +226,28 @@ export default function AttendancePage() {
                     </div>
                   );
                 })}
-                {excusedList.map((s) => (
-                  <div key={s.id} className={`${styles.attendanceCard} ${styles.cardExcused}`}>
-                    <div className={styles.cardTop}>
-                      <h4 className={styles.cardName}>
-                        {s.first_name} {s.last_name}
-                      </h4>
-                      <span className={styles.excusedBadge}>Excused</span>
+                {excusedList.map((s) => {
+                  const sid = String(s.id);
+                  const makeup = makeupScheduled[sid];
+                  return (
+                    <div key={s.id} className={`${styles.attendanceCard} ${styles.cardExcused}`}>
+                      <div className={styles.cardTop}>
+                        <h4 className={styles.cardName}>
+                          {s.first_name} {s.last_name}
+                        </h4>
+                        <span className={styles.excusedBadge}>Excused</span>
+                      </div>
+                      <p className={styles.cardTime}>
+                        Scheduled: {formatTimeKey(s.class_time_sort_key)}
+                      </p>
+                      {makeup && (
+                        <p className={styles.makeupLine}>
+                          <CalendarPlus size={11} /> Makeup: {makeup}
+                        </p>
+                      )}
                     </div>
-                    <p className={styles.cardTime}>
-                      Scheduled: {formatTimeKey(s.class_time_sort_key)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
                 {noShowStudents.length === 0 && excusedList.length === 0 && (
                   <p className={styles.emptyCol}>No absences yet.</p>
                 )}
@@ -266,6 +310,68 @@ export default function AttendancePage() {
           </div>
         )}
       </div>
+
+      {/* Makeup Scheduling Modal */}
+      <Modal
+        open={!!makeupPopupStudent}
+        onClose={() => setMakeupPopupStudent(null)}
+        title="Schedule Makeup Session"
+        subtitle={makeupPopupStudent ? `${makeupPopupStudent.first_name} ${makeupPopupStudent.last_name}` : ''}
+        maxWidth="400px"
+      >
+        <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--neutral)', fontFamily: 'var(--font-primary)' }}>
+          Select a day and time for the makeup class, or skip to mark as excused without a makeup.
+        </p>
+
+        {/* Day buttons */}
+        <div className={styles.makeupDays}>
+          {MAKEUP_DAYS.map((day) => (
+            <button
+              key={day}
+              className={`${styles.makeupDayBtn} ${makeupDay === day ? styles.makeupDayActive : ''}`}
+              onClick={() => setMakeupDay(day)}
+            >
+              {MAKEUP_DAY_SHORT[day]}
+            </button>
+          ))}
+        </div>
+
+        {/* Time selector */}
+        <div style={{ margin: '12px 0 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--neutral)', fontFamily: 'var(--font-primary)' }}>
+            Time:
+          </label>
+          <input
+            type="time"
+            value={makeupTime}
+            onChange={(e) => setMakeupTime(e.target.value)}
+            className={styles.makeupTimeInput}
+          />
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button className={styles.makeupSkipBtn} onClick={handleSkipMakeup}>
+            Skip
+          </button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleScheduleMakeup}
+            disabled={!makeupDay}
+          >
+            Schedule Makeup
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Toast */}
+      {toastMessage && (
+        <div className={styles.toast}>
+          <CheckCircle2 size={14} />
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

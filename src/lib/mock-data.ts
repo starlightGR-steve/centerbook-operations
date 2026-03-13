@@ -70,6 +70,12 @@ export const MOCK_STUDENTS: Student[] = [
     ashr_math_status: 'Not Yet ASHR', ashr_reading_status: 'Not Yet ASHR',
     primary_contact_id: 1, billing_contact_id: 1,
     created_at: '2024-09-01T00:00:00Z', updated_at: now,
+    pertinent_note: 'Needs iPad tested before leaving',
+    tasks: [
+      { id: 't1', label: 'Spelling check', completed: false },
+      { id: 't2', label: 'Multiplication quiz', completed: false },
+    ],
+    flags: ['new_concept'],
   },
   {
     id: 2, system_id: 'STU-002', clickup_task_id: 'abc002',
@@ -109,6 +115,13 @@ export const MOCK_STUDENTS: Student[] = [
     ashr_math_status: 'Bronze', ashr_reading_status: 'Not Yet ASHR',
     primary_contact_id: 4, billing_contact_id: 4,
     created_at: '2023-09-01T00:00:00Z', updated_at: now,
+    pertinent_note: 'Take multiplication quiz \u2014 flash cards in folder',
+    tasks: [
+      { id: 't3', label: 'Flash cards drill', completed: false },
+      { id: 't4', label: 'Read aloud assessment', completed: false },
+      { id: 't5', label: 'Correction worksheet', completed: false },
+    ],
+    flags: ['needs_help'],
   },
   {
     id: 5, system_id: 'STU-005', clickup_task_id: 'abc005',
@@ -135,6 +148,8 @@ export const MOCK_STUDENTS: Student[] = [
     ashr_math_status: 'Not Yet ASHR', ashr_reading_status: 'Not Yet ASHR',
     primary_contact_id: 6, billing_contact_id: 6,
     created_at: '2024-01-15T00:00:00Z', updated_at: now,
+    pertinent_note: 'Mom requested extra reading time today',
+    flags: ['new_concept', 'needs_help'],
   },
   {
     id: 7, system_id: 'STU-007', clickup_task_id: 'abc007',
@@ -239,6 +254,10 @@ export const MOCK_STUDENTS: Student[] = [
     ashr_math_status: 'Not Yet ASHR', ashr_reading_status: 'Not Yet ASHR',
     primary_contact_id: 14, billing_contact_id: 14,
     created_at: '2024-09-01T00:00:00Z', updated_at: now,
+    pertinent_note: 'Spelling check before checkout',
+    tasks: [
+      { id: 't6', label: 'Spelling check', completed: false },
+    ],
   },
   {
     id: 15, system_id: 'STU-015', clickup_task_id: 'abc015',
@@ -841,6 +860,7 @@ export const MOCK_STAFF: Staff[] = [
     role: 'Owner', hire_date: '2020-01-01', wp_user_id: 2,
     pin: '1234', status: 'Active',
     created_at: '2020-01-01T00:00:00Z', updated_at: now,
+    scheduled_shift: '2:00 PM - 7:00 PM', assigned_row: null,
   },
   {
     id: 2, clickup_task_id: null,
@@ -849,6 +869,7 @@ export const MOCK_STAFF: Staff[] = [
     role: 'Instruction Manager', hire_date: '2022-06-01', wp_user_id: 10,
     pin: '2345', status: 'Active',
     created_at: '2022-06-01T00:00:00Z', updated_at: now,
+    scheduled_shift: '2:45 PM - 6:30 PM', assigned_row: 'MC',
   },
   {
     id: 3, clickup_task_id: null,
@@ -857,6 +878,7 @@ export const MOCK_STAFF: Staff[] = [
     role: 'Teacher', hire_date: '2023-01-15', wp_user_id: 11,
     pin: '3456', status: 'Active',
     created_at: '2023-01-15T00:00:00Z', updated_at: now,
+    scheduled_shift: '3:00 PM - 6:00 PM', assigned_row: 'EL',
   },
   {
     id: 4, clickup_task_id: null,
@@ -865,6 +887,7 @@ export const MOCK_STAFF: Staff[] = [
     role: 'Teacher', hire_date: '2023-09-01', wp_user_id: 12,
     pin: '4567', status: 'Active',
     created_at: '2023-09-01T00:00:00Z', updated_at: now,
+    scheduled_shift: '3:00 PM - 6:00 PM', assigned_row: 'MC',
   },
   {
     id: 5, clickup_task_id: null,
@@ -873,6 +896,7 @@ export const MOCK_STAFF: Staff[] = [
     role: 'Teacher', hire_date: '2024-01-15', wp_user_id: 13,
     pin: '5678', status: 'Active',
     created_at: '2024-01-15T00:00:00Z', updated_at: now,
+    scheduled_shift: '3:00 PM - 6:00 PM', assigned_row: 'UC',
   },
   {
     id: 6, clickup_task_id: null,
@@ -881,6 +905,7 @@ export const MOCK_STAFF: Staff[] = [
     role: 'Teacher', hire_date: '2024-09-01', wp_user_id: null,
     pin: '6789', status: 'Active',
     created_at: '2024-09-01T00:00:00Z', updated_at: now,
+    scheduled_shift: '3:30 PM - 6:00 PM', assigned_row: 'MC',
   },
   {
     id: 7, clickup_task_id: null,
@@ -889,6 +914,7 @@ export const MOCK_STAFF: Staff[] = [
     role: 'Center Manager', hire_date: '2021-06-01', wp_user_id: 14,
     pin: '7890', status: 'Active',
     created_at: '2021-06-01T00:00:00Z', updated_at: now,
+    scheduled_shift: '2:30 PM - 6:30 PM', assigned_row: null,
   },
   {
     id: 8, clickup_task_id: null,
@@ -1081,49 +1107,92 @@ export const MOCK_BOOKS: Book[] = [
     id: 1, title: 'Bob Books: Set 1', author: 'Bobby Lynn Maslen',
     isbn: '978-0439845007', barcode: 'LIB-001',
     category: 'Early Reader', reading_level: '7A-2A',
-    status: 'checked-out',
+    status: 'checked-out', type: 'book',
     created_at: '2024-01-01T00:00:00Z', updated_at: now,
   },
   {
     id: 2, title: 'Frog and Toad Are Friends', author: 'Arnold Lobel',
     isbn: '978-0064440202', barcode: 'LIB-002',
     category: 'Early Reader', reading_level: 'AI-AII',
-    status: 'available',
+    status: 'available', type: 'book',
     created_at: '2024-01-01T00:00:00Z', updated_at: now,
   },
   {
     id: 3, title: 'Elephant & Piggie: I Really Like Slop!', author: 'Mo Willems',
     isbn: '978-1484722619', barcode: 'LIB-003',
     category: 'Early Reader', reading_level: 'AI-BI',
-    status: 'available',
+    status: 'available', type: 'book',
     created_at: '2024-01-01T00:00:00Z', updated_at: now,
   },
   {
     id: 4, title: 'Biscuit Finds a Friend', author: 'Alyssa Satin Capucilli',
     isbn: '978-0064442435', barcode: 'LIB-004',
     category: 'Early Reader', reading_level: '7A-AI',
-    status: 'available',
+    status: 'available', type: 'book',
     created_at: '2024-01-01T00:00:00Z', updated_at: now,
   },
   {
     id: 5, title: 'Green Eggs and Ham', author: 'Dr. Seuss',
     isbn: '978-0394800165', barcode: 'LIB-005',
     category: 'Early Reader', reading_level: 'AI-AII',
-    status: 'available',
+    status: 'available', type: 'book',
     created_at: '2024-01-01T00:00:00Z', updated_at: now,
   },
   {
     id: 6, title: 'Charlotte\'s Web', author: 'E.B. White',
     isbn: '978-0064400558', barcode: 'LIB-006',
     category: 'Chapter Book', reading_level: 'CI-DI',
-    status: 'checked-out',
+    status: 'checked-out', type: 'book',
     created_at: '2024-01-01T00:00:00Z', updated_at: now,
   },
   {
     id: 7, title: 'Magic Tree House #1', author: 'Mary Pope Osborne',
     isbn: '978-0679824114', barcode: 'LIB-007',
     category: 'Chapter Book', reading_level: 'BII-CI',
-    status: 'available',
+    status: 'available', type: 'book',
+    created_at: '2024-01-01T00:00:00Z', updated_at: now,
+  },
+  // Answer Keys
+  {
+    id: 101, title: 'Math Level D Answer Key', author: null,
+    isbn: null, barcode: 'AK-001',
+    category: 'Reference', reading_level: 'D',
+    status: 'checked-out', type: 'answer_key',
+    created_at: '2024-01-01T00:00:00Z', updated_at: now,
+  },
+  {
+    id: 102, title: 'Math Level F Answer Key', author: null,
+    isbn: null, barcode: 'AK-002',
+    category: 'Reference', reading_level: 'F',
+    status: 'available', type: 'answer_key',
+    created_at: '2024-01-01T00:00:00Z', updated_at: now,
+  },
+  {
+    id: 103, title: 'Reading Level GI Answer Key', author: null,
+    isbn: null, barcode: 'AK-003',
+    category: 'Reference', reading_level: 'GI',
+    status: 'checked-out', type: 'answer_key',
+    created_at: '2024-01-01T00:00:00Z', updated_at: now,
+  },
+  {
+    id: 104, title: 'Math Level H Answer Key', author: null,
+    isbn: null, barcode: 'AK-004',
+    category: 'Reference', reading_level: 'H',
+    status: 'available', type: 'answer_key',
+    created_at: '2024-01-01T00:00:00Z', updated_at: now,
+  },
+  {
+    id: 105, title: 'Reading Level CII Answer Key', author: null,
+    isbn: null, barcode: 'AK-005',
+    category: 'Reference', reading_level: 'CII',
+    status: 'checked-out', type: 'answer_key',
+    created_at: '2024-01-01T00:00:00Z', updated_at: now,
+  },
+  {
+    id: 106, title: 'Math Level 3A Answer Key', author: null,
+    isbn: null, barcode: 'AK-006',
+    category: 'Reference', reading_level: '3A',
+    status: 'available', type: 'answer_key',
     created_at: '2024-01-01T00:00:00Z', updated_at: now,
   },
 ];
@@ -1168,6 +1237,25 @@ export const MOCK_BOOK_LOANS: BookLoan[] = [
     checked_out_at: dateAt(daysAgo(7), 15, 15), due_date: daysAgo(0),
     returned_at: dateAt(daysAgo(2), 16, 30), checked_out_by: 'Leah Martin', returned_to: 'Sarah Kim',
     created_at: dateAt(daysAgo(7), 15, 15),
+  },
+  // Answer key loans
+  {
+    id: 7, book_id: 101, student_id: 4,
+    checked_out_at: dateAt(daysAgo(2), 15, 0), due_date: twoWeeksFromNow(),
+    returned_at: null, checked_out_by: 'Sarah Kim', returned_to: null,
+    created_at: dateAt(daysAgo(2), 15, 0),
+  },
+  {
+    id: 8, book_id: 103, student_id: 1,
+    checked_out_at: dateAt(daysAgo(5), 16, 0), due_date: twoWeeksFromNow(),
+    returned_at: null, checked_out_by: 'Jane Doe', returned_to: null,
+    created_at: dateAt(daysAgo(5), 16, 0),
+  },
+  {
+    id: 9, book_id: 105, student_id: 6,
+    checked_out_at: dateAt(daysAgo(1), 15, 30), due_date: twoWeeksFromNow(),
+    returned_at: null, checked_out_by: 'Mike Rodriguez', returned_to: null,
+    created_at: dateAt(daysAgo(1), 15, 30),
   },
 ];
 
