@@ -85,3 +85,29 @@
   background: var(--white);
   color: var(--slate);
 }
+
+@media (max-width: 767px) {
+  .panel {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .header {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .row {
+    padding: 10px 12px;
+  }
+
+  .staffName {
+    font-size: 13px;
+  }
+
+  .clockBtn {
+    font-size: 11px;
+    padding: 5px 10px;
+    min-width: 70px;
+  }
+}

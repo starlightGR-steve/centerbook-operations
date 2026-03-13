@@ -311,10 +311,32 @@
 
 @media (max-width: 768px) {
   .panel {
-    position: absolute;
-    inset: 0;
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
-    z-index: 30;
+    z-index: 800;
     border-left: none;
+  }
+
+  .header {
+    padding: 14px 16px;
+  }
+
+  .body {
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+  }
+
+  .headerName {
+    font-size: 14px;
   }
 }

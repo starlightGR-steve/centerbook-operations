@@ -156,3 +156,15 @@
     padding: 20px;
   }
 }
+
+@media (max-width: 768px) {
+  .page {
+    height: 100%;
+  }
+  .header {
+    padding: 16px;
+  }
+  .content {
+    padding: 16px;
+  }
+}
