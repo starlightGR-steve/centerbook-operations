@@ -40,6 +40,9 @@ export interface Student {
   current_level_reading: string | null;
   ashr_math_status: 'Not Yet ASHR' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | null;
   ashr_reading_status: 'Not Yet ASHR' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | null;
+  birth_month?: number | null;
+  enroll_month?: number | null;
+  starting_grade_level?: string | null;
   primary_contact_id: number | null;
   billing_contact_id: number | null;
   created_at: string;
@@ -223,6 +226,81 @@ export interface CreateNoteRequest {
   author_id?: number;
   note_date: string;
   visibility?: NoteVisibility;
+}
+
+// ── Tasks ─────────────────────────────────
+
+export type CbTaskType =
+  | 'birthday'
+  | 'progress_meeting_prep'
+  | 'progress_meeting_followup'
+  | 'goals'
+  | 'checkin_call'
+  | 'form_followup'
+  | 'no_show_followup'
+  | 'general';
+
+export type CbTaskStatus = 'open' | 'complete';
+
+export interface CbTask {
+  id: number;
+  student_id: number | null;
+  contact_id: number | null;
+  assigned_to: number;
+  created_by: number;
+  type: CbTaskType;
+  title: string;
+  notes: string | null;
+  due_date: string | null;
+  status: CbTaskStatus;
+  recurrence_rule: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTaskRequest {
+  student_id?: number | null;
+  contact_id?: number | null;
+  assigned_to: number;
+  type: CbTaskType;
+  title: string;
+  notes?: string | null;
+  due_date?: string | null;
+}
+
+// ── Journal ───────────────────────────────
+
+export type JournalEntryType =
+  | 'behavioral_log'
+  | 'goal_setting'
+  | 'parent_conversation'
+  | 'student_checkin'
+  | 'progress_meeting_notes'
+  | 'general';
+
+export type JournalVisibility = 'internal' | 'staff' | 'parent_visible';
+
+export interface JournalEntry {
+  id: number;
+  student_id: number;
+  created_by: number;
+  entry_type: JournalEntryType;
+  visibility: JournalVisibility;
+  title: string | null;
+  content: string;
+  goal_status: 'active' | 'met' | 'revised' | null;
+  task_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateJournalEntryRequest {
+  student_id: number;
+  entry_type: JournalEntryType;
+  visibility: JournalVisibility;
+  title?: string | null;
+  content: string;
 }
 
 // ── Library ────────────────────────────────

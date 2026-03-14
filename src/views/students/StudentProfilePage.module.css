@@ -1,0 +1,507 @@
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--base);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-size: 14px;
+  color: var(--neutral);
+  font-family: var(--font-primary);
+}
+
+/* ── Header ── */
+.header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 40px;
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+}
+
+.backBtn:hover {
+  text-decoration: underline;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studentName {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.headerBadges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Body ── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Sections ── */
+.section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--neutral);
+  margin-left: 8px;
+}
+
+/* ── Details Grid ── */
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailFull {
+  grid-column: 1 / -1;
+}
+
+.detailLabel {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+}
+
+.detailValue {
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.medicalValue {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.04);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.12);
+}
+
+.eyeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--neutral);
+  padding: 2px;
+  display: inline-flex;
+}
+
+.eyeBtn:hover {
+  color: var(--primary);
+}
+
+.dayPills {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dayPill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--secondary-ul);
+  color: var(--secondary);
+}
+
+.timePill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--primary-ul);
+  color: var(--primary);
+}
+
+/* ── Add Button ── */
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--secondary);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.addBtn:hover {
+  border-color: var(--secondary);
+  background: var(--secondary-ul);
+}
+
+/* ── Inline Forms ── */
+.inlineForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--base);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.formRow {
+  display: flex;
+  gap: 8px;
+}
+
+.formInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}
+
+.formInput:focus {
+  border-color: var(--secondary);
+}
+
+.formSelect {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--white);
+  cursor: pointer;
+}
+
+.formSelect:focus {
+  outline: none;
+  border-color: var(--secondary);
+}
+
+.formTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+}
+
+.formTextarea:focus {
+  border-color: var(--secondary);
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+}
+
+.formSubmit {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.formSubmit:hover {
+  opacity: 0.85;
+}
+
+.formSubmit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.formCancel {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--neutral);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Tasks ── */
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.taskCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.taskDone {
+  opacity: 0.5;
+}
+
+.taskInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.taskTitle {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.taskDue {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  color: var(--neutral);
+}
+
+.completeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--green);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.completeBtn:hover {
+  border-color: var(--green);
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.toggleCompleted {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--neutral);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  padding: 4px 0;
+}
+
+.toggleCompleted:hover {
+  color: var(--primary);
+}
+
+.empty {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--neutral);
+  font-style: italic;
+  margin: 0;
+  padding: 8px 0;
+}
+
+/* ── Journal ── */
+.journalList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.journalCard {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.journalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.journalBadges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.journalDate {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  color: var(--neutral);
+}
+
+.journalTitle {
+  margin: 0 0 4px;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.journalContent {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .header {
+    padding: 20px;
+  }
+  .body {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    height: 100%;
+  }
+
+  .header {
+    padding: 16px;
+  }
+
+  .studentName {
+    font-size: 18px;
+  }
+
+  .body {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 16px;
+  }
+
+  .formRow {
+    flex-direction: column;
+  }
+
+  .taskCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

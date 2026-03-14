@@ -10,6 +10,8 @@ import type {
   Attendance,
   TimeEntry,
   StudentNote,
+  CbTask,
+  JournalEntry,
   Book,
   BookLoan,
   RowAssignment,
@@ -68,6 +70,7 @@ export const MOCK_STUDENTS: Student[] = [
     class_schedule_days: 'Monday, Wednesday', class_time_sort_key: 1500,
     current_level_math: 'C', current_level_reading: 'BII',
     ashr_math_status: 'Not Yet ASHR', ashr_reading_status: 'Not Yet ASHR',
+    birth_month: 3, enroll_month: 9, starting_grade_level: '2',
     primary_contact_id: 1, billing_contact_id: 1,
     created_at: '2024-09-01T00:00:00Z', updated_at: now,
     pertinent_note: 'Needs iPad tested before leaving',
@@ -87,6 +90,7 @@ export const MOCK_STUDENTS: Student[] = [
     class_schedule_days: 'Tuesday, Thursday', class_time_sort_key: 1530,
     current_level_math: 'B', current_level_reading: 'AI',
     ashr_math_status: 'Not Yet ASHR', ashr_reading_status: null,
+    birth_month: 7, enroll_month: 10, starting_grade_level: '1',
     primary_contact_id: 2, billing_contact_id: 2,
     created_at: '2024-10-15T00:00:00Z', updated_at: now,
   },
@@ -1392,5 +1396,59 @@ export const MOCK_CLASSROOM_CONFIG: ClassroomSection[] = [
     rows: [
       { id: 'upper', label: 'Upper Row', tables: 5, seatsPerTable: 2, teacher: 'Dr. Kim (Adv. Math)', advanced: true },
     ],
+  },
+];
+
+// ── Tasks (matches cb_tasks schema) ──
+
+export const MOCK_TASKS: CbTask[] = [
+  {
+    id: 501, student_id: 1, contact_id: 1, assigned_to: 1, created_by: 1,
+    type: 'birthday', title: 'Prepare birthday card for Alice',
+    notes: 'Birthday is March 15 — get card signed by staff',
+    due_date: '2026-03-14', status: 'open', recurrence_rule: null,
+    completed_at: null, created_at: daysAgo(5) + 'T09:00:00Z', updated_at: now,
+  },
+  {
+    id: 502, student_id: 1, contact_id: 1, assigned_to: 2, created_by: 1,
+    type: 'progress_meeting_prep', title: 'Pull progress data for Johnson family meeting',
+    notes: 'Include ASHR status and current levels for both subjects',
+    due_date: '2026-03-18', status: 'open', recurrence_rule: null,
+    completed_at: null, created_at: daysAgo(3) + 'T14:00:00Z', updated_at: now,
+  },
+  {
+    id: 503, student_id: 1, contact_id: null, assigned_to: 1, created_by: 1,
+    type: 'goals', title: 'Set new math goal — finish Level C by April',
+    notes: null,
+    due_date: '2026-03-20', status: 'open', recurrence_rule: null,
+    completed_at: null, created_at: daysAgo(2) + 'T10:00:00Z', updated_at: now,
+  },
+  {
+    id: 504, student_id: 1, contact_id: 1, assigned_to: 3, created_by: 1,
+    type: 'checkin_call', title: 'Follow up with parent on homework routine',
+    notes: 'Mom mentioned Alice is struggling with nightly worksheets',
+    due_date: daysAgo(-2), status: 'complete', recurrence_rule: null,
+    completed_at: daysAgo(1) + 'T16:30:00Z', created_at: daysAgo(7) + 'T09:00:00Z', updated_at: now,
+  },
+];
+
+// ── Journal Entries (matches cb_journal schema) ──
+
+export const MOCK_JOURNAL_ENTRIES: JournalEntry[] = [
+  {
+    id: 601, student_id: 1, created_by: 1,
+    entry_type: 'goal_setting', visibility: 'staff',
+    title: 'Math goal — Level C completion',
+    content: 'Alice is progressing well through Level C. Set target to complete by end of April. She is averaging 4 pages per session. Focus areas: long division and fractions.',
+    goal_status: 'active', task_id: 503,
+    created_at: daysAgo(2) + 'T10:15:00Z', updated_at: now,
+  },
+  {
+    id: 602, student_id: 1, created_by: 2,
+    entry_type: 'parent_conversation', visibility: 'parent_visible',
+    title: 'Phone call with Sarah Johnson',
+    content: 'Discussed homework routine concerns. Mom says Alice gets frustrated with word problems. Suggested breaking worksheets into smaller chunks. Will follow up in one week.',
+    goal_status: null, task_id: 504,
+    created_at: daysAgo(5) + 'T15:30:00Z', updated_at: now,
   },
 ];

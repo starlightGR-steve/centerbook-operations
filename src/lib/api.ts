@@ -20,6 +20,10 @@ import type {
   ClockOutRequest,
   StudentNote,
   CreateNoteRequest,
+  CbTask,
+  CreateTaskRequest,
+  JournalEntry,
+  CreateJournalEntryRequest,
   Book,
   BookLoan,
   CheckoutBookRequest,
@@ -156,7 +160,7 @@ function directFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
 export const api = {
   // ── Students ──
   students: {
-    list: () => directFetch<Student[]>('/students'),
+    list: () => directFetch<Student[]>('/operations/students/all'),
     get: (id: number) => directFetch<Student>(`/students/${id}`),
     create: (data: Partial<Student>) =>
       directFetch<Student>('/students', {
@@ -269,6 +273,36 @@ export const api = {
       }),
     delete: (id: number) =>
       directFetch<void>(`/note/${id}`, { method: 'DELETE' }),
+  },
+
+  // ── Tasks ──
+  tasks: {
+    forStudent: (studentId: number, status?: string) => {
+      const params = new URLSearchParams({ student_id: String(studentId) });
+      if (status) params.set('status', status);
+      return directFetch<CbTask[]>(`/tasks?${params}`);
+    },
+    create: (data: CreateTaskRequest) =>
+      directFetch<CbTask>('/tasks', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: number, data: Partial<CbTask>) =>
+      directFetch<CbTask>(`/tasks/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  // ── Journal ──
+  journal: {
+    forStudent: (studentId: number) =>
+      directFetch<JournalEntry[]>(`/journal?student_id=${studentId}`),
+    create: (data: CreateJournalEntryRequest) =>
+      directFetch<JournalEntry>('/journal', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   // ── Library (no API yet — falls back to mock data) ──

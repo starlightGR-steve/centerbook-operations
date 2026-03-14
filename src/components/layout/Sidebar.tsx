@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
   Scan,
+  GraduationCap,
   Users,
   CalendarDays,
   ClipboardList,
@@ -30,6 +31,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/kiosk', icon: Scan, label: 'Kiosk' },
+  { href: '/students', icon: GraduationCap, label: 'Students' },
   { href: '/rows', icon: Users, label: 'Live Class' },
   { href: '/attendance', icon: ClipboardList, label: 'Attendance' },
   { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },

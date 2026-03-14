@@ -34,6 +34,20 @@ export function useStudent(id: number | null) {
   );
 }
 
+/** Fetch all students (all statuses) for roster view */
+export function useAllStudents() {
+  const { isDemoMode } = useDemoMode();
+
+  return useSWR<Student[]>(
+    isDemoMode ? 'demo-all-students' : 'all-students',
+    async () => {
+      if (isDemoMode) return MOCK_STUDENTS;
+      return api.students.list();
+    },
+    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
+  );
+}
+
 /** Filter students scheduled for a specific day */
 export function useStudentsForDay(day: string) {
   const { data: students, ...rest } = useStudents();

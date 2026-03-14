@@ -2,10 +2,11 @@ import Badge from '@/components/ui/Badge';
 import { parseSubjects } from '@/lib/types';
 
 interface SubjectBadgesProps {
-  subjects: string | string[];
+  subjects: string | string[] | null | undefined;
 }
 
 export default function SubjectBadges({ subjects }: SubjectBadgesProps) {
+  if (!subjects) return null;
   const parsed =
     typeof subjects === 'string' ? parseSubjects(subjects) : subjects;
 
