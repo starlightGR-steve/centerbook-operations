@@ -89,6 +89,15 @@ export interface Family {
 // ── Staff ──────────────────────────────────
 
 export type StaffRole =
+  | 'owner'
+  | 'admin'
+  | 'superuser'
+  | 'instruction_manager'
+  | 'center_manager'
+  | 'project_manager'
+  | 'teacher'
+  | 'grader'
+  // Legacy title-case values (mock data)
   | 'Owner'
   | 'Instruction Manager'
   | 'Center Manager'
@@ -101,6 +110,8 @@ export type StaffStatus = 'Active' | 'Inactive' | 'On Leave';
 export interface Staff {
   id: number;
   clickup_task_id: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   full_name: string;
   email: string | null;
   phone: string | null;

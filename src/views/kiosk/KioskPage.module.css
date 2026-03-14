@@ -3,21 +3,23 @@
   display: flex;
   flex-direction: column;
   background: var(--base);
-  padding: 36px;
+  padding: 24px 28px;
   overflow: hidden;
 }
 
+/* ── Header ── */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
+  gap: 24px;
 }
 
-.logo {
+.logoBlock {
   display: flex;
   align-items: center;
-  user-select: none;
+  gap: 12px;
   flex-shrink: 0;
 }
 
@@ -26,20 +28,305 @@
   width: auto;
 }
 
+.centerName {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neutral);
+  letter-spacing: 0.02em;
+}
+
 .scannerWrap {
   flex: 1;
   max-width: 400px;
-  margin: 0 32px;
 }
 
+.scannerInput {
+  width: 100%;
+  padding: 10px 16px 10px 42px;
+  border: 2px solid var(--secondary);
+  border-radius: 24px;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.scannerInput::placeholder {
+  color: var(--neutral);
+  font-weight: 400;
+}
+
+.scannerInput:focus {
+  border-color: var(--primary);
+}
+
+.scannerInputWrap {
+  position: relative;
+}
+
+.scannerIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--secondary);
+  pointer-events: none;
+  display: flex;
+}
+
+.clock {
+  font-family: var(--font-primary);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Columns ── */
 .columns {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Card Column ── */
+.card {
+  background: var(--white);
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
+.cardDark {
+  background: var(--slate);
+  border-color: var(--slate);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px 12px;
+  font-family: var(--font-primary);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.cardHeaderDark {
+  color: var(--white);
+}
+
+.cardBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+}
+
+/* ── Expected Student Row ── */
+.expectedRow {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  gap: 8px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-primary);
+}
+
+.expectedRow:hover {
+  background: var(--base);
+}
+
+.expectedLeft {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.expectedName {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.expectedBadges {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.expectedRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.expectedTime {
+  font-size: 11px;
+  font-weight: 500;
+  color: #57727c;
+  white-space: nowrap;
+}
+
+.expectedPlus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+/* ── Here Now Row ── */
+.hereRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-primary);
+}
+
+.hereRow:hover {
+  background: rgba(22, 163, 74, 0.04);
+}
+
+.hereName {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.hereArrival {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.hereCheck {
+  color: #16a34a;
+  flex-shrink: 0;
+  display: flex;
+}
+
+/* ── Staff Row ── */
+.staffRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.staffRow:last-child {
+  border-bottom: none;
+}
+
+.staffInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.staffName {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--white);
+}
+
+.staffRole {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.clockOutBtn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.clockOutBtn:hover {
+  opacity: 0.85;
+}
+
+.clockInBtn {
+  padding: 6px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--slate);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.clockInBtn:hover {
+  opacity: 0.85;
+}
+
+/* ── Empty State ── */
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--neutral);
+  font-style: italic;
+}
+
+.emptyDark {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Loading ── */
 .loading {
   display: flex;
   align-items: center;
@@ -49,17 +336,16 @@
   color: var(--neutral);
 }
 
+/* ── Responsive ── */
+@media (max-width: 1200px) {
+  .columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 1024px) {
   .page {
     padding: 20px;
-  }
-
-  .scannerWrap {
-    margin: 0 16px;
-  }
-
-  .columns {
-    gap: 14px;
   }
 }
 
@@ -80,7 +366,10 @@
     order: 3;
     flex-basis: 100%;
     max-width: none;
-    margin: 0;
+  }
+
+  .clock {
+    font-size: 20px;
   }
 
   .columns {
