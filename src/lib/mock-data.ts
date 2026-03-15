@@ -1272,6 +1272,7 @@ interface MockRowAssignment {
   assigned_date: string;
   assigned_by: number;
   created_at: string;
+  row_label?: string; // New entries store the label directly
 }
 
 export const MOCK_ROW_ASSIGNMENTS: MockRowAssignment[] = [

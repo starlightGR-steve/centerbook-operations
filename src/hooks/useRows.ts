@@ -34,7 +34,7 @@ export function useClassroomAssignments(date?: string) {
             id: r.id,
             session_date: r.assigned_date,
             student_id: r.student_id,
-            row_label: `Row ${r.row_number}`,
+            row_label: r.row_label || `Row ${r.row_number}`,
             assigned_at: r.created_at,
             assigned_by: null,
           }));
@@ -72,16 +72,14 @@ export async function assignStudentToRow(data: AssignRowRequest): Promise<RowAss
     const idx = MOCK_ROW_ASSIGNMENTS.findIndex(
       (r) => r.student_id === data.student_id && r.assigned_date === data.session_date
     );
-    // Extract row_number from row_label for mock compatibility (e.g. "Row 3" -> 3)
-    const numMatch = data.row_label.match(/(\d+)/);
-    const rowNumber = numMatch ? parseInt(numMatch[1], 10) : 0;
     const entry = {
       id: idx >= 0 ? MOCK_ROW_ASSIGNMENTS[idx].id : Date.now(),
       student_id: data.student_id,
-      row_number: rowNumber,
+      row_number: 0,
       assigned_date: data.session_date,
       assigned_by: 0,
       created_at: new Date().toISOString(),
+      row_label: data.row_label,
     };
     if (idx >= 0) {
       MOCK_ROW_ASSIGNMENTS[idx] = entry;
