@@ -14,7 +14,6 @@ import type {
   JournalEntry,
   Book,
   BookLoan,
-  RowAssignment,
   CenterSettings,
   StaffSlotAssignment,
   ScheduleOverride,
@@ -1264,8 +1263,18 @@ export const MOCK_BOOK_LOANS: BookLoan[] = [
 ];
 
 // ── Row Assignments (today) ────────────────
+// Legacy mock shape — useRows.ts demo mode maps these to the new RowAssignment interface
 
-export const MOCK_ROW_ASSIGNMENTS: RowAssignment[] = [
+interface MockRowAssignment {
+  id: number;
+  student_id: number;
+  row_number: number;
+  assigned_date: string;
+  assigned_by: number;
+  created_at: string;
+}
+
+export const MOCK_ROW_ASSIGNMENTS: MockRowAssignment[] = [
   { id: 1, student_id: 1, row_number: 3, assigned_date: today, assigned_by: 2, created_at: todayAt(14, 0) },
   { id: 2, student_id: 4, row_number: 3, assigned_date: today, assigned_by: 2, created_at: todayAt(14, 0) },
   { id: 3, student_id: 6, row_number: 3, assigned_date: today, assigned_by: 2, created_at: todayAt(14, 0) },

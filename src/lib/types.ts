@@ -364,19 +364,32 @@ export interface ReturnBookRequest {
 
 export interface RowAssignment {
   id: number;
+  session_date: string;       // YYYY-MM-DD
   student_id: number;
-  row_number: number; // 1-6
-  assigned_date: string; // YYYY-MM-DD
-  assigned_by: number | null;
-  created_at: string;
-  // Joined fields
-  student?: Student;
+  row_label: string;          // "EL Row 1", "Row 3", "Upper Row"
+  assigned_at: string;        // ISO datetime
+  assigned_by: string | null;
 }
 
 export interface AssignRowRequest {
   student_id: number;
-  row_number: number;
-  date: string; // YYYY-MM-DD
+  row_label: string;
+  session_date: string;       // YYYY-MM-DD
+  assigned_by?: string;
+}
+
+export interface RowTeacher {
+  id: number;
+  session_date: string;
+  row_label: string;
+  staff_id: number;
+  assigned_at: string;
+}
+
+export interface AssignRowTeacherRequest {
+  staff_id: number;
+  row_label: string;
+  session_date: string;
 }
 
 // ── Center Settings (Logistics) ──────────

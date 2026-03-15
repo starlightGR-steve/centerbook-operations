@@ -4,28 +4,29 @@ import { ChevronRight } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import StudentRow from '@/components/StudentRow';
 import type { Student } from '@/lib/types';
-import { assignToRow } from '@/hooks/useRows';
+import { assignStudentToRow } from '@/hooks/useRows';
 
 interface RowAssignmentModalProps {
   open: boolean;
   onClose: () => void;
-  rowNumber: number;
+  rowLabel: string;
   availableStudents: Student[];
 }
 
 export default function RowAssignmentModal({
   open,
   onClose,
-  rowNumber,
+  rowLabel,
   availableStudents,
 }: RowAssignmentModalProps) {
   const today = new Date().toISOString().split('T')[0];
 
   const handleAssign = async (student: Student) => {
-    await assignToRow({
+    await assignStudentToRow({
       student_id: student.id,
-      row_number: rowNumber,
-      date: today,
+      row_label: rowLabel,
+      session_date: today,
+      assigned_by: 'Staff',
     });
     onClose();
   };
@@ -34,7 +35,7 @@ export default function RowAssignmentModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={`Assign to Row ${rowNumber}`}
+      title={`Assign to ${rowLabel}`}
       subtitle="Select a checked-in student"
       maxWidth="480px"
     >

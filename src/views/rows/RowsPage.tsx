@@ -13,6 +13,7 @@ import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { useNotes } from '@/hooks/useNotes';
+import { useClassroomAssignments, buildOverridesMap, assignStudentToRow, removeStudentFromRow } from '@/hooks/useRows';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
 import type { Student, Attendance, ClassroomSection, ClassroomRow } from '@/lib/types';
 import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
@@ -98,7 +99,6 @@ export default function RowsPage() {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [dragStudent, setDragStudent] = useState<Student | null>(null);
-  const [rowOverrides, setRowOverrides] = useState<Record<string, string>>({});
   const [rowCompleteIds, setRowCompleteIds] = useState<Set<number>>(new Set());
   const [assigningToRow, setAssigningToRow] = useState(false);
   const [movingStudent, setMovingStudent] = useState<number | null>(null);
@@ -116,6 +116,9 @@ export default function RowsPage() {
   const { data: allStudents } = useStudents();
   const { data: checkedIn } = useCheckedInStudents(undefined, 10000);
 
+  const today = new Date().toISOString().split('T')[0];
+  const { data: persistedAssignments } = useClassroomAssignments(today);
+
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 15000);
     return () => clearInterval(id);
@@ -123,6 +126,23 @@ export default function RowsPage() {
 
   const sections = CLASSROOM_CONFIG;
   const rows = useMemo(() => buildRows(sections), [sections]);
+
+  const rowIdToLabel = useMemo(() => {
+    const map: Record<string, string> = {};
+    rows.forEach((r) => { map[r.id] = r.label; });
+    return map;
+  }, [rows]);
+
+  const rowLabelToId = useMemo(() => {
+    const map: Record<string, string> = {};
+    rows.forEach((r) => { map[r.label] = r.id; });
+    return map;
+  }, [rows]);
+
+  const rowOverrides = useMemo(
+    () => buildOverridesMap(persistedAssignments, rowLabelToId),
+    [persistedAssignments, rowLabelToId]
+  );
 
   const attendanceMap = useMemo(() => {
     const map = new Map<number, Attendance>();
@@ -136,18 +156,20 @@ export default function RowsPage() {
     return allStudents.filter((s) => ids.has(s.id) && !rowCompleteIds.has(s.id));
   }, [allStudents, checkedIn, rowCompleteIds]);
 
-  const moveStudentToRow = (studentId: number, rowId: string) => {
-    setRowOverrides((prev) => ({ ...prev, [String(studentId)]: rowId }));
+  const moveStudentToRow = async (studentId: number, rowId: string) => {
+    const label = rowIdToLabel[rowId];
+    if (!label) return;
+    await assignStudentToRow({
+      student_id: studentId,
+      row_label: label,
+      session_date: today,
+      assigned_by: 'Staff',
+    });
   };
 
-  const handleRowCheckout = (studentId: number) => {
+  const handleRowCheckout = async (studentId: number) => {
     setRowCompleteIds((prev) => new Set(prev).add(studentId));
-    // Remove any row override for this student
-    setRowOverrides((prev) => {
-      const next = { ...prev };
-      delete next[String(studentId)];
-      return next;
-    });
+    await removeStudentFromRow(studentId, today);
   };
 
   const assignments = useMemo(

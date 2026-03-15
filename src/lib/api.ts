@@ -30,6 +30,8 @@ import type {
   ReturnBookRequest,
   RowAssignment,
   AssignRowRequest,
+  RowTeacher,
+  AssignRowTeacherRequest,
 } from './types';
 import { MOCK_BOOKS, MOCK_BOOK_LOANS } from './mock-data';
 
@@ -333,21 +335,42 @@ export const api = {
     },
   },
 
-  // ── Row Assignments ──
-  rows: {
-    forRow: (rowNumber: number, date?: string) => {
+  // ── Classroom Assignments ──
+  classroom: {
+    /** Get all student row assignments for a date */
+    assignments: (date?: string) => {
       const d = date || new Date().toISOString().split('T')[0];
-      return directFetch<RowAssignment[]>(
-        `/row?number=${rowNumber}&date=${d}`
-      );
+      return directFetch<RowAssignment[]>(`/classroom/assignments?date=${d}`);
     },
+
+    /** Upsert a student row assignment */
     assign: (data: AssignRowRequest) =>
-      directFetch<RowAssignment>('/row/assign', {
+      directFetch<RowAssignment>('/classroom/assignments', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    remove: (id: number) =>
-      directFetch<void>(`/row/assign/${id}`, { method: 'DELETE' }),
+
+    /** Remove a student's row assignment for a date */
+    unassign: (studentId: number, date?: string) => {
+      const d = date || new Date().toISOString().split('T')[0];
+      return directFetch<{ deleted: boolean }>(
+        `/classroom/assignments/${studentId}?date=${d}`,
+        { method: 'DELETE' }
+      );
+    },
+
+    /** Get all teacher-to-row assignments for a date */
+    teachers: (date?: string) => {
+      const d = date || new Date().toISOString().split('T')[0];
+      return directFetch<RowTeacher[]>(`/classroom/teachers?date=${d}`);
+    },
+
+    /** Upsert a teacher-to-row assignment */
+    assignTeacher: (data: AssignRowTeacherRequest) =>
+      directFetch<RowTeacher>('/classroom/teachers', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   // ── Batch utility for bulk operations ──
