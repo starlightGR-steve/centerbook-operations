@@ -122,6 +122,7 @@ export default function ClassroomOverview({
   const handleDrop = (rowId: string) => {
     if (dragStudent) {
       onMoveStudent(dragStudent.id, rowId);
+      onDragEnd();
     }
   };
 
