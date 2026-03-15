@@ -68,13 +68,33 @@ export function buildOverridesMap(
 /** Assign a student to a row (persisted) */
 export async function assignStudentToRow(data: AssignRowRequest): Promise<RowAssignment> {
   if (isDemoModeActive()) {
+    // Upsert into mock array so SWR refetch picks it up
+    const idx = MOCK_ROW_ASSIGNMENTS.findIndex(
+      (r) => r.student_id === data.student_id && r.assigned_date === data.session_date
+    );
+    // Extract row_number from row_label for mock compatibility (e.g. "Row 3" -> 3)
+    const numMatch = data.row_label.match(/(\d+)/);
+    const rowNumber = numMatch ? parseInt(numMatch[1], 10) : 0;
+    const entry = {
+      id: idx >= 0 ? MOCK_ROW_ASSIGNMENTS[idx].id : Date.now(),
+      student_id: data.student_id,
+      row_number: rowNumber,
+      assigned_date: data.session_date,
+      assigned_by: 0,
+      created_at: new Date().toISOString(),
+    };
+    if (idx >= 0) {
+      MOCK_ROW_ASSIGNMENTS[idx] = entry;
+    } else {
+      MOCK_ROW_ASSIGNMENTS.push(entry);
+    }
     globalMutate(assignmentsKey(data.session_date, true));
     return {
-      id: Date.now(),
+      id: entry.id,
       session_date: data.session_date,
       student_id: data.student_id,
       row_label: data.row_label,
-      assigned_at: new Date().toISOString(),
+      assigned_at: entry.created_at,
       assigned_by: data.assigned_by || null,
     };
   }
@@ -90,6 +110,11 @@ export async function removeStudentFromRow(
 ): Promise<void> {
   const d = date || todayStr();
   if (isDemoModeActive()) {
+    // Remove from mock array so SWR refetch picks it up
+    const idx = MOCK_ROW_ASSIGNMENTS.findIndex(
+      (r) => r.student_id === studentId && r.assigned_date === d
+    );
+    if (idx >= 0) MOCK_ROW_ASSIGNMENTS.splice(idx, 1);
     globalMutate(assignmentsKey(d, true));
     return;
   }
