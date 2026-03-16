@@ -284,6 +284,8 @@ export const api = {
       if (status) params.set('status', status);
       return directFetch<CbTask[]>(`/tasks?${params}`);
     },
+    forAssignee: (staffId: number) =>
+      directFetch<CbTask[]>(`/tasks?assigned_to=${staffId}`),
     create: (data: CreateTaskRequest) =>
       directFetch<CbTask>('/tasks', {
         method: 'POST',

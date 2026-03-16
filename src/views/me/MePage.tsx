@@ -1,19 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, UserCircle, Key, Eye, EyeOff } from 'lucide-react';
+import useSWR, { mutate as globalMutate } from 'swr';
+import {
+  LogOut, UserCircle, Key, Eye, EyeOff,
+  ClipboardList, Plus, Check, Inbox,
+} from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import { api } from '@/lib/api';
+import { useDemoMode, isDemoModeActive } from '@/context/MockDataContext';
+import { MOCK_TASKS } from '@/lib/mock-data';
+import type { CbTask, CbTaskType, CreateTaskRequest } from '@/lib/types';
 import styles from './MePage.module.css';
+
+const TASK_TYPE_LABELS: Record<CbTaskType, string> = {
+  birthday: 'Birthday',
+  progress_meeting_prep: 'Meeting Prep',
+  progress_meeting_followup: 'Meeting Follow-up',
+  goals: 'Goals',
+  checkin_call: 'Check-in Call',
+  form_followup: 'Form Follow-up',
+  no_show_followup: 'No-show Follow-up',
+  general: 'General',
+};
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
 
 export default function MePage() {
   const { data: session } = useSession();
+  const { isDemoMode } = useDemoMode();
 
   const user = session?.user;
   const role = (user as { role?: string } | undefined)?.role ?? 'staff';
+  const staffId = (user as { id?: string } | undefined)?.id;
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -22,6 +55,92 @@ export default function MePage() {
   const [showNew, setShowNew] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Task creation form state
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newType, setNewType] = useState<CbTaskType>('general');
+  const [addingTask, setAddingTask] = useState(false);
+
+  const swrKey = staffId
+    ? (isDemoMode ? `demo-my-tasks-${staffId}` : `my-tasks-${staffId}`)
+    : null;
+
+  const { data: tasks, error: tasksError, isLoading: tasksLoading } = useSWR<CbTask[]>(
+    swrKey,
+    async () => {
+      if (isDemoMode) {
+        return MOCK_TASKS.filter((t) => t.assigned_to === Number(staffId));
+      }
+      // Fetch all tasks and filter client-side (small dataset, assigned_to filter not confirmed)
+      const all = await api.tasks.forAssignee(Number(staffId));
+      return all;
+    },
+    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: true }
+  );
+
+  const sortedTasks = useMemo(() => {
+    if (!tasks) return [];
+    return [...tasks].sort((a, b) => {
+      // Open first, then by created_at desc
+      if (a.status !== b.status) return a.status === 'open' ? -1 : 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [tasks]);
+
+  const openCount = useMemo(() => tasks?.filter((t) => t.status === 'open').length ?? 0, [tasks]);
+
+  const handleCompleteTask = async (task: CbTask) => {
+    const newStatus = task.status === 'open' ? 'complete' : 'open';
+    // Optimistic update
+    if (tasks) {
+      globalMutate(
+        swrKey,
+        tasks.map((t) => t.id === task.id ? { ...t, status: newStatus, completed_at: newStatus === 'complete' ? new Date().toISOString() : null } as CbTask : t),
+        false
+      );
+    }
+    if (!isDemoModeActive()) {
+      await api.tasks.update(task.id, { status: newStatus });
+    }
+    globalMutate(swrKey);
+  };
+
+  const handleAddTask = async () => {
+    if (!newTitle.trim() || !staffId) return;
+    setAddingTask(true);
+    const data: CreateTaskRequest = {
+      assigned_to: Number(staffId),
+      type: newType,
+      title: newTitle.trim(),
+    };
+    if (isDemoModeActive()) {
+      const task: CbTask = {
+        id: Date.now(),
+        student_id: null,
+        contact_id: null,
+        assigned_to: Number(staffId),
+        created_by: Number(staffId),
+        type: newType,
+        title: newTitle.trim(),
+        notes: null,
+        due_date: null,
+        status: 'open',
+        recurrence_rule: null,
+        completed_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      MOCK_TASKS.push(task);
+    } else {
+      await api.tasks.create(data);
+    }
+    globalMutate(swrKey);
+    setNewTitle('');
+    setNewType('general');
+    setShowAddTask(false);
+    setAddingTask(false);
+  };
 
   const handleChangePassword = async () => {
     setPwMessage(null);
@@ -91,6 +210,125 @@ export default function MePage() {
             </div>
           </div>
         </Card>
+
+        {/* My Tasks */}
+        {staffId ? (
+          <Card className={styles.actionsCard}>
+            <div className={styles.tasksHeader}>
+              <div className={styles.tasksHeaderLeft}>
+                <h4 className={styles.tasksTitle}>
+                  <ClipboardList size={15} /> My Tasks
+                </h4>
+                {openCount > 0 && (
+                  <span className={styles.taskCount}>{openCount}</span>
+                )}
+              </div>
+              <button
+                className={styles.addTaskBtn}
+                onClick={() => setShowAddTask(!showAddTask)}
+              >
+                <Plus size={13} /> Add
+              </button>
+            </div>
+
+            {showAddTask && (
+              <div className={styles.addTaskForm}>
+                <div className={styles.addTaskRow}>
+                  <input
+                    className={styles.addTaskInput}
+                    placeholder="Task title..."
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                    autoFocus
+                  />
+                  <select
+                    className={styles.addTaskSelect}
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value as CbTaskType)}
+                  >
+                    {Object.entries(TASK_TYPE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.addTaskRow}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAddTask}
+                    disabled={addingTask || !newTitle.trim()}
+                  >
+                    {addingTask ? 'Adding...' : 'Add Task'}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => { setShowAddTask(false); setNewTitle(''); }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {tasksLoading && (
+              <p className={styles.sectionDesc}>Loading tasks...</p>
+            )}
+
+            {tasksError && (
+              <p className={styles.msgError}>Failed to load tasks.</p>
+            )}
+
+            {!tasksLoading && !tasksError && sortedTasks.length === 0 && (
+              <div className={styles.emptyTasks}>
+                <div className={styles.emptyTasksIcon}>
+                  <Inbox size={32} strokeWidth={1.5} />
+                </div>
+                <p className={styles.emptyTasksText}>No tasks assigned to you</p>
+              </div>
+            )}
+
+            {sortedTasks.length > 0 && (
+              <div className={styles.taskList}>
+                {sortedTasks.map((task) => {
+                  const done = task.status === 'complete';
+                  return (
+                    <div key={task.id} className={styles.taskItem}>
+                      <button
+                        className={done ? styles.taskCheckDone : styles.taskCheck}
+                        onClick={() => handleCompleteTask(task)}
+                        title={done ? 'Mark open' : 'Mark complete'}
+                      >
+                        {done && <Check size={12} color="#fff" strokeWidth={3} />}
+                      </button>
+                      <div className={styles.taskBody}>
+                        <p
+                          className={done ? styles.taskTitleDone : styles.taskTitleText}
+                          title={task.title}
+                        >
+                          {task.title}
+                        </p>
+                        <div className={styles.taskMeta}>
+                          <span className={styles.taskTypeBadge}>
+                            {TASK_TYPE_LABELS[task.type] || task.type}
+                          </span>
+                          <span className={styles.taskDate}>
+                            {timeAgo(task.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        ) : (
+          <Card className={styles.actionsCard}>
+            <p className={styles.sectionDesc}>Staff profile not linked. Tasks unavailable.</p>
+          </Card>
+        )}
 
         <Card className={styles.actionsCard}>
           <h4 className={styles.sectionTitle}>
