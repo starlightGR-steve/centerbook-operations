@@ -7,6 +7,7 @@ import {
   Scan,
   GraduationCap,
   Users,
+  UserPlus,
   CalendarDays,
   ClipboardList,
   Briefcase,
@@ -32,6 +33,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/kiosk', icon: Scan, label: 'Kiosk' },
   { href: '/students', icon: GraduationCap, label: 'Students' },
+  { href: '/contacts', icon: Users, label: 'Contacts' },
+  { href: '/onboarding', icon: UserPlus, label: 'Onboarding', roles: ['superuser', 'admin'] },
   { href: '/rows', icon: Users, label: 'Live Class' },
   { href: '/attendance', icon: ClipboardList, label: 'Attendance' },
   { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
