@@ -148,10 +148,14 @@
 }
 
 .rowTeacher {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
   font-size: 10px;
-  font-weight: 500;
-  color: var(--neutral);
+  font-weight: 600;
+  color: var(--secondary);
+  background: var(--secondary-ul);
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
 }
 
 .rowCount {

@@ -16,6 +16,7 @@
   border: 1px solid var(--border);
   cursor: grab;
   transition: all 0.15s;
+  gap: 4px;
 }
 
 .slot:active {
@@ -24,12 +25,20 @@
 
 .over {
   background: rgba(239, 68, 68, 0.07);
-  border-color: rgba(239, 68, 68, 0.19);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .warn {
   background: rgba(234, 179, 8, 0.09);
   border-color: rgba(234, 179, 8, 0.31);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .name {
@@ -39,7 +48,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 70px;
 }
 
 .over .name {
@@ -50,12 +58,59 @@
   color: #92400e;
 }
 
+.badges {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.badgeM {
+  font-size: 8px;
+  font-weight: 700;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #0091ff;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.badgeR {
+  font-size: 8px;
+  font-weight: 700;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #f76808;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.badgeKC {
+  font-size: 7px;
+  font-weight: 700;
+  width: 16px;
+  height: 14px;
+  border-radius: 3px;
+  background: #0d9488;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .time {
   font-size: 9px;
   font-weight: 700;
   color: var(--neutral);
   flex-shrink: 0;
-  margin-left: 4px;
 }
 
 .over .time {
