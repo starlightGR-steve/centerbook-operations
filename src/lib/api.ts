@@ -217,6 +217,20 @@ export const api = {
       }),
   },
 
+  // ── Student-Contact Links ──
+  studentContact: {
+    link: (data: { student_id: number; contact_id: number; role?: string }) =>
+      directFetch<{ _action: string }>('/student-contact', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    unlink: (data: { student_id: number; contact_id: number }) =>
+      directFetch<{ _action: string }>('/student-contact', {
+        method: 'DELETE',
+        body: JSON.stringify(data),
+      }),
+  },
+
   // ── Staff ──
   staff: {
     list: () => directFetch<Staff[]>('/staff'),

@@ -1,0 +1,198 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 460px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--neutral);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+}
+
+.closeBtn:hover {
+  color: var(--text);
+}
+
+.searchWrap {
+  position: relative;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--neutral);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 10px 8px 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--secondary);
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+  padding: 8px 0;
+}
+
+.empty {
+  text-align: center;
+  padding: 24px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--neutral);
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  font-family: var(--font-primary);
+}
+
+.item:hover:not(:disabled) {
+  background: var(--base);
+}
+
+.itemSelected {
+  background: var(--secondary-ul) !important;
+  border-left: 3px solid var(--secondary);
+}
+
+.itemLinked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.itemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.itemSub {
+  font-size: 11px;
+  color: var(--neutral);
+}
+
+.linkedBadge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--neutral);
+  background: var(--base);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  align-items: center;
+}
+
+.roleSelect {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+}
+
+.roleSelect:focus {
+  border-color: var(--secondary);
+}
+
+.linkBtn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.linkBtn:hover { opacity: 0.85; }
+.linkBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.error {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--red);
+  padding: 0 20px 12px;
+  margin: 0;
+}

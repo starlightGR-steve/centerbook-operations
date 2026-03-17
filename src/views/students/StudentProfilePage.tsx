@@ -19,6 +19,10 @@ import {
   Users,
   RefreshCw,
   Pencil,
+  Link2,
+  Unlink,
+  Crown,
+  CreditCard,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import SectionHeader from '@/components/ui/SectionHeader';
@@ -28,12 +32,14 @@ import PosBadge from '@/components/PosBadge';
 import NoteCard from '@/components/NoteCard';
 import VisibilityLabel from '@/components/VisibilityLabel';
 import EmptyState from '@/components/ui/EmptyState';
-import { useStudent, useStudentContacts } from '@/hooks/useStudents';
+import { useStudent, useStudentContacts, useAllStudents } from '@/hooks/useStudents';
+import useSWR from 'swr';
+import LinkPickerModal from '@/components/LinkPickerModal';
 import { useStudentTasks, completeTask, createTask } from '@/hooks/useStudentTasks';
 import { useNotes, createNote } from '@/hooks/useNotes';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
-import type { CbTaskType, NoteVisibility } from '@/lib/types';
+import type { CbTaskType, NoteVisibility, Contact } from '@/lib/types';
 import styles from './StudentProfilePage.module.css';
 
 const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -118,6 +124,15 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [noteVis, setNoteVis] = useState<NoteVisibility>('staff');
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
+
+  // Link contact
+  const [showLinkContact, setShowLinkContact] = useState(false);
+  const [unlinkConfirm, setUnlinkConfirm] = useState<number | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const { data: allContacts, isLoading: allContactsLoading } = useSWR<Contact[]>(
+    showLinkContact ? 'all-contacts-for-picker' : null,
+    () => api.contacts.list()
+  );
 
   // Edit mode
   const [isEditing, setIsEditing] = useState(false);
@@ -265,6 +280,51 @@ export default function StudentProfilePage({ studentId }: Props) {
       setEditSaving(false);
     }
   };
+
+  const handleLinkContact = async (contactId: number, role: string) => {
+    setLinkError(null);
+    await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
+    mutateContacts();
+  };
+
+  const handleUnlinkContact = async (contactId: number) => {
+    setLinkError(null);
+    try {
+      await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
+      mutateContacts();
+      setUnlinkConfirm(null);
+    } catch (e) {
+      const msg = e instanceof Error && e.message.includes('409')
+        ? 'Cannot unlink — this contact is designated as Primary Communication or Billing parent. Change the designation first.'
+        : 'Failed to unlink contact.';
+      setLinkError(msg);
+      setUnlinkConfirm(null);
+    }
+  };
+
+  const handleSetPrimary = async (contactId: number) => {
+    setLinkError(null);
+    try {
+      await api.students.update(studentId, { primary_contact_id: contactId } as Partial<typeof student>);
+      await mutateStudent();
+      mutateContacts();
+    } catch {
+      setLinkError('Failed to set primary contact.');
+    }
+  };
+
+  const handleSetBilling = async (contactId: number) => {
+    setLinkError(null);
+    try {
+      await api.students.update(studentId, { billing_contact_id: contactId } as Partial<typeof student>);
+      await mutateStudent();
+      mutateContacts();
+    } catch {
+      setLinkError('Failed to set billing contact.');
+    }
+  };
+
+  const linkedContactIds = new Set(contacts?.map((c) => c.id) ?? []);
 
   const editScheduleDays = parseScheduleDays(getField('class_schedule_days') || null);
   const toggleDay = (day: string) => {
@@ -571,7 +631,14 @@ export default function StudentProfilePage({ studentId }: Props) {
                 <span className={styles.count}>{contacts.length}</span>
               )}
             </h3>
+            <button className={styles.addBtn} onClick={() => setShowLinkContact(true)}>
+              <Link2 size={14} /> Link Contact
+            </button>
           </div>
+
+          {linkError && (
+            <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{linkError}</p>
+          )}
 
           {contactsLoading && (
             <p className={styles.empty}>Loading contacts...</p>
@@ -610,23 +677,63 @@ export default function StudentProfilePage({ studentId }: Props) {
                       )}
                     </div>
                   </div>
-                  <div className={styles.contactDetails}>
-                    {c.phone && (
-                      <a href={`tel:${c.phone}`} className={styles.contactLink}>
-                        <Phone size={12} /> {c.phone}
-                      </a>
-                    )}
-                    {c.email && (
-                      <a href={`mailto:${c.email}`} className={styles.contactLink}>
-                        <Mail size={12} /> {c.email}
-                      </a>
-                    )}
+                  <div className={styles.contactActions}>
+                    <div className={styles.contactDetails}>
+                      {c.phone && (
+                        <a href={`tel:${c.phone}`} className={styles.contactLink}>
+                          <Phone size={12} /> {c.phone}
+                        </a>
+                      )}
+                      {c.email && (
+                        <a href={`mailto:${c.email}`} className={styles.contactLink}>
+                          <Mail size={12} /> {c.email}
+                        </a>
+                      )}
+                    </div>
+                    <div className={styles.cardBtnRow}>
+                      {!c.is_primary_contact && (
+                        <button className={styles.cardBtn} onClick={() => handleSetPrimary(c.id)} title="Set as Primary Communication">
+                          <Crown size={12} /> Primary
+                        </button>
+                      )}
+                      {!c.is_billing_contact && (
+                        <button className={styles.cardBtn} onClick={() => handleSetBilling(c.id)} title="Set as Billing Contact">
+                          <CreditCard size={12} /> Billing
+                        </button>
+                      )}
+                      {unlinkConfirm === c.id ? (
+                        <span className={styles.confirmRow}>
+                          <span className={styles.confirmText}>Unlink?</span>
+                          <button className={styles.confirmYes} onClick={() => handleUnlinkContact(c.id)}>Yes</button>
+                          <button className={styles.confirmNo} onClick={() => setUnlinkConfirm(null)}>No</button>
+                        </span>
+                      ) : (
+                        <button className={styles.unlinkBtn} onClick={() => setUnlinkConfirm(c.id)} title="Unlink contact">
+                          <Unlink size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {showLinkContact && (
+          <LinkPickerModal
+            title="Link Contact"
+            items={(allContacts ?? []).map((c) => ({
+              id: c.id,
+              label: `${c.last_name}, ${c.first_name}`,
+              sub: c.email || c.phone || '',
+              linked: linkedContactIds.has(c.id),
+            }))}
+            loading={allContactsLoading}
+            onLink={handleLinkContact}
+            onClose={() => setShowLinkContact(false)}
+          />
+        )}
 
         {/* ── Section 3: Tasks ── */}
         <div className={styles.section}>
@@ -812,11 +919,12 @@ export default function StudentProfilePage({ studentId }: Props) {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value }: { label: string; value: string | number | null | undefined }) {
+  const display = value == null ? '—' : typeof value === 'object' ? String(value) : value;
   return (
     <div className={styles.detailItem}>
       <span className={styles.detailLabel}>{label}</span>
-      <span className={styles.detailValue}>{value}</span>
+      <span className={styles.detailValue}>{display}</span>
     </div>
   );
 }

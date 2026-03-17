@@ -540,11 +540,100 @@
   flex-wrap: wrap;
 }
 
+.contactActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
 .contactDetails {
   display: flex;
   flex-direction: column;
   gap: 4px;
   align-items: flex-end;
+}
+
+.cardBtnRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.cardBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--white);
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cardBtn:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.unlinkBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.unlinkBtn:hover {
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.confirmText {
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.confirmYes {
+  padding: 2px 8px;
+  border: 1px solid var(--red);
+  border-radius: 4px;
+  background: var(--red);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmNo {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--neutral);
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .contactLink {

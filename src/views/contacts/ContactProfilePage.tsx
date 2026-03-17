@@ -3,14 +3,16 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { ArrowLeft, RefreshCw, Users, Pencil } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Users, Pencil, Link2, Unlink } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
 import EmptyState from '@/components/ui/EmptyState';
+import LinkPickerModal from '@/components/LinkPickerModal';
 import { api } from '@/lib/api';
+import { useAllStudents } from '@/hooks/useStudents';
 import { useDemoMode } from '@/context/MockDataContext';
-import type { Contact, LinkedStudent } from '@/lib/types';
+import type { Contact, LinkedStudent, Student } from '@/lib/types';
 import styles from './ContactProfilePage.module.css';
 
 const RELATIONSHIPS = ['Mother', 'Father', 'Step-Mother', 'Step-Father', 'Guardian'];
@@ -58,6 +60,12 @@ export default function ContactProfilePage({ contactId }: Props) {
   const [editFields, setEditFields] = useState<EditableFields>({});
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+
+  // Link student
+  const [showLinkStudent, setShowLinkStudent] = useState(false);
+  const [unlinkConfirm, setUnlinkConfirm] = useState<number | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const { data: allStudents, isLoading: allStudentsLoading } = useAllStudents();
 
   if (isLoading) {
     return (
@@ -138,6 +146,29 @@ export default function ContactProfilePage({ contactId }: Props) {
       setEditError('Failed to save changes. Please try again.');
     } finally {
       setEditSaving(false);
+    }
+  };
+
+  const linkedStudentIds = new Set(linkedStudents?.map((s) => s.id) ?? []);
+
+  const handleLinkStudent = async (studentId: number, role: string) => {
+    setLinkError(null);
+    await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
+    mutateStudents();
+  };
+
+  const handleUnlinkStudent = async (studentId: number) => {
+    setLinkError(null);
+    try {
+      await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
+      mutateStudents();
+      setUnlinkConfirm(null);
+    } catch (e) {
+      const msg = e instanceof Error && e.message.includes('409')
+        ? 'Cannot unlink — this contact is designated as Primary Communication or Billing parent. Change the designation first.'
+        : 'Failed to unlink student.';
+      setLinkError(msg);
+      setUnlinkConfirm(null);
     }
   };
 
@@ -353,7 +384,14 @@ export default function ContactProfilePage({ contactId }: Props) {
                 <span className={styles.count}>{linkedStudents.length}</span>
               )}
             </h3>
+            <button className={styles.editBtn} onClick={() => setShowLinkStudent(true)}>
+              <Link2 size={14} /> Link Student
+            </button>
           </div>
+
+          {linkError && (
+            <p className={styles.editError}>{linkError}</p>
+          )}
 
           {studentsLoading && (
             <p className={styles.empty}>Loading students...</p>
@@ -375,12 +413,8 @@ export default function ContactProfilePage({ contactId }: Props) {
           {linkedStudents && linkedStudents.length > 0 && (
             <div className={styles.studentList}>
               {linkedStudents.map((s) => (
-                <div
-                  key={s.id}
-                  className={styles.studentCard}
-                  onClick={() => router.push(`/students/${s.id}`)}
-                >
-                  <div className={styles.studentInfo}>
+                <div key={s.id} className={styles.studentCard}>
+                  <div className={styles.studentInfo} onClick={() => router.push(`/students/${s.id}`)}>
                     <span className={styles.studentName}>
                       {s.first_name} {s.last_name}
                     </span>
@@ -407,8 +441,16 @@ export default function ContactProfilePage({ contactId }: Props) {
                     {s.current_level_reading && (
                       <span className={styles.levelText}>Reading: {s.current_level_reading}</span>
                     )}
-                    {s.grade_level && (
-                      <span className={styles.levelText}>Grade {s.grade_level}</span>
+                    {unlinkConfirm === s.id ? (
+                      <span className={styles.confirmRow}>
+                        <span className={styles.confirmText}>Unlink?</span>
+                        <button className={styles.confirmYes} onClick={(e) => { e.stopPropagation(); handleUnlinkStudent(s.id); }}>Yes</button>
+                        <button className={styles.confirmNo} onClick={(e) => { e.stopPropagation(); setUnlinkConfirm(null); }}>No</button>
+                      </span>
+                    ) : (
+                      <button className={styles.unlinkBtn} onClick={(e) => { e.stopPropagation(); setUnlinkConfirm(s.id); }} title="Unlink student">
+                        <Unlink size={12} />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -416,6 +458,21 @@ export default function ContactProfilePage({ contactId }: Props) {
             </div>
           )}
         </div>
+
+        {showLinkStudent && (
+          <LinkPickerModal
+            title="Link Student"
+            items={(allStudents ?? []).map((s) => ({
+              id: s.id,
+              label: `${s.last_name}, ${s.first_name}`,
+              sub: s.school || s.enrollment_status || '',
+              linked: linkedStudentIds.has(s.id),
+            }))}
+            loading={allStudentsLoading}
+            onLink={handleLinkStudent}
+            onClose={() => setShowLinkStudent(false)}
+          />
+        )}
       </div>
     </div>
   );

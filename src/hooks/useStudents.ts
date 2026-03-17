@@ -28,7 +28,11 @@ export function useStudent(id: number | null) {
     async () => {
       if (!id) return null;
       if (isDemoMode) return MOCK_STUDENTS.find((s) => s.id === id) || null;
-      return api.students.get(id);
+      const raw = await api.students.get(id);
+      // Strip nested objects that the API embeds but Student type doesn't define
+      // (primary_contact, billing_contact are full Contact objects — rendering them causes React error #310)
+      const { primary_contact, billing_contact, ...student } = raw as Student & { primary_contact?: unknown; billing_contact?: unknown };
+      return student as Student;
     },
     { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
   );
