@@ -140,6 +140,19 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
+  // useMemo MUST be above early returns to satisfy React hooks rules
+  const changedFields = useMemo(() => {
+    if (!student) return {};
+    const changes: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(editFields)) {
+      const orig = ((student as unknown as Record<string, unknown>)[k] as string) ?? '';
+      if (v !== orig) changes[k] = v === '' ? null : v;
+    }
+    return changes;
+  }, [editFields, student]);
+
+  const hasChanges = Object.keys(changedFields).length > 0;
+
   if (isLoading) {
     return (
       <div className={styles.page}>
@@ -253,17 +266,6 @@ export default function StudentProfilePage({ studentId }: Props) {
     const orig = ((student as unknown as Record<string, unknown>)[key] as string) ?? '';
     return editFields[key] !== orig;
   };
-
-  const changedFields = useMemo(() => {
-    const changes: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(editFields)) {
-      const orig = ((student as unknown as Record<string, unknown>)[k] as string) ?? '';
-      if (v !== orig) changes[k] = v === '' ? null : v;
-    }
-    return changes;
-  }, [editFields, student]);
-
-  const hasChanges = Object.keys(changedFields).length > 0;
 
   const handleSave = async () => {
     if (!hasChanges) { setIsEditing(false); return; }
