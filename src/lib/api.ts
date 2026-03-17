@@ -172,7 +172,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
     update: (id: number, data: Partial<Student>) =>
-      directFetch<Student>(`/students/${id}`, {
+      directFetch<Student>(`/student/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
