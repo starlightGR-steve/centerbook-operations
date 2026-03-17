@@ -1,0 +1,556 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1050px;
+  max-width: 95vw;
+  max-height: 90vh;
+  background: var(--white);
+  border-radius: 12px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 32px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studentName {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.headerBadges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badgeMath {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--tertiary);
+  color: var(--white);
+}
+
+.badgeReading {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--white);
+}
+
+.badgeNeutral {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--base);
+  color: var(--neutral);
+  border: 1px solid var(--border);
+}
+
+.gradeText {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.headerRight {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.medicalAlert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.04);
+  color: var(--red);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 250px;
+}
+
+.medicalAlert span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--neutral);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+}
+
+.closeBtn:hover {
+  color: var(--text);
+}
+
+/* ── Body ── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Column Labels ── */
+.colLabel {
+  display: block;
+  font-family: var(--font-primary);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+/* ── Row layouts ── */
+.row3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Pickup Contact ── */
+.contactSelect {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+}
+
+.contactSelect:focus {
+  border-color: var(--secondary);
+}
+
+.phoneText {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--secondary);
+  margin-top: 6px;
+}
+
+/* ── Session Time ── */
+.timeDisplay {
+  font-family: var(--font-primary);
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.timeControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.timeBtn {
+  width: 36px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--white);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.timeBtn:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.timeValue {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 32px;
+  text-align: center;
+}
+
+.presets {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.presetBtn {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--white);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.presetBtn:hover {
+  border-color: var(--secondary);
+}
+
+.presetActive {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--white);
+}
+
+/* ── Schedule ── */
+.scheduleDays {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dayPill {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neutral);
+}
+
+.dayActive {
+  background: var(--secondary-ul);
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.scheduleTime {
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ── Staff Notes ── */
+.staffNotes {
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-left: 4px solid #f59e0b;
+  background: rgba(234, 179, 8, 0.04);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.staffNotesHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 10px;
+}
+
+.staffNoteItem {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.staffNoteItem:last-child {
+  margin-bottom: 0;
+}
+
+.noteAuthor {
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.noteContent {
+  font-weight: 400;
+}
+
+/* ── Section block ── */
+.sectionBlock {
+  padding: 0;
+}
+
+/* ── Pill grid ── */
+.pillGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--white);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pill:hover {
+  border-color: var(--secondary);
+}
+
+.pillSelected {
+  border-color: var(--secondary);
+  background: var(--secondary-ul);
+  color: var(--secondary);
+  font-weight: 600;
+}
+
+/* ── Add task row ── */
+.addTaskRow {
+  display: flex;
+  gap: 6px;
+}
+
+.addTaskInput {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+}
+
+.addTaskInput:focus {
+  border-color: var(--secondary);
+}
+
+.addTaskBtn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.addTaskBtn:hover { opacity: 0.85; }
+.addTaskBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Note input ── */
+.noteInputRow {
+  display: flex;
+  gap: 6px;
+}
+
+.noteInput {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}
+
+.noteInput:focus {
+  border-color: var(--secondary);
+}
+
+.sendBtn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s;
+}
+
+.sendBtn:hover { opacity: 0.85; }
+.sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.placeholder {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--neutral);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── Footer ── */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  border-top: 1px solid var(--border);
+}
+
+.cancelBtn {
+  padding: 10px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--neutral);
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  border-color: var(--neutral);
+}
+
+.confirmBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 28px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--green);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.confirmBtn:hover { opacity: 0.85; }
+.confirmBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .modal {
+    width: 95vw;
+  }
+
+  .row3 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .header {
+    padding: 20px 24px 14px;
+  }
+
+  .body {
+    padding: 20px 24px;
+  }
+
+  .footer {
+    padding: 14px 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .row3,
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .headerRight {
+    align-self: flex-end;
+  }
+
+  .studentName {
+    font-size: 20px;
+  }
+
+  .body {
+    padding: 16px;
+    gap: 20px;
+  }
+}

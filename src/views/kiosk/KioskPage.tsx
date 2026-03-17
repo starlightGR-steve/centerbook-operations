@@ -10,6 +10,8 @@ import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock'
 import { getSessionDuration, formatTimeKey, formatTime } from '@/lib/types';
 import type { Student, Staff, TimeEntry } from '@/lib/types';
 import KioskSkeleton from './KioskSkeleton';
+import CheckInPopup from './CheckInPopup';
+import type { CheckInOptions } from './CheckInPopup';
 import styles from './KioskPage.module.css';
 
 const ROLE_ORDER: Record<string, number> = {
@@ -40,6 +42,7 @@ export default function KioskPage() {
   const [scan, setScan] = useState('');
   const [announcement, setAnnouncement] = useState('');
   const [time, setTime] = useState('');
+  const [checkInStudent_popup, setCheckInStudentPopup] = useState<Student | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: allStudents } = useStudents();
@@ -150,13 +153,19 @@ export default function KioskPage() {
     setScan('');
   };
 
-  const handleManualCheckIn = async (student: Student) => {
+  const handleManualCheckIn = (student: Student) => {
+    setCheckInStudentPopup(student);
+  };
+
+  const handleCheckInConfirm = async (options: CheckInOptions) => {
     await checkInStudent({
-      student_id: student.id,
+      student_id: options.studentId,
       source: 'kiosk',
       checked_in_by: 'kiosk',
-      session_duration_minutes: getSessionDuration(student.subjects),
+      session_duration_minutes: options.sessionMinutes,
     });
+    setCheckInStudentPopup(null);
+    setAnnouncement(`${checkInStudent_popup?.first_name} ${checkInStudent_popup?.last_name} checked in`);
   };
 
   const handleCheckOut = async (studentId: number) => {
@@ -331,6 +340,14 @@ export default function KioskPage() {
           </div>
         </div>
       </div>
+
+      {checkInStudent_popup && (
+        <CheckInPopup
+          student={checkInStudent_popup}
+          onClose={() => setCheckInStudentPopup(null)}
+          onConfirm={handleCheckInConfirm}
+        />
+      )}
     </div>
   );
 }
