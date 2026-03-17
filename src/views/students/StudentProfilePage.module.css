@@ -411,52 +411,98 @@
   padding: 8px 0;
 }
 
-/* ── Journal ── */
-.journalList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* ── Daily Observation / Notes ── */
+.noteInputWrap {
+  position: relative;
+  margin-top: 12px;
 }
 
-.journalCard {
-  padding: 16px;
+.noteInput {
+  width: 100%;
+  box-sizing: border-box;
+  height: 80px;
   border: 1px solid var(--border);
   border-radius: 8px;
+  padding: 14px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  resize: none;
+  outline: none;
+  line-height: 1.5;
 }
 
-.journalHeader {
+.noteInput:focus {
+  border-color: var(--secondary);
+}
+
+.noteInput::placeholder {
+  color: var(--neutral);
+  font-weight: 400;
+}
+
+.noteActions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-top: 8px;
 }
 
-.journalBadges {
+.visSelector {
   display: flex;
   gap: 4px;
-  flex-wrap: wrap;
 }
 
-.journalDate {
-  font-family: var(--font-primary);
-  font-size: 11px;
-  color: var(--neutral);
+.visBtn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-.journalTitle {
-  margin: 0 0 4px;
-  font-family: var(--font-primary);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--primary);
+.visBtnActive {
+  border-color: var(--border);
+  background: var(--base);
 }
 
-.journalContent {
-  margin: 0;
-  font-family: var(--font-primary);
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.6;
+.sendBtn {
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sendBtn:hover {
+  opacity: 0.85;
+}
+
+.sendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notesHistoryTitle {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.noteVisRow {
+  margin-bottom: 4px;
+}
+
+.notesFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* ── Responsive ── */

@@ -29,6 +29,8 @@ export default function StudentDetailPanel({
 }: StudentDetailPanelProps) {
   const [noteText, setNoteText] = useState('');
   const [noteVis, setNoteVis] = useState<NoteVisibility>('staff');
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
   const today = new Date().toISOString().split('T')[0];
   const { data: notes } = useNotes(student.id, today);
   const { data: allLoans } = useOutstandingLoans();
@@ -37,16 +39,24 @@ export default function StudentDetailPanel({
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
 
   const handleAddNote = async () => {
-    if (!noteText.trim()) return;
-    await createNote({
-      student_id: student.id,
-      content: noteText.trim(),
-      author_type: 'staff',
-      author_name: 'You',
-      note_date: today,
-      visibility: noteVis,
-    });
-    setNoteText('');
+    if (!noteText.trim() || noteSaving) return;
+    setNoteSaving(true);
+    setNoteError(null);
+    try {
+      await createNote({
+        student_id: student.id,
+        content: noteText.trim(),
+        author_type: 'staff',
+        author_name: 'You',
+        note_date: today,
+        visibility: noteVis,
+      });
+      setNoteText('');
+    } catch {
+      setNoteError('Failed to save note. Please try again.');
+    } finally {
+      setNoteSaving(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -148,10 +158,17 @@ export default function StudentDetailPanel({
                   </button>
                 ))}
               </div>
-              <button className={styles.sendBtn} onClick={handleAddNote}>
-                <Send size={14} />
+              <button className={styles.sendBtn} onClick={handleAddNote} disabled={noteSaving}>
+                {noteSaving ? (
+                  <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }} />
+                ) : (
+                  <Send size={14} />
+                )}
               </button>
             </div>
+            {noteError && (
+              <p style={{ color: 'var(--red)', fontSize: 11, margin: '4px 0 0', fontFamily: 'var(--font-primary)' }}>{noteError}</p>
+            )}
           </div>
         </div>
 

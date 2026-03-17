@@ -11,17 +11,22 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
+  Send,
+  FileText,
 } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Badge from '@/components/ui/Badge';
 import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
+import NoteCard from '@/components/NoteCard';
+import VisibilityLabel from '@/components/VisibilityLabel';
+import EmptyState from '@/components/ui/EmptyState';
 import { useStudent } from '@/hooks/useStudents';
 import { useStudentTasks, completeTask, createTask } from '@/hooks/useStudentTasks';
-import { useStudentJournal, createJournalEntry } from '@/hooks/useStudentJournal';
+import { useNotes, createNote } from '@/hooks/useNotes';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
-import type { CbTaskType, JournalEntryType, JournalVisibility } from '@/lib/types';
+import type { CbTaskType, NoteVisibility } from '@/lib/types';
 import styles from './StudentProfilePage.module.css';
 
 const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -37,15 +42,6 @@ const TASK_TYPE_LABELS: Record<CbTaskType, string> = {
   general: 'General',
 };
 
-const JOURNAL_TYPE_LABELS: Record<JournalEntryType, string> = {
-  behavioral_log: 'Behavioral Log',
-  goal_setting: 'Goal Setting',
-  parent_conversation: 'Parent Conversation',
-  student_checkin: 'Student Check-in',
-  progress_meeting_notes: 'Progress Meeting',
-  general: 'General',
-};
-
 function statusVariant(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
   switch (status) {
     case 'Active': return 'success';
@@ -53,12 +49,6 @@ function statusVariant(status: string): 'success' | 'warning' | 'danger' | 'neut
     case 'Withdrawn': return 'danger';
     default: return 'neutral';
   }
-}
-
-function visibilityVariant(vis: string): 'internal' | 'staff' | 'parent' {
-  if (vis === 'parent_visible') return 'parent';
-  if (vis === 'staff') return 'staff';
-  return 'internal';
 }
 
 interface Props {
@@ -69,7 +59,7 @@ export default function StudentProfilePage({ studentId }: Props) {
   const router = useRouter();
   const { data: student, isLoading } = useStudent(studentId);
   const { data: tasks, mutate: mutateTasks } = useStudentTasks(studentId);
-  const { data: journal, mutate: mutateJournal } = useStudentJournal(studentId);
+  const { data: notes } = useNotes(studentId);
   const { data: staffList } = useActiveStaff();
 
   // Password visibility
@@ -84,13 +74,11 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [taskAssignedTo, setTaskAssignedTo] = useState<number>(1);
   const [taskSaving, setTaskSaving] = useState(false);
 
-  // Journal
-  const [showJournalForm, setShowJournalForm] = useState(false);
-  const [journalType, setJournalType] = useState<JournalEntryType>('general');
-  const [journalVis, setJournalVis] = useState<JournalVisibility>('staff');
-  const [journalTitle, setJournalTitle] = useState('');
-  const [journalContent, setJournalContent] = useState('');
-  const [journalSaving, setJournalSaving] = useState(false);
+  // Notes / Daily Observation
+  const [noteText, setNoteText] = useState('');
+  const [noteVis, setNoteVis] = useState<NoteVisibility>('staff');
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -111,9 +99,35 @@ export default function StudentProfilePage({ studentId }: Props) {
   const openTasks = tasks?.filter((t) => t.status === 'open') ?? [];
   const completedTasks = tasks?.filter((t) => t.status === 'complete') ?? [];
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
-  const sortedJournal = [...(journal ?? [])].sort(
-    (a, b) => b.created_at.localeCompare(a.created_at)
-  );
+  const today = new Date().toISOString().split('T')[0];
+
+  const handleAddNote = async () => {
+    if (!noteText.trim() || noteSaving) return;
+    setNoteSaving(true);
+    setNoteError(null);
+    try {
+      await createNote({
+        student_id: studentId,
+        content: noteText.trim(),
+        author_type: 'staff',
+        author_name: 'You',
+        note_date: today,
+        visibility: noteVis,
+      });
+      setNoteText('');
+    } catch {
+      setNoteError('Failed to save note. Please try again.');
+    } finally {
+      setNoteSaving(false);
+    }
+  };
+
+  const handleNoteKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAddNote();
+    }
+  };
 
   const handleCompleteTask = async (taskId: number) => {
     await completeTask(taskId, studentId);
@@ -139,25 +153,6 @@ export default function StudentProfilePage({ studentId }: Props) {
     setShowTaskForm(false);
     setTaskSaving(false);
     mutateTasks();
-  };
-
-  const handleCreateJournal = async () => {
-    if (!journalContent.trim()) return;
-    setJournalSaving(true);
-    await createJournalEntry({
-      student_id: studentId,
-      entry_type: journalType,
-      visibility: journalVis,
-      title: journalTitle.trim() || null,
-      content: journalContent.trim(),
-    });
-    setJournalTitle('');
-    setJournalContent('');
-    setJournalType('general');
-    setJournalVis('staff');
-    setShowJournalForm(false);
-    setJournalSaving(false);
-    mutateJournal();
   };
 
   return (
@@ -358,97 +353,59 @@ export default function StudentProfilePage({ studentId }: Props) {
           )}
         </div>
 
-        {/* ── Section 4: Journal ── */}
+        {/* ── Section 4: Daily Observation + Notes History ── */}
         <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>
-              Journal <span className={styles.count}>{sortedJournal.length} entries</span>
-            </h3>
-            <button
-              className={styles.addBtn}
-              onClick={() => setShowJournalForm(!showJournalForm)}
-            >
-              <Plus size={14} />
-              Add Entry
-            </button>
+          <h3 className={styles.sectionTitle}>Daily Observation</h3>
+          <div className={styles.noteInputWrap}>
+            <textarea
+              className={styles.noteInput}
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              onKeyDown={handleNoteKeyDown}
+              placeholder="Type observation notes..."
+            />
+            <div className={styles.noteActions}>
+              <div className={styles.visSelector}>
+                {(['staff', 'parent', 'internal'] as NoteVisibility[]).map((v) => (
+                  <button
+                    key={v}
+                    className={`${styles.visBtn} ${noteVis === v ? styles.visBtnActive : ''}`}
+                    onClick={() => setNoteVis(v)}
+                    type="button"
+                  >
+                    <VisibilityLabel visibility={v} />
+                  </button>
+                ))}
+              </div>
+              <button className={styles.sendBtn} onClick={handleAddNote} disabled={noteSaving}>
+                {noteSaving ? (
+                  <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }} />
+                ) : (
+                  <Send size={14} />
+                )}
+              </button>
+            </div>
+            {noteError && (
+              <p style={{ color: 'var(--red)', fontSize: 11, margin: '4px 0 0', fontFamily: 'var(--font-primary)' }}>{noteError}</p>
+            )}
           </div>
 
-          {showJournalForm && (
-            <div className={styles.inlineForm}>
-              <div className={styles.formRow}>
-                <select
-                  className={styles.formSelect}
-                  value={journalType}
-                  onChange={(e) => setJournalType(e.target.value as JournalEntryType)}
-                >
-                  {Object.entries(JOURNAL_TYPE_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
-                <select
-                  className={styles.formSelect}
-                  value={journalVis}
-                  onChange={(e) => setJournalVis(e.target.value as JournalVisibility)}
-                >
-                  <option value="internal">Internal</option>
-                  <option value="staff">Staff</option>
-                  <option value="parent_visible">Parent Visible</option>
-                </select>
-              </div>
-              <input
-                className={styles.formInput}
-                placeholder="Title (optional)"
-                value={journalTitle}
-                onChange={(e) => setJournalTitle(e.target.value)}
-              />
-              <textarea
-                className={styles.formTextarea}
-                placeholder="Write your entry..."
-                value={journalContent}
-                onChange={(e) => setJournalContent(e.target.value)}
-                rows={4}
-              />
-              <div className={styles.formActions}>
-                <button
-                  className={styles.formSubmit}
-                  disabled={!journalContent.trim() || journalSaving}
-                  onClick={handleCreateJournal}
-                >
-                  {journalSaving ? 'Saving...' : 'Add Entry'}
-                </button>
-                <button className={styles.formCancel} onClick={() => setShowJournalForm(false)}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className={styles.journalList}>
-            {sortedJournal.length === 0 && (
-              <p className={styles.empty}>No journal entries yet.</p>
-            )}
-            {sortedJournal.map((e) => (
-              <div key={e.id} className={styles.journalCard}>
-                <div className={styles.journalHeader}>
-                  <div className={styles.journalBadges}>
-                    <Badge variant="info">{JOURNAL_TYPE_LABELS[e.entry_type]}</Badge>
-                    <Badge variant={visibilityVariant(e.visibility)}>
-                      {e.visibility === 'parent_visible' ? 'Parent' : e.visibility}
-                    </Badge>
-                    {e.goal_status && (
-                      <Badge variant={e.goal_status === 'met' ? 'success' : e.goal_status === 'revised' ? 'warning' : 'info'}>
-                        {e.goal_status}
-                      </Badge>
-                    )}
+          <h3 className={`${styles.sectionTitle} ${styles.notesHistoryTitle}`}>
+            Notes History <span className={styles.count}>{notes?.length ?? 0}</span>
+          </h3>
+          <div className={styles.notesFeed}>
+            {notes && notes.length > 0 ? (
+              notes.map((n) => (
+                <div key={n.id}>
+                  <div className={styles.noteVisRow}>
+                    <VisibilityLabel visibility={n.visibility} />
                   </div>
-                  <span className={styles.journalDate}>
-                    {new Date(e.created_at).toLocaleDateString()}
-                  </span>
+                  <NoteCard note={n} />
                 </div>
-                {e.title && <h4 className={styles.journalTitle}>{e.title}</h4>}
-                <p className={styles.journalContent}>{e.content}</p>
-              </div>
-            ))}
+              ))
+            ) : (
+              <EmptyState icon={FileText} title="No notes yet" description="Add an observation above" />
+            )}
           </div>
         </div>
       </div>

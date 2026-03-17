@@ -262,19 +262,49 @@ export const api = {
       }),
   },
 
-  // ── Notes ──
+  // ── Notes (backed by /journal endpoint) ──
   notes: {
-    forStudent: (studentId: number, date?: string) => {
-      const qs = date ? `?date=${date}` : '';
-      return directFetch<StudentNote[]>(`/note/student/${studentId}${qs}`);
+    forStudent: async (studentId: number, date?: string): Promise<StudentNote[]> => {
+      const entries = await directFetch<JournalEntry[]>(`/journal?student_id=${studentId}`);
+      const mapped = entries.map((e): StudentNote => ({
+        id: e.id,
+        student_id: e.student_id,
+        author_type: 'staff',
+        author_name: '',
+        author_id: e.created_by,
+        content: e.content,
+        note_date: e.created_at.split(' ')[0].split('T')[0],
+        visibility: e.visibility === 'parent_visible' ? 'parent' : e.visibility as 'internal' | 'staff',
+        created_at: e.created_at,
+      }));
+      if (date) return mapped.filter((n) => n.note_date === date);
+      return mapped;
     },
-    create: (data: CreateNoteRequest) =>
-      directFetch<StudentNote>('/note', {
+    create: async (data: CreateNoteRequest): Promise<StudentNote> => {
+      const entry = await directFetch<JournalEntry>('/journal', {
         method: 'POST',
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify({
+          student_id: data.student_id,
+          created_by: data.author_id || 0,
+          entry_type: 'general',
+          visibility: data.visibility === 'parent' ? 'parent_visible' : (data.visibility || 'staff'),
+          content: data.content,
+        }),
+      });
+      return {
+        id: entry.id,
+        student_id: entry.student_id,
+        author_type: data.author_type,
+        author_name: data.author_name,
+        author_id: entry.created_by,
+        content: entry.content,
+        note_date: entry.created_at.split(' ')[0].split('T')[0],
+        visibility: data.visibility || 'internal',
+        created_at: entry.created_at,
+      };
+    },
     delete: (id: number) =>
-      directFetch<void>(`/note/${id}`, { method: 'DELETE' }),
+      directFetch<void>(`/journal/${id}`, { method: 'DELETE' }),
   },
 
   // ── Tasks ──
