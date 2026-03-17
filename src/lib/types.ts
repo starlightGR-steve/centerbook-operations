@@ -72,6 +72,7 @@ export interface Contact {
   preferred_contact_method: 'Text' | 'Call' | 'Email' | null;
   portal_access_enabled: 0 | 1;
   wp_user_id: number | null;
+  linked_students_count?: number;
   created_at: string;
   updated_at: string;
 }

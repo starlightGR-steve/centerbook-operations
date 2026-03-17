@@ -186,7 +186,17 @@ export const api = {
 
   // ── Contacts ──
   contacts: {
-    list: () => directFetch<Contact[]>('/contacts'),
+    list: async (): Promise<Contact[]> => {
+      const all: Contact[] = [];
+      let page = 1;
+      while (true) {
+        const res = await directFetch<Contact[]>(`/contacts?per_page=200&page=${page}`);
+        all.push(...res);
+        if (res.length < 200) break;
+        page++;
+      }
+      return all;
+    },
     get: (id: number) => directFetch<Contact>(`/contacts/${id}`),
     search: (params: Record<string, string>) =>
       directFetch<Contact[]>('/contacts/search', {
