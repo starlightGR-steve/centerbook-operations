@@ -276,6 +276,7 @@ export interface CreateTaskRequest {
   student_id?: number | null;
   contact_id?: number | null;
   assigned_to: number;
+  created_by: number;
   type: CbTaskType;
   title: string;
   notes?: string | null;

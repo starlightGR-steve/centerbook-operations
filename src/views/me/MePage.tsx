@@ -111,6 +111,7 @@ export default function MePage() {
     setAddingTask(true);
     const data: CreateTaskRequest = {
       assigned_to: Number(staffId),
+      created_by: Number(staffId),
       type: newType,
       title: newTitle.trim(),
     };

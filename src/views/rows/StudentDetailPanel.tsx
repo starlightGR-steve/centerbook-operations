@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { X, Send, FileText, BookOpen, Heart } from 'lucide-react';
 import NoteCard from '@/components/NoteCard';
 import PosBadge from '@/components/PosBadge';
@@ -27,6 +28,8 @@ export default function StudentDetailPanel({
   attendance,
   onClose,
 }: StudentDetailPanelProps) {
+  const { data: session } = useSession();
+  const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const [noteText, setNoteText] = useState('');
   const [noteVis, setNoteVis] = useState<NoteVisibility>('staff');
   const [noteSaving, setNoteSaving] = useState(false);
@@ -47,7 +50,8 @@ export default function StudentDetailPanel({
         student_id: student.id,
         content: noteText.trim(),
         author_type: 'staff',
-        author_name: 'You',
+        author_name: session?.user?.name || 'Staff',
+        author_id: staffId,
         note_date: today,
         visibility: noteVis,
       });

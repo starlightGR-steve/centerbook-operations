@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import {
   ArrowLeft,
   Eye,
@@ -57,6 +58,8 @@ interface Props {
 
 export default function StudentProfilePage({ studentId }: Props) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const { data: student, isLoading } = useStudent(studentId);
   const { data: tasks, mutate: mutateTasks } = useStudentTasks(studentId);
   const { data: notes } = useNotes(studentId);
@@ -73,6 +76,7 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [taskDueDate, setTaskDueDate] = useState('');
   const [taskAssignedTo, setTaskAssignedTo] = useState<number>(1);
   const [taskSaving, setTaskSaving] = useState(false);
+  const [taskError, setTaskError] = useState<string | null>(null);
 
   // Notes / Daily Observation
   const [noteText, setNoteText] = useState('');
@@ -110,7 +114,8 @@ export default function StudentProfilePage({ studentId }: Props) {
         student_id: studentId,
         content: noteText.trim(),
         author_type: 'staff',
-        author_name: 'You',
+        author_name: session?.user?.name || 'Staff',
+        author_id: staffId,
         note_date: today,
         visibility: noteVis,
       });
@@ -130,29 +135,40 @@ export default function StudentProfilePage({ studentId }: Props) {
   };
 
   const handleCompleteTask = async (taskId: number) => {
-    await completeTask(taskId, studentId);
-    mutateTasks();
+    try {
+      await completeTask(taskId, studentId);
+      mutateTasks();
+    } catch {
+      setTaskError('Failed to complete task.');
+    }
   };
 
   const handleCreateTask = async () => {
     if (!taskTitle.trim()) return;
     setTaskSaving(true);
-    await createTask(
-      {
-        student_id: studentId,
-        assigned_to: taskAssignedTo,
-        type: taskType,
-        title: taskTitle.trim(),
-        due_date: taskDueDate || null,
-      },
-      studentId
-    );
-    setTaskTitle('');
-    setTaskType('general');
-    setTaskDueDate('');
-    setShowTaskForm(false);
-    setTaskSaving(false);
-    mutateTasks();
+    setTaskError(null);
+    try {
+      await createTask(
+        {
+          student_id: studentId,
+          assigned_to: taskAssignedTo,
+          created_by: taskAssignedTo,
+          type: taskType,
+          title: taskTitle.trim(),
+          due_date: taskDueDate || null,
+        },
+        studentId
+      );
+      setTaskTitle('');
+      setTaskType('general');
+      setTaskDueDate('');
+      setShowTaskForm(false);
+      mutateTasks();
+    } catch {
+      setTaskError('Failed to create task. Please try again.');
+    } finally {
+      setTaskSaving(false);
+    }
   };
 
   return (
@@ -295,6 +311,10 @@ export default function StudentProfilePage({ studentId }: Props) {
                 </button>
               </div>
             </div>
+          )}
+
+          {taskError && (
+            <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{taskError}</p>
           )}
 
           <div className={styles.taskList}>
