@@ -213,14 +213,17 @@ export default function StudentProfilePage({ studentId }: Props) {
             <DetailRow label="Current Reading Level" value={student.current_level_reading ?? '—'} />
             <DetailRow label="ASHR Math" value={student.ashr_math_status ?? '—'} />
             <DetailRow label="ASHR Reading" value={student.ashr_reading_status ?? '—'} />
-            <DetailRow label="KC Username" value={student.student_id ?? '—'} />
+            <DetailRow label="Student ID" value={student.student_id ?? '—'} />
+            <DetailRow label="KC Username" value={student.kc_username ?? '—'} />
             <div className={styles.detailItem}>
               <span className={styles.detailLabel}>KC Password</span>
               <span className={styles.detailValue}>
-                {showKcPw ? (student.student_id ? '••••••' : '—') : '••••••'}
-                <button className={styles.eyeBtn} onClick={() => setShowKcPw(!showKcPw)}>
-                  {showKcPw ? <EyeOff size={12} /> : <Eye size={12} />}
-                </button>
+                {showKcPw ? (student.kc_password ?? '—') : (student.kc_password ? '••••••' : '—')}
+                {student.kc_password && (
+                  <button className={styles.eyeBtn} onClick={() => setShowKcPw(!showKcPw)}>
+                    {showKcPw ? <EyeOff size={12} /> : <Eye size={12} />}
+                  </button>
+                )}
               </span>
             </div>
             {student.medical_notes && (

@@ -62,6 +62,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 1, system_id: 'STU-001', clickup_task_id: 'abc001',
     first_name: 'Alice', last_name: 'Johnson', student_id: 'KUM-10001',
+    kc_username: '100971263000107', kc_password: 'abc123',
     date_of_birth: '2016-03-15', grade_level: '3', school: 'Forest Hills Elementary',
     medical_notes: 'Peanut allergy', enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -82,6 +83,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 2, system_id: 'STU-002', clickup_task_id: 'abc002',
     first_name: 'Ben', last_name: 'Smith', student_id: 'KUM-10002',
+    kc_username: null, kc_password: null,
     date_of_birth: '2017-07-22', grade_level: '2', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -96,6 +98,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 3, system_id: 'STU-003', clickup_task_id: 'abc003',
     first_name: 'Charlie', last_name: 'Davis', student_id: 'KUM-10003',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-01-10', grade_level: '4', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -109,6 +112,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 4, system_id: 'STU-004', clickup_task_id: 'abc004',
     first_name: 'Diana', last_name: 'Prince', student_id: 'KUM-10004',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-11-05', grade_level: '5', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -129,6 +133,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 5, system_id: 'STU-005', clickup_task_id: 'abc005',
     first_name: 'Evan', last_name: 'Wright', student_id: 'KUM-10005',
+    kc_username: null, kc_password: null,
     date_of_birth: '2013-05-18', grade_level: '6', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -142,6 +147,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 6, system_id: 'STU-006', clickup_task_id: 'abc006',
     first_name: 'Fiona', last_name: 'Glenanne', student_id: 'KUM-10006',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-09-12', grade_level: '4', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -157,6 +163,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 7, system_id: 'STU-007', clickup_task_id: 'abc007',
     first_name: 'George', last_name: 'Miller', student_id: 'KUM-10007',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-12-01', grade_level: '3', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -170,6 +177,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 8, system_id: 'STU-008', clickup_task_id: 'abc008',
     first_name: 'Hannah', last_name: 'Abbott', student_id: 'KUM-10008',
+    kc_username: null, kc_password: null,
     date_of_birth: '2017-04-28', grade_level: '2', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -183,6 +191,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 9, system_id: 'STU-009', clickup_task_id: 'abc009',
     first_name: 'Ian', last_name: 'McKellen', student_id: 'KUM-10009',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-08-15', grade_level: '5', school: 'East Grand Rapids MS',
     medical_notes: 'Asthma — inhaler in backpack', enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -196,6 +205,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 10, system_id: 'STU-010', clickup_task_id: 'abc010',
     first_name: 'Jack', last_name: 'Sparrow', student_id: 'KUM-10010',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-06-20', grade_level: '3', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -209,6 +219,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 11, system_id: 'STU-011', clickup_task_id: 'abc011',
     first_name: 'Kelly', last_name: 'Clarkson', student_id: 'KUM-10011',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-02-14', grade_level: '4', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -222,6 +233,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 12, system_id: 'STU-012', clickup_task_id: 'abc012',
     first_name: 'Liam', last_name: 'Neeson', student_id: 'KUM-10012',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-10-30', grade_level: '5', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -235,6 +247,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 13, system_id: 'STU-013', clickup_task_id: 'abc013',
     first_name: 'Mia', last_name: 'Farrow', student_id: 'KUM-10013',
+    kc_username: null, kc_password: null,
     date_of_birth: '2017-12-05', grade_level: '2', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -248,6 +261,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 14, system_id: 'STU-014', clickup_task_id: 'abc014',
     first_name: 'Noah', last_name: 'Ark', student_id: 'KUM-10014',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-07-07', grade_level: '4', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -265,6 +279,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 15, system_id: 'STU-015', clickup_task_id: 'abc015',
     first_name: 'Olivia', last_name: 'Pope', student_id: 'KUM-10015',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-03-25', grade_level: '5', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -278,6 +293,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 16, system_id: 'STU-016', clickup_task_id: 'abc016',
     first_name: 'Peter', last_name: 'Parker', student_id: 'KUM-10016',
+    kc_username: null, kc_password: null,
     date_of_birth: '2013-08-10', grade_level: '6', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -292,6 +308,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 17, system_id: 'STU-017', clickup_task_id: null,
     first_name: 'Quinn', last_name: 'Harris', student_id: 'KUM-10017',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-10-15', grade_level: '4', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -305,6 +322,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 18, system_id: 'STU-018', clickup_task_id: null,
     first_name: 'Ruby', last_name: 'Chen', student_id: 'KUM-10018',
+    kc_username: null, kc_password: null,
     date_of_birth: '2018-01-05', grade_level: '1', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -318,6 +336,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 19, system_id: 'STU-019', clickup_task_id: null,
     first_name: 'Sam', last_name: 'Taylor', student_id: 'KUM-10019',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-08-10', grade_level: '3', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -331,6 +350,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 20, system_id: 'STU-020', clickup_task_id: null,
     first_name: 'Tessa', last_name: 'Wong', student_id: 'KUM-10020',
+    kc_username: null, kc_password: null,
     date_of_birth: '2019-02-10', grade_level: 'PK2', school: null,
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -344,6 +364,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 21, system_id: 'STU-021', clickup_task_id: null,
     first_name: 'Umar', last_name: 'Patel', student_id: 'KUM-10021',
+    kc_username: null, kc_password: null,
     date_of_birth: '2013-08-20', grade_level: '8', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Digital', subjects: 'Math',
@@ -357,6 +378,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 22, system_id: 'STU-022', clickup_task_id: null,
     first_name: 'Violet', last_name: 'Brooks', student_id: 'KUM-10022',
+    kc_username: null, kc_password: null,
     date_of_birth: '2017-11-01', grade_level: '2', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -370,6 +392,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 23, system_id: 'STU-023', clickup_task_id: null,
     first_name: 'Will', last_name: 'Jackson', student_id: 'KUM-10023',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-05-20', grade_level: '5', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -383,6 +406,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 24, system_id: 'STU-024', clickup_task_id: null,
     first_name: 'Xena', last_name: 'Lopez', student_id: 'KUM-10024',
+    kc_username: null, kc_password: null,
     date_of_birth: '2018-01-15', grade_level: '1', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -396,6 +420,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 25, system_id: 'STU-025', clickup_task_id: null,
     first_name: 'Yuki', last_name: 'Tanaka', student_id: 'KUM-10025',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-02-28', grade_level: '6', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -409,6 +434,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 26, system_id: 'STU-026', clickup_task_id: null,
     first_name: 'Zara', last_name: 'Ahmed', student_id: 'KUM-10026',
+    kc_username: null, kc_password: null,
     date_of_birth: '2019-02-20', grade_level: 'PK1', school: null,
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -422,6 +448,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 27, system_id: 'STU-027', clickup_task_id: null,
     first_name: 'Aiden', last_name: 'Murphy', student_id: 'KUM-10027',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-09-20', grade_level: '3', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -435,6 +462,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 28, system_id: 'STU-028', clickup_task_id: null,
     first_name: 'Bella', last_name: 'Rivera', student_id: 'KUM-10028',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-07-15', grade_level: '4', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -448,6 +476,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 29, system_id: 'STU-029', clickup_task_id: null,
     first_name: 'Carter', last_name: 'Lee', student_id: 'KUM-10029',
+    kc_username: null, kc_password: null,
     date_of_birth: '2012-03-10', grade_level: '9', school: 'East Grand Rapids HS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Digital', subjects: 'Math',
@@ -461,6 +490,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 30, system_id: 'STU-030', clickup_task_id: null,
     first_name: 'Daisy', last_name: 'Kim', student_id: 'KUM-10030',
+    kc_username: null, kc_password: null,
     date_of_birth: '2017-12-10', grade_level: '2', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -474,6 +504,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 31, system_id: 'STU-031', clickup_task_id: null,
     first_name: 'Eli', last_name: 'Brown', student_id: 'KUM-10031',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-01-15', grade_level: '6', school: 'East Grand Rapids MS',
     medical_notes: 'Latex allergy', enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -487,6 +518,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 32, system_id: 'STU-032', clickup_task_id: null,
     first_name: 'Faith', last_name: 'Wilson', student_id: 'KUM-10032',
+    kc_username: null, kc_password: null,
     date_of_birth: '2018-01-25', grade_level: '1', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -500,6 +532,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 33, system_id: 'STU-033', clickup_task_id: null,
     first_name: 'Gabe', last_name: 'Martin', student_id: 'KUM-10033',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-08-25', grade_level: '3', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -513,6 +546,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 34, system_id: 'STU-034', clickup_task_id: null,
     first_name: 'Holly', last_name: 'Scott', student_id: 'KUM-10034',
+    kc_username: null, kc_password: null,
     date_of_birth: '2013-05-10', grade_level: '8', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -526,6 +560,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 35, system_id: 'STU-035', clickup_task_id: null,
     first_name: 'Isaac', last_name: 'Young', student_id: 'KUM-10035',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-06-15', grade_level: '5', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -539,6 +574,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 36, system_id: 'STU-036', clickup_task_id: null,
     first_name: 'Jade', last_name: 'Thomas', student_id: 'KUM-10036',
+    kc_username: null, kc_password: null,
     date_of_birth: '2019-03-01', grade_level: 'PK2', school: null,
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -552,6 +588,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 37, system_id: 'STU-037', clickup_task_id: null,
     first_name: 'Kai', last_name: 'Nguyen', student_id: 'KUM-10037',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-03-20', grade_level: '7', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -565,6 +602,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 38, system_id: 'STU-038', clickup_task_id: null,
     first_name: 'Luna', last_name: 'Garcia', student_id: 'KUM-10038',
+    kc_username: null, kc_password: null,
     date_of_birth: '2017-11-20', grade_level: '2', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -578,6 +616,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 39, system_id: 'STU-039', clickup_task_id: null,
     first_name: 'Max', last_name: 'Hall', student_id: 'KUM-10039',
+    kc_username: null, kc_password: null,
     date_of_birth: '2011-09-01', grade_level: '10', school: 'East Grand Rapids HS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Digital', subjects: 'Math, Reading',
@@ -591,6 +630,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 40, system_id: 'STU-040', clickup_task_id: null,
     first_name: 'Nora', last_name: 'Allen', student_id: 'KUM-10040',
+    kc_username: null, kc_password: null,
     date_of_birth: '2018-02-05', grade_level: 'K', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -604,6 +644,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 41, system_id: 'STU-041', clickup_task_id: null,
     first_name: 'Oscar', last_name: 'Wright', student_id: 'KUM-10041',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-10-05', grade_level: '3', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -617,6 +658,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 42, system_id: 'STU-042', clickup_task_id: null,
     first_name: 'Penny', last_name: 'Clark', student_id: 'KUM-10042',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-07-01', grade_level: '4', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -630,6 +672,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 43, system_id: 'STU-043', clickup_task_id: null,
     first_name: 'Ryan', last_name: 'Foster', student_id: 'KUM-10043',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-09-25', grade_level: '3', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -643,6 +686,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 44, system_id: 'STU-044', clickup_task_id: null,
     first_name: 'Sofia', last_name: 'Reyes', student_id: 'KUM-10044',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-08-05', grade_level: '4', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -656,6 +700,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 45, system_id: 'STU-045', clickup_task_id: null,
     first_name: 'Tyler', last_name: 'Moore', student_id: 'KUM-10045',
+    kc_username: null, kc_password: null,
     date_of_birth: '2018-01-08', grade_level: '1', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -669,6 +714,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 46, system_id: 'STU-046', clickup_task_id: null,
     first_name: 'Uma', last_name: 'Sharma', student_id: 'KUM-10046',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-04-10', grade_level: '6', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -682,6 +728,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 47, system_id: 'STU-047', clickup_task_id: null,
     first_name: 'Vera', last_name: 'Stone', student_id: 'KUM-10047',
+    kc_username: null, kc_password: null,
     date_of_birth: '2017-11-10', grade_level: '2', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -695,6 +742,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 48, system_id: 'STU-048', clickup_task_id: null,
     first_name: 'Wyatt', last_name: 'Cole', student_id: 'KUM-10048',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-10-20', grade_level: '3', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -708,6 +756,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 49, system_id: 'STU-049', clickup_task_id: null,
     first_name: 'Zoey', last_name: 'Price', student_id: 'KUM-10049',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-06-20', grade_level: '5', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -721,6 +770,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 50, system_id: 'STU-050', clickup_task_id: null,
     first_name: 'Amir', last_name: 'Khan', student_id: 'KUM-10050',
+    kc_username: null, kc_password: null,
     date_of_birth: '2018-02-15', grade_level: '1', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -734,6 +784,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 51, system_id: 'STU-051', clickup_task_id: null,
     first_name: 'Brooke', last_name: 'Adams', student_id: 'KUM-10051',
+    kc_username: null, kc_password: null,
     date_of_birth: '2015-02-10', grade_level: '6', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -747,6 +798,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 52, system_id: 'STU-052', clickup_task_id: null,
     first_name: 'Caleb', last_name: 'Reed', student_id: 'KUM-10052',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-09-10', grade_level: '3', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
@@ -760,6 +812,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 53, system_id: 'STU-053', clickup_task_id: null,
     first_name: 'Dina', last_name: 'Ross', student_id: 'KUM-10053',
+    kc_username: null, kc_password: null,
     date_of_birth: '2017-12-20', grade_level: '2', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Reading',
@@ -773,6 +826,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 54, system_id: 'STU-054', clickup_task_id: null,
     first_name: 'Ezra', last_name: 'Bell', student_id: 'KUM-10054',
+    kc_username: null, kc_password: null,
     date_of_birth: '2014-05-05', grade_level: '5', school: 'Ada Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -786,6 +840,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 55, system_id: 'STU-055', clickup_task_id: null,
     first_name: 'Greta', last_name: 'Hoffman', student_id: 'KUM-10055',
+    kc_username: null, kc_password: null,
     date_of_birth: '2013-07-15', grade_level: '8', school: 'East Grand Rapids MS',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Digital', subjects: 'Math, Reading',
@@ -799,6 +854,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 56, system_id: 'STU-056', clickup_task_id: null,
     first_name: 'Henry', last_name: 'Marsh', student_id: 'KUM-10056',
+    kc_username: null, kc_password: null,
     date_of_birth: '2016-10-30', grade_level: '3', school: 'Kenowa Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math',
@@ -812,6 +868,7 @@ export const MOCK_STUDENTS: Student[] = [
   {
     id: 57, system_id: 'STU-057', clickup_task_id: null,
     first_name: 'Ivy', last_name: 'Grant', student_id: 'KUM-10057',
+    kc_username: null, kc_password: null,
     date_of_birth: '2018-01-30', grade_level: '1', school: 'Forest Hills Elementary',
     medical_notes: null, enrollment_status: 'Active',
     program_type: 'Paper', subjects: 'Math, Reading',
