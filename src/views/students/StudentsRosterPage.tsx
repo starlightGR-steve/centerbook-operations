@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import Badge from '@/components/ui/Badge';
@@ -165,6 +165,12 @@ export default function StudentsRosterPage() {
             title="Student Roster"
             subtitle={isLoading ? 'Loading...' : countLabel}
           />
+          <button
+            className={styles.newBtn}
+            onClick={() => router.push('/students/new')}
+          >
+            <Plus size={14} /> New Student
+          </button>
         </div>
         <div className={styles.toolbar}>
           <SearchInput

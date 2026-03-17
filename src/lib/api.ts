@@ -167,7 +167,7 @@ export const api = {
     list: () => directFetch<Student[]>('/operations/students/all'),
     get: (id: number) => directFetch<Student>(`/students/${id}`),
     create: (data: Partial<Student>) =>
-      directFetch<Student>('/students', {
+      directFetch<Student>('/student', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
