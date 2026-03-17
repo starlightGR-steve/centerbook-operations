@@ -12,6 +12,7 @@ import type {
   Student,
   StudentContact,
   Contact,
+  LinkedStudent,
   Staff,
   Attendance,
   CheckInRequest,
@@ -198,6 +199,7 @@ export const api = {
       return all;
     },
     get: (id: number) => directFetch<Contact>(`/contacts/${id}`),
+    students: (id: number) => directFetch<LinkedStudent[]>(`/contacts/${id}/students`),
     search: (params: Record<string, string>) =>
       directFetch<Contact[]>('/contacts/search', {
         method: 'POST',

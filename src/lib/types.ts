@@ -72,9 +72,29 @@ export interface Contact {
   preferred_contact_method: 'Text' | 'Call' | 'Email' | null;
   portal_access_enabled: 0 | 1;
   wp_user_id: number | null;
+  address_full?: string | null;
+  email_opt_in?: 0 | 1;
+  sms_opt_in?: 0 | 1;
   linked_students_count?: number;
   created_at: string;
   updated_at: string;
+}
+
+/** Student linked to a contact via GET /contacts/{id}/students */
+export interface LinkedStudent {
+  id: number;
+  system_id: string;
+  first_name: string;
+  last_name: string;
+  enrollment_status: string;
+  subjects: string | null;
+  current_level_math: string | null;
+  current_level_reading: string | null;
+  classroom_position: string | null;
+  grade_level: string | null;
+  relationship_role: string | null;
+  is_primary_contact: boolean;
+  is_billing_contact: boolean;
 }
 
 /** Contact linked to a student via GET /students/{id}/contacts */
