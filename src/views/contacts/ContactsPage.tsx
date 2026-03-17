@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { ChevronUp, ChevronDown, Check, Minus } from 'lucide-react';
+import { ChevronUp, ChevronDown, Check, Minus, Plus } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import { api } from '@/lib/api';
@@ -105,6 +105,12 @@ export default function ContactsPage() {
             title="Contacts"
             subtitle={countLabel}
           />
+          <button
+            className={styles.newBtn}
+            onClick={() => router.push('/contacts/new')}
+          >
+            <Plus size={14} /> New Contact
+          </button>
         </div>
         <div className={styles.toolbar}>
           <SearchInput

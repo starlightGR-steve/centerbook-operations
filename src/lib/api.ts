@@ -200,6 +200,11 @@ export const api = {
     },
     get: (id: number) => directFetch<Contact>(`/contacts/${id}`),
     students: (id: number) => directFetch<LinkedStudent[]>(`/contacts/${id}/students`),
+    create: (data: Partial<Contact>) =>
+      directFetch<Contact>('/contact', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     search: (params: Record<string, string>) =>
       directFetch<Contact[]>('/contacts/search', {
         method: 'POST',
