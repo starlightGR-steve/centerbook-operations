@@ -1,8 +1,9 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { ArrowLeft, RefreshCw, Users } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Users, Pencil } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
@@ -12,6 +13,21 @@ import { useDemoMode } from '@/context/MockDataContext';
 import type { Contact, LinkedStudent } from '@/lib/types';
 import styles from './ContactProfilePage.module.css';
 
+const RELATIONSHIPS = ['Mother', 'Father', 'Step-Mother', 'Step-Father', 'Guardian'];
+const CONTACT_METHODS = ['Text', 'Email', 'Both', 'Call'];
+
+type EditableFields = {
+  first_name?: string;
+  last_name?: string;
+  email?: string | null;
+  phone?: string | null;
+  address_full?: string | null;
+  relationship_to_students?: string | null;
+  preferred_contact_method?: string | null;
+  email_opt_in?: 0 | 1;
+  sms_opt_in?: 0 | 1;
+};
+
 interface Props {
   contactId: number;
 }
@@ -20,7 +36,7 @@ export default function ContactProfilePage({ contactId }: Props) {
   const router = useRouter();
   const { isDemoMode } = useDemoMode();
 
-  const { data: contact, isLoading, error } = useSWR<Contact>(
+  const { data: contact, isLoading, error, mutate: mutateContact } = useSWR<Contact>(
     isDemoMode ? null : `contact-${contactId}`,
     () => api.contacts.get(contactId),
     { dedupingInterval: 10000, revalidateOnFocus: false }
@@ -36,6 +52,12 @@ export default function ContactProfilePage({ contactId }: Props) {
     () => api.contacts.students(contactId),
     { dedupingInterval: 10000, revalidateOnFocus: false }
   );
+
+  // Edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFields, setEditFields] = useState<EditableFields>({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -56,6 +78,68 @@ export default function ContactProfilePage({ contactId }: Props) {
   }
 
   const portalActive = Number(contact.portal_access_enabled) === 1;
+
+  const startEditing = () => {
+    setEditFields({});
+    setEditError(null);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditFields({});
+    setEditError(null);
+    setIsEditing(false);
+  };
+
+  const setField = (key: keyof EditableFields, value: unknown) => {
+    setEditFields((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const getField = (key: keyof EditableFields): string => {
+    if (key in editFields) return String(editFields[key] ?? '');
+    return String((contact as unknown as Record<string, unknown>)[key] ?? '');
+  };
+
+  const getOptIn = (key: 'email_opt_in' | 'sms_opt_in'): boolean => {
+    if (key in editFields) return Number(editFields[key]) === 1;
+    return Number((contact as unknown as Record<string, unknown>)[key]) === 1;
+  };
+
+  const isChanged = (key: keyof EditableFields): boolean => {
+    if (!(key in editFields)) return false;
+    const orig = String((contact as unknown as Record<string, unknown>)[key] ?? '');
+    return String(editFields[key] ?? '') !== orig;
+  };
+
+  const changedFields: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(editFields)) {
+    const orig = String((contact as unknown as Record<string, unknown>)[k] ?? '');
+    if (String(v ?? '') !== orig) changedFields[k] = v === '' ? null : v;
+  }
+  const hasChanges = Object.keys(changedFields).length > 0;
+
+  const handleSave = async () => {
+    if (!hasChanges) { setIsEditing(false); return; }
+    // Validate required fields
+    const fn = getField('first_name');
+    const ln = getField('last_name');
+    if (!fn.trim() || !ln.trim()) {
+      setEditError('First name and last name are required.');
+      return;
+    }
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      await api.contacts.update(contactId, changedFields as Partial<Contact>);
+      await mutateContact();
+      setEditFields({});
+      setIsEditing(false);
+    } catch {
+      setEditError('Failed to save changes. Please try again.');
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -84,52 +168,179 @@ export default function ContactProfilePage({ contactId }: Props) {
       <div className={styles.body}>
         {/* ── Details Grid ── */}
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Contact Details</h3>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Contact Details</h3>
+            {!isEditing ? (
+              <button className={styles.editBtn} onClick={startEditing}>
+                <Pencil size={14} /> Edit
+              </button>
+            ) : (
+              <div className={styles.editActions}>
+                <button className={styles.saveBtn} onClick={handleSave} disabled={editSaving || !hasChanges}>
+                  {editSaving ? 'Saving...' : 'Save'}
+                </button>
+                <button className={styles.cancelEditBtn} onClick={cancelEditing} disabled={editSaving}>
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+
+          {editError && (
+            <p className={styles.editError}>{editError}</p>
+          )}
+
           <div className={styles.detailsGrid}>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Email</span>
-              {contact.email ? (
-                <a href={`mailto:${contact.email}`} className={styles.detailLink}>
-                  {contact.email}
-                </a>
-              ) : (
-                <span className={styles.detailValue}>—</span>
-              )}
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Phone</span>
-              {contact.phone ? (
-                <a href={`tel:${contact.phone}`} className={styles.detailLink}>
-                  {contact.phone}
-                </a>
-              ) : (
-                <span className={styles.detailValue}>—</span>
-              )}
-            </div>
-            <div className={`${styles.detailItem} ${styles.detailFull}`}>
-              <span className={styles.detailLabel}>Address</span>
-              <span className={styles.detailValue}>
-                {contact.address_full || '—'}
-              </span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Preferred Contact Method</span>
-              <span className={styles.detailValue}>
-                {contact.preferred_contact_method ?? '—'}
-              </span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Email Opt-in</span>
-              <span className={Number(contact.email_opt_in) === 1 ? styles.optIn : styles.optOut}>
-                {Number(contact.email_opt_in) === 1 ? 'Yes' : 'No'}
-              </span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>SMS Opt-in</span>
-              <span className={Number(contact.sms_opt_in) === 1 ? styles.optIn : styles.optOut}>
-                {Number(contact.sms_opt_in) === 1 ? 'Yes' : 'No'}
-              </span>
-            </div>
+            {/* First Name */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('first_name') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>First Name *</span>
+                <input className={styles.editInput} value={getField('first_name')} onChange={(e) => setField('first_name', e.target.value)} />
+              </div>
+            ) : (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>First Name</span>
+                <span className={styles.detailValue}>{contact.first_name}</span>
+              </div>
+            )}
+
+            {/* Last Name */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('last_name') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Last Name *</span>
+                <input className={styles.editInput} value={getField('last_name')} onChange={(e) => setField('last_name', e.target.value)} />
+              </div>
+            ) : (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Last Name</span>
+                <span className={styles.detailValue}>{contact.last_name}</span>
+              </div>
+            )}
+
+            {/* Email */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('email') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Email</span>
+                <input type="email" className={styles.editInput} value={getField('email')} onChange={(e) => setField('email', e.target.value || null)} />
+              </div>
+            ) : (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Email</span>
+                {contact.email ? (
+                  <a href={`mailto:${contact.email}`} className={styles.detailLink}>{contact.email}</a>
+                ) : (
+                  <span className={styles.detailValue}>—</span>
+                )}
+              </div>
+            )}
+
+            {/* Phone */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('phone') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Phone</span>
+                <input type="tel" className={styles.editInput} value={getField('phone')} onChange={(e) => setField('phone', e.target.value || null)} />
+              </div>
+            ) : (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Phone</span>
+                {contact.phone ? (
+                  <a href={`tel:${contact.phone}`} className={styles.detailLink}>{contact.phone}</a>
+                ) : (
+                  <span className={styles.detailValue}>—</span>
+                )}
+              </div>
+            )}
+
+            {/* Address */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${styles.detailFull} ${isChanged('address_full') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Address</span>
+                <textarea className={styles.editTextarea} value={getField('address_full')} onChange={(e) => setField('address_full', e.target.value || null)} rows={2} />
+              </div>
+            ) : (
+              <div className={`${styles.detailItem} ${styles.detailFull}`}>
+                <span className={styles.detailLabel}>Address</span>
+                <span className={styles.detailValue}>{contact.address_full || '—'}</span>
+              </div>
+            )}
+
+            {/* Relationship */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('relationship_to_students') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Relationship</span>
+                <select className={styles.editSelect} value={getField('relationship_to_students')} onChange={(e) => setField('relationship_to_students', e.target.value || null)}>
+                  <option value="">—</option>
+                  {RELATIONSHIPS.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Relationship</span>
+                <span className={styles.detailValue}>{contact.relationship_to_students ?? '—'}</span>
+              </div>
+            )}
+
+            {/* Preferred Contact Method */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('preferred_contact_method') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Preferred Contact Method</span>
+                <select className={styles.editSelect} value={getField('preferred_contact_method')} onChange={(e) => setField('preferred_contact_method', e.target.value || null)}>
+                  <option value="">—</option>
+                  {CONTACT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Preferred Contact Method</span>
+                <span className={styles.detailValue}>{contact.preferred_contact_method ?? '—'}</span>
+              </div>
+            )}
+
+            {/* Email Opt-in */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('email_opt_in') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Email Opt-in</span>
+                <label className={styles.checkLabel}>
+                  <input
+                    type="checkbox"
+                    checked={getOptIn('email_opt_in')}
+                    onChange={(e) => setField('email_opt_in', e.target.checked ? 1 : 0)}
+                    className={styles.checkbox}
+                  />
+                  {getOptIn('email_opt_in') ? 'Yes' : 'No'}
+                </label>
+              </div>
+            ) : (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Email Opt-in</span>
+                <span className={Number(contact.email_opt_in) === 1 ? styles.optIn : styles.optOut}>
+                  {Number(contact.email_opt_in) === 1 ? 'Yes' : 'No'}
+                </span>
+              </div>
+            )}
+
+            {/* SMS Opt-in */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('sms_opt_in') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>SMS Opt-in</span>
+                <label className={styles.checkLabel}>
+                  <input
+                    type="checkbox"
+                    checked={getOptIn('sms_opt_in')}
+                    onChange={(e) => setField('sms_opt_in', e.target.checked ? 1 : 0)}
+                    className={styles.checkbox}
+                  />
+                  {getOptIn('sms_opt_in') ? 'Yes' : 'No'}
+                </label>
+              </div>
+            ) : (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>SMS Opt-in</span>
+                <span className={Number(contact.sms_opt_in) === 1 ? styles.optIn : styles.optOut}>
+                  {Number(contact.sms_opt_in) === 1 ? 'Yes' : 'No'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -205,6 +205,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    update: (id: number, data: Partial<Contact>) =>
+      directFetch<Contact>(`/contact/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
     search: (params: Record<string, string>) =>
       directFetch<Contact[]>('/contacts/search', {
         method: 'POST',
