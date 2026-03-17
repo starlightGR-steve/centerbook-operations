@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import {
-  X, Heart, Minus, Plus, Check, Send, AlertTriangle,
+  X, Heart, Minus, Plus, Check, Send, AlertTriangle, ExternalLink,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
@@ -38,6 +39,7 @@ const CHECKLIST_ITEMS = [
 const FLAG_OPTIONS = ['New Concept', 'Needs Help', 'Work with Amy'];
 
 export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPopupProps) {
+  const router = useRouter();
   const { data: session } = useSession();
   const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const subjects = parseSubjects(student.subjects);
@@ -186,7 +188,8 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
         </div>
 
         <div className={styles.body}>
-          {/* ROW 1: Three columns */}
+          {/* ── Pickup & Session ── */}
+          <h3 className={styles.sectionHeading}>Pickup &amp; Session</h3>
           <div className={styles.row3}>
             {/* Pickup Contact */}
             <div className={styles.col}>
@@ -253,6 +256,8 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
             </div>
           </div>
 
+          <hr className={styles.divider} />
+
           {/* STAFF NOTES */}
           {recentNotes && recentNotes.length > 0 && (
             <div className={styles.staffNotes}>
@@ -269,7 +274,8 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
             </div>
           )}
 
-          {/* TEACHER CHECKLIST */}
+          {/* ── Class Prep ── */}
+          <h3 className={styles.sectionHeading}>Class Prep</h3>
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Teacher Checklist</span>
             <div className={styles.pillGrid}>
@@ -324,41 +330,51 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
             </div>
           </div>
 
-          {/* BOTTOM ROW */}
-          <div className={styles.row2}>
-            {/* Note for Teacher */}
-            <div className={styles.col}>
-              <span className={styles.colLabel}>Note for Teacher</span>
-              <div className={styles.noteInputRow}>
-                <input
-                  className={styles.noteInput}
-                  placeholder="Add a note..."
-                  value={teacherNote}
-                  onChange={(e) => setTeacherNote(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendNote()}
-                />
-                <button
-                  className={styles.sendBtn}
-                  onClick={handleSendNote}
-                  disabled={noteSending || !teacherNote.trim()}
-                >
-                  {noteSent ? <Check size={14} /> : <Send size={14} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Checked Out Items */}
-            <div className={styles.col}>
-              <span className={styles.colLabel}>Checked Out Items</span>
-              <p className={styles.placeholder}>No checked out items</p>
+          {/* Note for Teacher (part of Class Prep) */}
+          <div className={styles.sectionBlock}>
+            <span className={styles.colLabel}>Note for Teacher</span>
+            <div className={styles.noteInputRow}>
+              <input
+                className={styles.noteInput}
+                placeholder="Add a note..."
+                value={teacherNote}
+                onChange={(e) => setTeacherNote(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendNote()}
+              />
+              <button
+                className={styles.sendBtn}
+                onClick={handleSendNote}
+                disabled={noteSending || !teacherNote.trim()}
+              >
+                {noteSent ? <Check size={14} /> : <Send size={14} />}
+              </button>
             </div>
           </div>
+
+          <hr className={styles.divider} />
+
+          {/* ── Checked Out Items ── */}
+          <h3 className={styles.sectionHeading}>Checked Out Items</h3>
+          <p className={styles.placeholder}>No checked out items</p>
         </div>
 
         {/* FOOTER */}
         <div className={styles.footer}>
           <button className={styles.cancelBtn} onClick={onClose}>
             Cancel
+          </button>
+          <button
+            className={styles.outlineBtn}
+            onClick={() => { onClose(); router.push(`/students/${student.id}`); }}
+          >
+            <ExternalLink size={14} /> Student Record
+          </button>
+          <button
+            className={styles.outlineBtn}
+            onClick={() => { handleConfirm(); router.push(`/students/${student.id}`); }}
+            disabled={confirming}
+          >
+            <Check size={14} /> Check In &amp; Open Record
           </button>
           <button className={styles.confirmBtn} onClick={handleConfirm} disabled={confirming}>
             {confirming ? 'Checking in...' : (

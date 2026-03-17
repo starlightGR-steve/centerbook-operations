@@ -140,6 +140,21 @@
   gap: 24px;
 }
 
+/* ── Section Headings & Dividers ── */
+.sectionHeading {
+  margin: 0 0 12px;
+  font-family: var(--font-primary);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0;
+}
+
 /* ── Column Labels ── */
 .colLabel {
   display: block;
@@ -486,6 +501,31 @@
 
 .cancelBtn:hover {
   border-color: var(--neutral);
+}
+
+.outlineBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: 1.5px solid var(--green);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--green);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.outlineBtn:hover {
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.outlineBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .confirmBtn {
