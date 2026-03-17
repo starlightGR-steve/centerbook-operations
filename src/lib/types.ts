@@ -32,7 +32,7 @@ export interface Student {
   school: string | null;
   medical_notes: string | null;
   enrollment_status: 'Active' | 'On Hold' | 'Withdrawn' | 'Inactive';
-  program_type: 'Paper' | 'Digital' | null;
+  program_type: 'Paper' | 'Digital' | 'Kumon Connect' | null;
   subjects: string; // "Math, Reading" — comma-separated
   enroll_date: string | null;
   classroom_position: 'Early Learners' | 'Main Classroom' | 'Upper Classroom' | null;

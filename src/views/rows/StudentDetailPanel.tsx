@@ -2,11 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { X, Send, FileText, BookOpen, Heart } from 'lucide-react';
-import NoteCard from '@/components/NoteCard';
-import PosBadge from '@/components/PosBadge';
-import VisibilityLabel from '@/components/VisibilityLabel';
-import SubjectBadges from '@/components/SubjectBadges';
+import { X, Send, FileText, BookOpen, Heart, Lock } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
 import type { Student, Attendance, NoteVisibility } from '@/lib/types';
@@ -17,15 +13,55 @@ import styles from './StudentDetailPanel.module.css';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
+const VIS_OPTIONS: { value: NoteVisibility; label: string; icon?: boolean }[] = [
+  { value: 'internal', label: 'Management Only', icon: true },
+  { value: 'staff', label: 'Teacher Visible' },
+  { value: 'parent', label: 'Parent Visible' },
+];
+
+function formatNoteDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const day = d.getDate();
+  const time = d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${month} ${day}, ${time}`;
+}
+
+function visibilityBadgeClass(vis: string): string {
+  if (vis === 'internal') return styles.visBadgeInternal;
+  if (vis === 'parent') return styles.visBadgeParent;
+  return styles.visBadgeStaff;
+}
+
+function visibilityLabel(vis: string): string {
+  if (vis === 'internal') return 'Management Only';
+  if (vis === 'parent') return 'Parent Visible';
+  return 'Teacher Visible';
+}
+
+function roleBadgeClass(vis: string): string {
+  if (vis === 'parent') return styles.roleBadgeParent;
+  if (vis === 'internal') return styles.roleBadgeAdmin;
+  return styles.roleBadgeStaff;
+}
+
+function roleLabel(vis: string): string {
+  if (vis === 'parent') return 'Parent Portal';
+  if (vis === 'internal') return 'Admin';
+  return 'Staff';
+}
+
 interface StudentDetailPanelProps {
   student: Student;
   attendance: Attendance | undefined;
+  rowLabel?: string;
   onClose: () => void;
 }
 
 export default function StudentDetailPanel({
   student,
   attendance,
+  rowLabel,
   onClose,
 }: StudentDetailPanelProps) {
   const { data: session } = useSession();
@@ -40,6 +76,7 @@ export default function StudentDetailPanel({
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
+  const subjects = parseSubjects(student.subjects);
 
   const handleAddNote = async () => {
     if (!noteText.trim() || noteSaving) return;
@@ -72,6 +109,7 @@ export default function StudentDetailPanel({
 
   return (
     <div className={styles.panel}>
+      {/* 1. Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <div className={styles.avatar}>{student.first_name[0]}</div>
@@ -80,7 +118,7 @@ export default function StudentDetailPanel({
               {student.first_name} {student.last_name}
             </h3>
             <p className={styles.headerSub}>
-              Grade {student.grade_level || '—'} · {student.program_type || 'Paper'}
+              {rowLabel || 'Row'} · Grade {student.grade_level || '—'} · {student.program_type || 'Paper'}
             </p>
           </div>
         </div>
@@ -90,28 +128,33 @@ export default function StudentDetailPanel({
       </div>
 
       <div className={styles.body}>
-        {/* Quick info badges */}
-        <div className={styles.quickBadges}>
+        {/* 2. Badge row */}
+        <div className={styles.badgeRow}>
           {student.classroom_position && (
-            <PosBadge position={student.classroom_position} />
+            <span className={styles.posBadge}>{student.classroom_position}</span>
           )}
-          <SubjectBadges subjects={parseSubjects(student.subjects)} />
-          <span className={styles.infoBadge}>{student.program_type || 'Paper'}</span>
-          <span className={styles.infoBadge}>Grade {student.grade_level || '—'}</span>
+          {subjects.includes('Math') && (
+            <span className={styles.levelBadgeMath}>
+              Math {student.current_level_math || ''}
+            </span>
+          )}
+          {subjects.includes('Reading') && (
+            <span className={styles.levelBadgeReading}>
+              Reading {student.current_level_reading || ''}
+            </span>
+          )}
+          {student.program_type === 'Kumon Connect' && (
+            <span className={styles.kcBadge}>KC</span>
+          )}
+          <span className={styles.gradeBadge}>Grade {student.grade_level || '—'}</span>
         </div>
 
-        {/* Medical alert */}
-        {student.medical_notes && (
-          <div className={styles.medicalAlert}>
-            <Heart size={16} color="var(--red)" />
-            <div>
-              <p className={styles.medicalTitle}>Medical / Allergies</p>
-              <p className={styles.medicalText}>{student.medical_notes}</p>
-            </div>
-          </div>
+        {/* SMS Status */}
+        {attendance && attendance.sms_10min_sent && (
+          <SmsStatusIndicator attendance={attendance} variant="detail" />
         )}
 
-        {/* Schedule */}
+        {/* 3. Schedule */}
         <div>
           <label className={styles.label}>Schedule</label>
           <div className={styles.scheduleDays}>
@@ -133,14 +176,9 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* SMS Status */}
-        {attendance && attendance.sms_10min_sent && (
-          <SmsStatusIndicator attendance={attendance} variant="detail" />
-        )}
-
-        {/* Daily Observation */}
+        {/* 4. Add Note */}
         <div>
-          <label className={styles.label}>Daily Observation</label>
+          <label className={styles.label}>Add Note</label>
           <div className={styles.noteInputWrap}>
             <textarea
               className={styles.noteInput}
@@ -151,14 +189,15 @@ export default function StudentDetailPanel({
             />
             <div className={styles.noteActions}>
               <div className={styles.visSelector}>
-                {(['staff', 'parent', 'internal'] as NoteVisibility[]).map((v) => (
+                {VIS_OPTIONS.map((opt) => (
                   <button
-                    key={v}
-                    className={`${styles.visBtn} ${noteVis === v ? styles.visBtnActive : ''}`}
-                    onClick={() => setNoteVis(v)}
+                    key={opt.value}
+                    className={`${styles.visBtn} ${noteVis === opt.value ? styles.visBtnActive : ''}`}
+                    onClick={() => setNoteVis(opt.value)}
                     type="button"
                   >
-                    <VisibilityLabel visibility={v} />
+                    {opt.icon && <Lock size={10} />}
+                    {opt.label}
                   </button>
                 ))}
               </div>
@@ -176,7 +215,7 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* Notes History */}
+        {/* 5. Notes History */}
         <div>
           <label className={`${styles.label} ${styles.labelSpaced}`}>
             Notes History
@@ -184,11 +223,27 @@ export default function StudentDetailPanel({
           <div className={styles.notesFeed}>
             {notes && notes.length > 0 ? (
               notes.map((n) => (
-                <div key={n.id}>
-                  <div className={styles.noteVisRow}>
-                    <VisibilityLabel visibility={n.visibility} />
+                <div key={n.id} className={styles.noteCard}>
+                  <div className={styles.noteCardHeader}>
+                    <div className={styles.noteCardLeft}>
+                      <span className={roleBadgeClass(n.visibility)}>
+                        {roleLabel(n.visibility)}
+                      </span>
+                      <span className={styles.noteAuthorName}>
+                        {n.author_name || 'Staff'}
+                      </span>
+                    </div>
+                    <div className={styles.noteCardRight}>
+                      <span className={visibilityBadgeClass(n.visibility)}>
+                        {n.visibility === 'internal' && <Lock size={9} />}
+                        {visibilityLabel(n.visibility)}
+                      </span>
+                      <span className={styles.noteDate}>
+                        {formatNoteDate(n.created_at)}
+                      </span>
+                    </div>
                   </div>
-                  <NoteCard note={n} />
+                  <p className={styles.noteContent}>{n.content}</p>
                 </div>
               ))
             ) : (
@@ -197,27 +252,7 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* Levels */}
-        <div className={styles.levels}>
-          <div className={`${styles.levelCard} ${styles.levelMath}`}>
-            <p className={`${styles.levelLabel} ${styles.levelLabelMath}`}>
-              Math Level
-            </p>
-            <p className={`${styles.levelValue} ${styles.levelValueMath}`}>
-              {student.current_level_math || '—'}
-            </p>
-          </div>
-          <div className={`${styles.levelCard} ${styles.levelReading}`}>
-            <p className={`${styles.levelLabel} ${styles.levelLabelReading}`}>
-              Reading Level
-            </p>
-            <p className={`${styles.levelValue} ${styles.levelValueReading}`}>
-              {student.current_level_reading || '—'}
-            </p>
-          </div>
-        </div>
-
-        {/* Library Books */}
+        {/* 6. Library Books */}
         <div>
           <label className={styles.label}>Library Books</label>
           {studentLoans && studentLoans.length > 0 ? (
@@ -230,9 +265,20 @@ export default function StudentDetailPanel({
               </div>
             ))
           ) : (
-            <EmptyState icon={BookOpen} title="No active loans" />
+            <EmptyState icon={BookOpen} title="No checked out items" />
           )}
         </div>
+
+        {/* 7. Medical Alert (moved to bottom) */}
+        {student.medical_notes && (
+          <div className={styles.medicalAlert}>
+            <Heart size={16} color="var(--red)" />
+            <div>
+              <p className={styles.medicalTitle}>Medical / Allergies</p>
+              <p className={styles.medicalText}>{student.medical_notes}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,9 @@
 'use client';
 
-import { AlertCircle, ChevronRight } from 'lucide-react';
-import SubjectBadges from '@/components/SubjectBadges';
+import { AlertCircle, ChevronRight, Clock } from 'lucide-react';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
 import type { Student, Attendance } from '@/lib/types';
-import { getTimeRemaining, getSessionDuration } from '@/lib/types';
+import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
 import styles from './StudentCard.module.css';
 
 interface StudentCardProps {
@@ -23,13 +22,17 @@ export default function StudentCard({
   const timeLeft = attendance
     ? getTimeRemaining(student.subjects, attendance.check_in)
     : getSessionDuration(student.subjects);
-  const isWarn = attendance ? timeLeft <= 5 && timeLeft >= 0 : false;
+  const isOver = attendance ? timeLeft <= 0 : false;
+  const isWarn = attendance ? timeLeft <= 5 && timeLeft > 0 : false;
+  const subjects = parseSubjects(student.subjects);
 
-  const cardClass = isWarn
-    ? styles.cardWarning
-    : isSelected
-      ? styles.cardSelected
-      : styles.cardNormal;
+  const cardClass = isOver
+    ? styles.cardOver
+    : isWarn
+      ? styles.cardWarning
+      : isSelected
+        ? styles.cardSelected
+        : styles.cardNormal;
 
   return (
     <div
@@ -42,42 +45,62 @@ export default function StudentCard({
     >
       <div>
         <div className={styles.top}>
-          <div className={styles.badges}>
-            <SubjectBadges subjects={student.subjects} />
-          </div>
+          <h3 className={`${styles.name} ${isOver ? styles.nameOver : isWarn ? styles.nameWarning : ''}`}>
+            {student.first_name} {student.last_name}
+          </h3>
           <div className={styles.icons}>
+            {attendance && (
+              <span
+                className={styles.timeInline}
+                style={{ color: isOver ? 'var(--red)' : isWarn ? '#92400e' : 'var(--neutral)' }}
+              >
+                <Clock size={11} />
+                {isOver ? '+' : ''}{Math.abs(timeLeft)}m
+              </span>
+            )}
             {attendance && (
               <SmsStatusIndicator attendance={attendance} variant="card" />
             )}
-            {isWarn && (
+            {(isOver || isWarn) && (
               <AlertCircle
-                size={16}
-                color="var(--red)"
+                size={14}
+                color={isOver ? 'var(--red)' : '#92400e'}
                 className={styles.pulse}
               />
             )}
           </div>
         </div>
-        <h3 className={`${styles.name} ${isWarn ? styles.nameWarning : ''}`}>
-          {student.first_name} {student.last_name}
-        </h3>
-        <p className={styles.durationLabel}>
-          {getSessionDuration(student.subjects)} min session
-        </p>
+        <div className={styles.levelBadges}>
+          {subjects.includes('Math') && (
+            <span className={styles.levelBadgeMath}>
+              Math {student.current_level_math || ''}
+            </span>
+          )}
+          {subjects.includes('Reading') && (
+            <span className={styles.levelBadgeReading}>
+              Reading {student.current_level_reading || ''}
+            </span>
+          )}
+          {student.program_type === 'Kumon Connect' && (
+            <span className={styles.kcBadge}>KC</span>
+          )}
+        </div>
       </div>
       <div className={styles.bottom}>
         <div>
           <p
-            className={`${styles.timeValue} ${isWarn ? styles.timeValueWarning : ''}`}
+            className={`${styles.timeValue} ${isOver ? styles.timeValueOver : isWarn ? styles.timeValueWarning : ''}`}
           >
-            {timeLeft}
+            {isOver ? '+' : ''}{Math.abs(timeLeft)}
             <span className={styles.timeUnit}>m</span>
           </p>
-          <p className={styles.timeLabel}>remaining</p>
+          <p className={styles.timeLabel}>
+            {isOver ? 'over time' : 'remaining'}
+          </p>
         </div>
         <ChevronRight
           size={16}
-          color={isWarn ? 'var(--red)' : 'var(--neutral)'}
+          color={isOver ? 'var(--red)' : isWarn ? '#92400e' : 'var(--neutral)'}
         />
       </div>
     </div>

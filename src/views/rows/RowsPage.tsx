@@ -345,11 +345,13 @@ export default function RowsPage() {
 
             {rowStudents.map((s) => {
               const att = attendanceMap.get(s.id);
+              const attendance = att;
               const remaining = getAdjustedTimeRemaining(s, att);
               const isOver = att ? remaining <= 0 : false;
               const isWarn = att ? remaining > 0 && remaining <= 5 : false;
               const isAlert = isOver || isWarn;
               const isSel = selectedStudentId === s.id;
+              const subjects = parseSubjects(s.subjects);
               const timeStr =
                 !att
                   ? '—'
@@ -394,10 +396,30 @@ export default function RowsPage() {
                   )}
 
                   <div>
-                    {/* 2. Subject badges + alert icons */}
+                    {/* 2. Name + time remaining */}
                     <div className={styles.cardTop}>
-                      <SubjectBadges subjects={parseSubjects(s.subjects)} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <h3
+                        className={styles.cardName}
+                        style={{
+                          color: isOver
+                            ? 'var(--red)'
+                            : isWarn
+                              ? '#92400e'
+                              : undefined,
+                        }}
+                      >
+                        {s.first_name} {s.last_name}
+                      </h3>
+                      <div className={styles.cardTopRight}>
+                        {attendance && (
+                          <span
+                            className={styles.cardTimeInline}
+                            style={{ color: isOver ? 'var(--red)' : isWarn ? '#92400e' : 'var(--neutral)' }}
+                          >
+                            <Clock size={12} />
+                            {isOver ? '+' : ''}{Math.abs(remaining ?? 0)}m
+                          </span>
+                        )}
                         {isAlert && (
                           <AlertCircle
                             size={16}
@@ -408,23 +430,25 @@ export default function RowsPage() {
                       </div>
                     </div>
 
-                    {/* 3. Student name + medical alert */}
-                    <h3
-                      className={styles.cardName}
-                      style={{
-                        color: isOver
-                          ? 'var(--red)'
-                          : isWarn
-                            ? '#92400e'
-                            : undefined,
-                      }}
-                    >
-                      {s.first_name} {s.last_name}
-                    </h3>
-                    <div className={styles.cardBadges}>
-                      {s.classroom_position && (
-                        <PosBadge position={s.classroom_position} />
+                    {/* 3. Subject+level badges */}
+                    <div className={styles.levelBadgeRow}>
+                      {subjects.includes('Math') && (
+                        <span className={styles.levelBadgeMath}>
+                          Math {s.current_level_math || ''}
+                        </span>
                       )}
+                      {subjects.includes('Reading') && (
+                        <span className={styles.levelBadgeReading}>
+                          Reading {s.current_level_reading || ''}
+                        </span>
+                      )}
+                      {s.program_type === 'Kumon Connect' && (
+                        <span className={styles.kcBadge}>KC</span>
+                      )}
+                    </div>
+
+                    {/* Medical + position badges */}
+                    <div className={styles.cardBadges}>
                       {s.medical_notes && (
                         <span className={styles.medicalBadge}>
                           <Heart size={8} /> Medical
@@ -597,7 +621,7 @@ export default function RowsPage() {
                         handleRowCheckout(s.id);
                       }}
                     >
-                      <LogOut size={12} /> Row Checkout
+                      <LogOut size={12} /> Done
                     </button>
                     <div className={styles.moveWrap}>
                       <button
@@ -650,6 +674,7 @@ export default function RowsPage() {
           <StudentDetailPanel
             student={selectedStudent}
             attendance={attendanceMap.get(selectedStudent.id)}
+            rowLabel={currentRow?.label}
             onClose={() => setSelectedStudentId(null)}
           />
         )}
