@@ -76,6 +76,20 @@ export interface Contact {
   updated_at: string;
 }
 
+/** Contact linked to a student via GET /students/{id}/contacts */
+export interface StudentContact {
+  id: number;
+  system_id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  relationship_to_students: string | null;
+  relationship_role: string | null;
+  is_primary_contact: boolean;
+  is_billing_contact: boolean;
+}
+
 // ── Families (read-only for Operations — sales pipeline) ──
 
 export interface Family {

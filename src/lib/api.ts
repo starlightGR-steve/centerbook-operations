@@ -10,6 +10,7 @@
 import type {
   ApiResponse,
   Student,
+  StudentContact,
   Contact,
   Staff,
   Attendance,
@@ -179,6 +180,8 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    contacts: (id: number) =>
+      directFetch<StudentContact[]>(`/students/${id}/contacts`),
   },
 
   // ── Contacts ──

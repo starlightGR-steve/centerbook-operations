@@ -2,7 +2,7 @@ import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { MOCK_STUDENTS } from '@/lib/mock-data';
 import { useDemoMode } from '@/context/MockDataContext';
-import type { Student } from '@/lib/types';
+import type { Student, StudentContact } from '@/lib/types';
 
 /** Fetch all active students */
 export function useStudents() {
@@ -45,6 +45,21 @@ export function useAllStudents() {
       return api.students.list();
     },
     { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
+  );
+}
+
+/** Fetch contacts linked to a student */
+export function useStudentContacts(studentId: number | null) {
+  const { isDemoMode } = useDemoMode();
+
+  return useSWR<StudentContact[]>(
+    studentId ? (isDemoMode ? `demo-student-contacts-${studentId}` : `student-contacts-${studentId}`) : null,
+    async () => {
+      if (!studentId) return [];
+      if (isDemoMode) return [];
+      return api.students.contacts(studentId);
+    },
+    { dedupingInterval: isDemoMode ? 60000 : 10000, revalidateOnFocus: !isDemoMode }
   );
 }
 

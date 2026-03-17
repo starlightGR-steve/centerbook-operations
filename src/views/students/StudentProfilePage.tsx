@@ -14,6 +14,10 @@ import {
   AlertTriangle,
   Send,
   FileText,
+  Phone,
+  Mail,
+  Users,
+  RefreshCw,
 } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Badge from '@/components/ui/Badge';
@@ -22,7 +26,7 @@ import PosBadge from '@/components/PosBadge';
 import NoteCard from '@/components/NoteCard';
 import VisibilityLabel from '@/components/VisibilityLabel';
 import EmptyState from '@/components/ui/EmptyState';
-import { useStudent } from '@/hooks/useStudents';
+import { useStudent, useStudentContacts } from '@/hooks/useStudents';
 import { useStudentTasks, completeTask, createTask } from '@/hooks/useStudentTasks';
 import { useNotes, createNote } from '@/hooks/useNotes';
 import { useActiveStaff } from '@/hooks/useStaff';
@@ -63,6 +67,7 @@ export default function StudentProfilePage({ studentId }: Props) {
   const { data: student, isLoading } = useStudent(studentId);
   const { data: tasks, mutate: mutateTasks } = useStudentTasks(studentId);
   const { data: notes } = useNotes(studentId);
+  const { data: contacts, error: contactsError, isLoading: contactsLoading, mutate: mutateContacts } = useStudentContacts(studentId);
   const { data: staffList } = useActiveStaff();
 
   // Password visibility
@@ -247,6 +252,72 @@ export default function StudentProfilePage({ studentId }: Props) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ── Section 2b: Parents / Guardians ── */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>
+              Parents / Guardians
+              {contacts && contacts.length > 0 && (
+                <span className={styles.count}>{contacts.length}</span>
+              )}
+            </h3>
+          </div>
+
+          {contactsLoading && (
+            <p className={styles.empty}>Loading contacts...</p>
+          )}
+
+          {contactsError && (
+            <div className={styles.contactsError}>
+              <p>Unable to load contacts.</p>
+              <button className={styles.retryBtn} onClick={() => mutateContacts()}>
+                <RefreshCw size={12} /> Retry
+              </button>
+            </div>
+          )}
+
+          {!contactsLoading && !contactsError && (!contacts || contacts.length === 0) && (
+            <EmptyState icon={Users} title="No parents or guardians linked yet" description="" />
+          )}
+
+          {contacts && contacts.length > 0 && (
+            <div className={styles.contactList}>
+              {contacts.map((c) => (
+                <div key={c.id} className={styles.contactCard}>
+                  <div className={styles.contactInfo}>
+                    <span className={styles.contactName}>
+                      {c.first_name} {c.last_name}
+                    </span>
+                    <div className={styles.contactBadges}>
+                      {c.relationship_to_students && (
+                        <Badge variant="neutral">{c.relationship_to_students}</Badge>
+                      )}
+                      {c.is_primary_contact && (
+                        <Badge variant="reading">Primary</Badge>
+                      )}
+                      {c.is_billing_contact && (
+                        <Badge variant="math">Billing</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.contactDetails}>
+                    {c.phone && (
+                      <a href={`tel:${c.phone}`} className={styles.contactLink}>
+                        <Phone size={12} /> {c.phone}
+                      </a>
+                    )}
+                    {c.email && (
+                      <a href={`mailto:${c.email}`} className={styles.contactLink}>
+                        <Mail size={12} /> {c.email}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Section 3: Tasks ── */}
