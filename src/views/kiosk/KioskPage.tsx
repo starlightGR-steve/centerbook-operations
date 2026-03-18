@@ -125,6 +125,16 @@ export default function KioskPage() {
     [sortedCheckedIn, matchesSearch, allStudents]
   );
 
+  // Full roster search results (all active students)
+  const checkedInIds = useMemo(() => new Set(checkedIn?.map((a) => a.student_id) ?? []), [checkedIn]);
+
+  const searchResults = useMemo(() => {
+    if (!nameSearch.trim() || !allStudents) return [];
+    return allStudents
+      .filter(matchesSearch)
+      .sort((a, b) => a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name));
+  }, [allStudents, matchesSearch, nameSearch]);
+
   // Staff sorted by role order
   const sortedStaff = useMemo(() => {
     if (!activeStaff) return [];
@@ -283,7 +293,56 @@ export default function KioskPage() {
         )}
       </div>
 
-      {/* ── Three Columns ── */}
+      {/* ── Search Results (when searching) ── */}
+      {nameSearch.trim() ? (
+        <div className={styles.searchResultsWrap}>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <Search size={18} />
+              Search Results ({searchResults.length})
+            </div>
+            <div className={styles.cardBody}>
+              {searchResults.length === 0 ? (
+                <div className={styles.empty}>No students match &quot;{nameSearch}&quot;</div>
+              ) : (
+                searchResults.map((s) => {
+                  const isIn = checkedInIds.has(s.id);
+                  const detail = s.schedule_detail?.[todayDay];
+                  return (
+                    <button
+                      key={s.id}
+                      className={styles.expectedRow}
+                      onClick={() => !isIn && handleManualCheckIn(s)}
+                      disabled={isIn}
+                      style={isIn ? { opacity: 0.5, cursor: 'default' } : undefined}
+                    >
+                      <div className={styles.expectedLeft}>
+                        <span className={styles.expectedName}>
+                          {s.last_name}, {s.first_name}
+                        </span>
+                        <div className={styles.expectedBadges}>
+                          <SubjectBadges subjects={s.subjects} />
+                          {isIn && <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--green)' }}>Checked in</span>}
+                        </div>
+                      </div>
+                      <div className={styles.expectedRight}>
+                        {detail ? (
+                          <span className={styles.expectedTime}>{detail.start}</span>
+                        ) : (
+                          <span style={{ fontSize: 10, fontWeight: 500, color: '#92400e', background: 'rgba(234,179,8,0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                            Not scheduled
+                          </span>
+                        )}
+                        {!isIn && <span className={styles.expectedPlus}><Plus size={16} /></span>}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className={styles.columns}>
         {/* Column 1 — Expected Students */}
         <div className={styles.card}>
@@ -292,10 +351,10 @@ export default function KioskPage() {
             Expected Students
           </div>
           <div className={styles.cardBody}>
-            {filteredAwaiting.length === 0 ? (
-              <div className={styles.empty}>{nameSearch ? 'No matches' : 'All students checked in'}</div>
+            {awaitingCheckIn.length === 0 ? (
+              <div className={styles.empty}>All students checked in</div>
             ) : (
-              filteredAwaiting.map((s) => (
+              awaitingCheckIn.map((s) => (
                 <button
                   key={s.id}
                   className={styles.expectedRow}
@@ -333,10 +392,10 @@ export default function KioskPage() {
             Here Now
           </div>
           <div className={styles.cardBody}>
-            {filteredCheckedIn.length === 0 ? (
-              <div className={styles.empty}>{nameSearch ? 'No matches' : 'No students checked in yet'}</div>
+            {sortedCheckedIn.length === 0 ? (
+              <div className={styles.empty}>No students checked in yet</div>
             ) : (
-              filteredCheckedIn.map((a) => {
+              sortedCheckedIn.map((a) => {
                 const student = a.student || getStudent(a.student_id);
                 if (!student) return null;
                 return (
@@ -406,6 +465,7 @@ export default function KioskPage() {
           </div>
         </div>
       </div>
+      )}
 
       {checkInStudent_popup && (
         <CheckInPopup
