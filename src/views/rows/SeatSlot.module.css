@@ -1,14 +1,14 @@
 .empty {
-  height: 28px;
+  height: 36px;
   border-radius: var(--radius-sm);
   border: 1px dashed var(--border);
   background: var(--base);
 }
 
 .slot {
-  height: 28px;
+  height: 36px;
   border-radius: var(--radius-sm);
-  padding: 0 8px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -16,7 +16,7 @@
   border: 1px solid var(--border);
   cursor: grab;
   transition: all 0.15s;
-  gap: 4px;
+  gap: 6px;
 }
 
 .slot:active {
@@ -36,7 +36,7 @@
 .left {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   overflow: hidden;
   min-width: 0;
 }
@@ -60,7 +60,7 @@
 
 .badges {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   flex-shrink: 0;
 }
 

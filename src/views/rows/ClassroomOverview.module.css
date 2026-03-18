@@ -116,9 +116,8 @@
   padding: 24px;
   cursor: pointer;
   transition: all 0.15s;
-  min-width: 300px;
-  flex: 1 1 300px;
-  max-width: 400px;
+  width: 320px;
+  flex: 0 0 320px;
 }
 
 .rowCard:hover {
@@ -193,7 +192,7 @@
 .tables {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .tablePair {
@@ -240,8 +239,8 @@
   }
 
   .rowCard {
-    min-width: 260px;
-    flex: 1 1 260px;
+    width: 280px;
+    flex: 0 0 280px;
   }
 }
 
@@ -279,9 +278,8 @@
 
   .rowCard {
     padding: 16px;
-    min-width: 0;
-    flex: 1 1 100%;
-    max-width: none;
+    width: 100%;
+    flex: 0 0 100%;
   }
 
   .tablePair {
