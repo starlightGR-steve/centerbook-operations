@@ -145,11 +145,10 @@ export default function ClassroomOverview({
     );
   }, [timeclockEntries]);
 
-  // Staff options: exclude superuser (id=3), sort clocked-in first
+  // Staff options: sort clocked-in first
   const staffOptions = useMemo(() => {
     if (!allStaff) return [];
     return [...allStaff]
-      .filter((s) => s.role !== 'superuser')
       .sort((a, b) => {
         const aIn = clockedInIds.has(a.id) ? 0 : 1;
         const bIn = clockedInIds.has(b.id) ? 0 : 1;

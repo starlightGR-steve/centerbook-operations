@@ -100,11 +100,10 @@ export default function KioskPage() {
     });
   }, [checkedIn, allStudents]);
 
-  // Staff sorted by role order, excluding superusers
+  // Staff sorted by role order
   const sortedStaff = useMemo(() => {
     if (!activeStaff) return [];
-    return activeStaff
-      .filter((s) => s.role !== 'superuser')
+    return [...activeStaff]
       .sort((a, b) => (ROLE_ORDER[a.role] ?? 99) - (ROLE_ORDER[b.role] ?? 99));
   }, [activeStaff]);
 
