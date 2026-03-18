@@ -24,6 +24,7 @@ In-center tablet/desktop app for Kumon educational centers. Next.js 14+ App Rout
 - Data fetching: SWR hooks wrapping typed API client
 
 ## DO NOT
+- Add Co-authored-by trailers to git commits
 - Use Tailwind or styled-components
 - Add heavy drop shadows to cards
 - Use dark backgrounds for content (except sidebar/timeclock)
