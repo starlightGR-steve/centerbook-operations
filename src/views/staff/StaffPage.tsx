@@ -422,7 +422,7 @@ function StaffManagement({ staff }: MgmtProps) {
 export default function StaffPage() {
   const { data: session, status } = useSession();
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const { data: staff, isLoading: staffLoading } = useStaff();
+  const { data: staff, isLoading: staffLoading, mutate: mutateStaff } = useStaff();
   const { data: activeStaff } = useActiveStaff();
   const { data: timeEntries, error: timeError, isLoading: timeLoading } = useTimeclock();
   const { start, end, label, goPrev, goNext, goToCurrent } = usePayPeriod();
@@ -535,6 +535,8 @@ export default function StaffPage() {
           timeEntries={timeEntries || []}
           periodStart={start}
           periodEnd={end}
+          clockedInIds={clockedInIds}
+          onDelete={() => mutateStaff()}
         />
       )}
     </div>

@@ -5,6 +5,12 @@ import type { Staff, TimeEntry } from '@/lib/types';
 import { formatTime } from '@/lib/types';
 import styles from './StaffTable.module.css';
 
+function getStaffName(s: Staff): string {
+  if (s.full_name) return s.full_name;
+  if (s.first_name && s.last_name) return `${s.first_name} ${s.last_name}`;
+  return s.first_name || s.last_name || 'Unnamed';
+}
+
 interface StaffTableProps {
   staff: Staff[];
   timeEntries: TimeEntry[];
@@ -97,13 +103,13 @@ export default function StaffTable({
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(s); } }}
                 tabIndex={0}
                 role="button"
-                aria-label={`${s.full_name}, ${s.role}, ${isClockedIn ? 'Active' : 'Inactive'}, ${hours.toFixed(1)} hours`}
+                aria-label={`${getStaffName(s)}, ${s.role}, ${isClockedIn ? 'Active' : 'Inactive'}, ${hours.toFixed(1)} hours`}
               >
                 <td className={styles.cell}>
                   <div className={styles.employee}>
-                    <div className={styles.avatar}>{getInitials(s.full_name)}</div>
+                    <div className={styles.avatar}>{getInitials(getStaffName(s))}</div>
                     <div>
-                      <div className={styles.name}>{s.full_name}</div>
+                      <div className={styles.name}>{getStaffName(s)}</div>
                       <div className={styles.role}>{s.role}</div>
                     </div>
                   </div>

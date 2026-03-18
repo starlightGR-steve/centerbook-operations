@@ -246,6 +246,11 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+    deactivate: (id: number) =>
+      directFetch<{ success: boolean }>(`/staff/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ is_active: '0' }),
+      }),
   },
 
   // ── Attendance (Kiosk) ──

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Plus, Clock, MapPin, Calendar } from 'lucide-react';
+import { Plus, Clock, MapPin, Calendar, Trash2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import { clockInStaff } from '@/hooks/useTimeclock';
+import { api } from '@/lib/api';
 import type { Staff, TimeEntry } from '@/lib/types';
 import { formatTime } from '@/lib/types';
 import { getPeriodHours } from './StaffTable';
@@ -19,9 +20,18 @@ interface StaffDetailModalProps {
   timeEntries: TimeEntry[];
   periodStart: string;
   periodEnd: string;
+  clockedInIds?: Set<number>;
+  onDelete?: () => void;
+}
+
+function getStaffName(s: Staff): string {
+  if (s.full_name) return s.full_name;
+  if (s.first_name && s.last_name) return `${s.first_name} ${s.last_name}`;
+  return s.first_name || s.last_name || 'Unnamed';
 }
 
 function getInitials(name: string): string {
+  if (!name) return '?';
   return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
@@ -37,8 +47,16 @@ export default function StaffDetailModal({
   timeEntries,
   periodStart,
   periodEnd,
+  clockedInIds,
+  onDelete,
 }: StaffDetailModalProps) {
   const [showManualForm, setShowManualForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const staffName = getStaffName(staff);
+  const isClockedIn = clockedInIds?.has(staff.id) ?? false;
   const [manualDate, setManualDate] = useState('');
   const [manualIn, setManualIn] = useState('15:00');
   const [manualOut, setManualOut] = useState('18:00');
@@ -73,9 +91,9 @@ export default function StaffDetailModal({
     <Modal open={open} onClose={onClose} title="" maxWidth="520px">
       {/* Header */}
       <div className={styles.header}>
-        <div className={styles.avatarLarge}>{getInitials(staff.full_name)}</div>
+        <div className={styles.avatarLarge}>{getInitials(staffName)}</div>
         <div className={styles.headerInfo}>
-          <h3 className={styles.name}>{staff.full_name}</h3>
+          <h3 className={styles.name}>{staffName}</h3>
           <div className={styles.badges}>
             <Badge variant="neutral">{staff.role}</Badge>
             <Badge variant={staff.status === 'Active' ? 'success' : 'danger'}>
@@ -298,6 +316,93 @@ export default function StaffDetailModal({
         ) : (
           <button className={styles.dashedBtn} onClick={() => setShowManualForm(true)}>
             <Plus size={14} /> Add Manual Entry
+          </button>
+        )}
+      </div>
+
+      {/* Delete Staff */}
+      <div className={styles.section} style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
+        {deleteError && (
+          <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 10px', fontFamily: 'var(--font-primary)' }}>{deleteError}</p>
+        )}
+        {showDeleteConfirm ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ margin: 0, fontFamily: 'var(--font-primary)', fontSize: 13, color: 'var(--text)' }}>
+              Are you sure you want to delete <strong>{staffName}</strong>? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={async () => {
+                  if (isClockedIn) {
+                    setDeleteError('Cannot delete a staff member who is currently clocked in. Clock them out first.');
+                    setShowDeleteConfirm(false);
+                    return;
+                  }
+                  setDeleting(true);
+                  setDeleteError(null);
+                  try {
+                    await api.staff.deactivate(staff.id);
+                    setShowDeleteConfirm(false);
+                    onDelete?.();
+                    onClose();
+                  } catch {
+                    setDeleteError('Failed to delete staff member.');
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                disabled={deleting}
+                style={{
+                  padding: '6px 16px',
+                  border: '1px solid var(--red)',
+                  borderRadius: 6,
+                  background: 'var(--red)',
+                  color: 'var(--white)',
+                  fontFamily: 'var(--font-primary)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                  opacity: deleting ? 0.5 : 1,
+                }}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{
+                  padding: '6px 16px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  background: 'var(--white)',
+                  color: 'var(--neutral)',
+                  fontFamily: 'var(--font-primary)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setDeleteError(null); setShowDeleteConfirm(true); }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'none',
+              border: 'none',
+              color: 'var(--red)',
+              fontFamily: 'var(--font-primary)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <Trash2 size={14} /> Delete Staff Member
           </button>
         )}
       </div>
