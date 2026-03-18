@@ -61,6 +61,11 @@ const ASHR_STATUSES = ['Not Yet ASHR', 'Bronze', 'Silver', 'Gold', 'Platinum'];
 const CLASSROOM_POSITIONS = ['Early Learners', 'Main Classroom', 'Upper Classroom'];
 const ENROLLMENT_STATUSES = ['Active', 'On Hold', 'Withdrawn'];
 const PROGRAM_TYPES = ['Paper', 'Kumon Connect'];
+const SUBJECT_OPTIONS = [
+  { label: 'Math', value: 'Math' },
+  { label: 'Reading', value: 'Reading' },
+  { label: 'Math & Reading', value: 'Math, Reading' },
+];
 const GRADE_LEVELS = ['PK2', 'PK1', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'];
 const SCHEDULE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
@@ -92,6 +97,7 @@ type EditableFields = {
   classroom_position?: string | null;
   enrollment_status?: string;
   program_type?: string | null;
+  subjects?: string | null;
   grade_level?: string | null;
   class_schedule_days?: string | null;
   schedule_detail?: ScheduleDetailMap | null;
@@ -500,6 +506,19 @@ export default function StudentProfilePage({ studentId }: Props) {
               </div>
             ) : (
               <DetailRow label="Program Type" value={student.program_type ?? '—'} />
+            )}
+
+            {/* Subjects */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('subjects') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Subjects</span>
+                <select className={styles.editSelect} value={getField('subjects')} onChange={(e) => setField('subjects', e.target.value || null)}>
+                  <option value="">Select subjects...</option>
+                  {SUBJECT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            ) : (
+              <DetailRow label="Subjects" value={student.subjects ? student.subjects.replace('Math, Reading', 'Math & Reading') : '—'} />
             )}
 
             {/* Schedule */}
