@@ -100,22 +100,25 @@
 }
 
 .rowGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .rowGrid[data-small] {
-  grid-template-columns: repeat(3, 240px);
+  /* same as above -- flex wrap */
 }
 
 .rowCard {
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: 18px;
+  padding: 24px;
   cursor: pointer;
   transition: all 0.15s;
+  min-width: 300px;
+  flex: 1 1 300px;
+  max-width: 400px;
 }
 
 .rowCard:hover {
@@ -190,13 +193,13 @@
 .tables {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .tablePair {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
+  gap: 6px;
 }
 
 .rowBadges {
@@ -236,8 +239,9 @@
     padding: 20px;
   }
 
-  .rowGrid[data-small] {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  .rowCard {
+    min-width: 260px;
+    flex: 1 1 260px;
   }
 }
 
@@ -270,16 +274,14 @@
   }
 
   .rowGrid {
-    grid-template-columns: 1fr;
     gap: 10px;
   }
 
-  .rowGrid[data-small] {
-    grid-template-columns: 1fr;
-  }
-
   .rowCard {
-    padding: 14px;
+    padding: 16px;
+    min-width: 0;
+    flex: 1 1 100%;
+    max-width: none;
   }
 
   .tablePair {
