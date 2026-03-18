@@ -38,6 +38,7 @@ export interface Student {
   classroom_position: 'Early Learners' | 'Main Classroom' | 'Upper Classroom' | null;
   class_schedule_days: string | null; // "Monday, Wednesday" — comma-separated
   class_time_sort_key: number | null; // 1500, 1530, etc.
+  schedule_detail?: Record<string, { start: string; sort_key: number; duration: number }> | null;
   current_level_math: string | null;
   current_level_reading: string | null;
   ashr_math_status: 'Not Yet ASHR' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | null;

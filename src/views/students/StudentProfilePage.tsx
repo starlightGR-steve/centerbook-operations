@@ -64,6 +64,26 @@ const PROGRAM_TYPES = ['Paper', 'Kumon Connect'];
 const GRADE_LEVELS = ['PK2', 'PK1', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'];
 const SCHEDULE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
+const TIME_SLOTS = [
+  { label: '1:00 PM', sort_key: 1300 },
+  { label: '1:30 PM', sort_key: 1330 },
+  { label: '2:00 PM', sort_key: 1400 },
+  { label: '2:30 PM', sort_key: 1430 },
+  { label: '3:00 PM', sort_key: 1500 },
+  { label: '3:30 PM', sort_key: 1530 },
+  { label: '4:00 PM', sort_key: 1600 },
+  { label: '4:30 PM', sort_key: 1630 },
+  { label: '5:00 PM', sort_key: 1700 },
+  { label: '5:30 PM', sort_key: 1730 },
+  { label: '6:00 PM', sort_key: 1800 },
+  { label: '6:30 PM', sort_key: 1830 },
+];
+
+const DURATION_OPTIONS = [30, 45, 60, 90, 120];
+
+type ScheduleDetailEntry = { start: string; sort_key: number; duration: number };
+type ScheduleDetailMap = Record<string, ScheduleDetailEntry>;
+
 type EditableFields = {
   current_level_math?: string | null;
   current_level_reading?: string | null;
@@ -74,6 +94,7 @@ type EditableFields = {
   program_type?: string | null;
   grade_level?: string | null;
   class_schedule_days?: string | null;
+  schedule_detail?: ScheduleDetailMap | null;
   school?: string | null;
   student_id?: string | null;
   kc_username?: string | null;
@@ -145,8 +166,10 @@ export default function StudentProfilePage({ studentId }: Props) {
     if (!student) return {};
     const changes: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(editFields)) {
-      const orig = ((student as unknown as Record<string, unknown>)[k] as string) ?? '';
-      if (v !== orig) changes[k] = v === '' ? null : v;
+      const orig = (student as unknown as Record<string, unknown>)[k];
+      const origStr = typeof orig === 'object' ? JSON.stringify(orig) : String(orig ?? '');
+      const vStr = typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
+      if (vStr !== origStr) changes[k] = v === '' ? null : v;
     }
     return changes;
   }, [editFields, student]);
@@ -252,7 +275,7 @@ export default function StudentProfilePage({ studentId }: Props) {
     setIsEditing(false);
   };
 
-  const setField = (key: keyof EditableFields, value: string | null) => {
+  const setField = (key: keyof EditableFields, value: unknown) => {
     setEditFields((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -263,8 +286,11 @@ export default function StudentProfilePage({ studentId }: Props) {
 
   const isChanged = (key: keyof EditableFields): boolean => {
     if (!(key in editFields)) return false;
-    const orig = ((student as unknown as Record<string, unknown>)[key] as string) ?? '';
-    return editFields[key] !== orig;
+    const orig = (student as unknown as Record<string, unknown>)[key];
+    const origStr = typeof orig === 'object' ? JSON.stringify(orig) : String(orig ?? '');
+    const v = editFields[key];
+    const vStr = typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
+    return vStr !== origStr;
   };
 
   const handleSave = async () => {
@@ -329,12 +355,35 @@ export default function StudentProfilePage({ studentId }: Props) {
   const linkedContactIds = new Set(contacts?.map((c) => c.id) ?? []);
 
   const editScheduleDays = parseScheduleDays(getField('class_schedule_days') || null);
+  const editScheduleDetail: ScheduleDetailMap = (editFields.schedule_detail !== undefined
+    ? editFields.schedule_detail
+    : student?.schedule_detail) || {};
+
   const toggleDay = (day: string) => {
     const current = new Set(editScheduleDays);
-    if (current.has(day)) current.delete(day);
-    else current.add(day);
+    const newDetail = { ...editScheduleDetail };
+    if (current.has(day)) {
+      current.delete(day);
+      delete newDetail[day];
+    } else {
+      current.add(day);
+      newDetail[day] = { start: '4:00 PM', sort_key: 1600, duration: 60 };
+    }
     const ordered = SCHEDULE_DAYS.filter((d) => current.has(d));
     setField('class_schedule_days', ordered.length > 0 ? ordered.join(', ') : null);
+    setField('schedule_detail', Object.keys(newDetail).length > 0 ? newDetail : null);
+  };
+
+  const updateDayDetail = (day: string, field: 'sort_key' | 'duration', value: number) => {
+    const newDetail = { ...editScheduleDetail };
+    if (!newDetail[day]) return;
+    if (field === 'sort_key') {
+      const slot = TIME_SLOTS.find((t) => t.sort_key === value);
+      newDetail[day] = { ...newDetail[day], sort_key: value, start: slot?.label || newDetail[day].start };
+    } else {
+      newDetail[day] = { ...newDetail[day], duration: value };
+    }
+    setField('schedule_detail', newDetail);
   };
 
   return (
@@ -455,31 +504,69 @@ export default function StudentProfilePage({ studentId }: Props) {
 
             {/* Schedule */}
             {isEditing ? (
-              <div className={`${styles.detailItem} ${isChanged('class_schedule_days') ? styles.fieldChanged : ''}`}>
+              <div className={`${styles.detailItem} ${styles.detailFull} ${isChanged('class_schedule_days') || isChanged('schedule_detail') ? styles.fieldChanged : ''}`}>
                 <span className={styles.detailLabel}>Schedule</span>
-                <div className={styles.dayToggles}>
-                  {SCHEDULE_DAYS.map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      className={`${styles.dayToggle} ${editScheduleDays.includes(d) ? styles.dayToggleActive : ''}`}
-                      onClick={() => toggleDay(d)}
-                    >
-                      {d.slice(0, 3)}
-                    </button>
-                  ))}
+                <div className={styles.scheduleGrid}>
+                  {SCHEDULE_DAYS.map((d) => {
+                    const active = editScheduleDays.includes(d);
+                    const detail = editScheduleDetail[d];
+                    return (
+                      <div key={d} className={styles.scheduleCol}>
+                        <button
+                          type="button"
+                          className={`${styles.dayToggle} ${active ? styles.dayToggleActive : ''}`}
+                          onClick={() => toggleDay(d)}
+                        >
+                          {d.slice(0, 3)}
+                        </button>
+                        {active && detail && (
+                          <>
+                            <select
+                              className={styles.scheduleSelect}
+                              value={detail.sort_key}
+                              onChange={(e) => updateDayDetail(d, 'sort_key', Number(e.target.value))}
+                            >
+                              {TIME_SLOTS.map((t) => (
+                                <option key={t.sort_key} value={t.sort_key}>{t.label}</option>
+                              ))}
+                            </select>
+                            <select
+                              className={styles.scheduleSelect}
+                              value={detail.duration}
+                              onChange={(e) => updateDayDetail(d, 'duration', Number(e.target.value))}
+                            >
+                              {DURATION_OPTIONS.map((m) => (
+                                <option key={m} value={m}>{m} min</option>
+                              ))}
+                            </select>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
-              <div className={styles.detailItem}>
+              <div className={`${styles.detailItem} ${styles.detailFull}`}>
                 <span className={styles.detailLabel}>Schedule</span>
-                <div className={styles.dayPills}>
-                  {scheduleDays.map((d) => (
-                    <span key={d} className={styles.dayPill}>{d.slice(0, 3)}</span>
-                  ))}
-                  {student.class_time_sort_key && (
-                    <span className={styles.timePill}>{formatTimeKey(student.class_time_sort_key)}</span>
-                  )}
+                <div className={styles.scheduleGrid}>
+                  {SCHEDULE_DAYS.map((d) => {
+                    const active = scheduleDays.includes(d);
+                    const detail = student.schedule_detail?.[d];
+                    return (
+                      <div key={d} className={styles.scheduleCol}>
+                        <span className={`${styles.dayPill} ${active ? '' : styles.dayPillInactive}`}>
+                          {d.slice(0, 3)}
+                        </span>
+                        {active && detail && (
+                          <>
+                            <span className={styles.scheduleTime}>{detail.start}</span>
+                            <span className={styles.scheduleDuration}>{detail.duration} min</span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
