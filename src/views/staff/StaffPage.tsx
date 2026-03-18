@@ -17,6 +17,12 @@ import type { Staff, TimeEntry } from '@/lib/types';
 import StaffSkeleton from './StaffSkeleton';
 import styles from './StaffPage.module.css';
 
+function getStaffName(s: Staff): string {
+  if (getStaffName(s)) return getStaffName(s);
+  if (s.first_name && s.last_name) return `${s.first_name} ${s.last_name}`;
+  return s.first_name || s.last_name || 'Unnamed';
+}
+
 function exportPayrollCSV(
   staff: Staff[],
   timeEntries: TimeEntry[],
@@ -32,7 +38,7 @@ function exportPayrollCSV(
         e.duration_minutes != null
     );
     const hours = entries.reduce((sum, e) => sum + (e.duration_minutes || 0), 0) / 60;
-    return [s.full_name, s.role, hours.toFixed(2), String(entries.length), `${periodStart} to ${periodEnd}`];
+    return [getStaffName(s), s.role, hours.toFixed(2), String(entries.length), `${periodStart} to ${periodEnd}`];
   });
 
   const header = 'Employee Name,Role,Total Hours,Entries,Period';
@@ -168,7 +174,7 @@ interface EditModalProps {
 }
 
 function EditStaffModal({ staff: s, onClose, onSuccess }: EditModalProps) {
-  const nameParts = s.full_name.split(' ');
+  const nameParts = getStaffName(s).split(' ');
   const [firstName, setFirstName] = useState(nameParts[0] || '');
   const [lastName, setLastName] = useState(nameParts.slice(1).join(' ') || '');
   const [email, setEmail] = useState(s.email || '');
@@ -299,7 +305,7 @@ function ResetPasswordModal({ staff: s, onClose }: ResetPwModalProps) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Failed to reset password'); setSaving(false); return; }
-      setSuccess(`Password for ${s.full_name} has been reset successfully.`);
+      setSuccess(`Password for ${getStaffName(s)} has been reset successfully.`);
       setNewPw('');
       setConfirmPw('');
       setSaving(false);
@@ -310,7 +316,7 @@ function ResetPasswordModal({ staff: s, onClose }: ResetPwModalProps) {
     <div className={styles.modal} onClick={onClose}>
       <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <h3 className={styles.modalTitle}>Reset Password — {s.full_name}</h3>
+          <h3 className={styles.modalTitle}>Reset Password — {getStaffName(s)}</h3>
           <button className={styles.modalClose} onClick={onClose}>&times;</button>
         </div>
         <div className={styles.modalBody}>
@@ -390,7 +396,7 @@ function StaffManagement({ staff }: MgmtProps) {
         <tbody>
           {staff.map((s) => (
             <tr key={s.id}>
-              <td className={styles.rosterName}>{s.full_name}</td>
+              <td className={styles.rosterName}>{getStaffName(s)}</td>
               <td>{s.email || '—'}</td>
               <td className={styles.rosterRole}>{s.role}</td>
               <td>
