@@ -407,6 +407,16 @@ export const api = {
     },
   },
 
+  // ── Classroom Config ──
+  classroomConfig: {
+    get: () => directFetch<{ sections: { id: string; name: string; order: number }[]; rows: { id: string; section_id: string; name: string; seats: number; order: number }[] }>('/classroom/config'),
+    save: (config: { sections: { id: string; name: string; order: number }[]; rows: { id: string; section_id: string; name: string; seats: number; order: number }[] }) =>
+      directFetch<{ saved: boolean }>('/classroom/config', {
+        method: 'POST',
+        body: JSON.stringify({ config }),
+      }),
+  },
+
   // ── Classroom Assignments ──
   classroom: {
     /** Get all student row assignments for a date */

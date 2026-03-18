@@ -18,6 +18,7 @@ import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
 import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
+import ClassroomSetup from './ClassroomSetup';
 import styles from './RowsPage.module.css';
 
 interface FlatRow extends ClassroomRow {
@@ -98,6 +99,7 @@ function distributeStudents(
 export default function RowsPage() {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [showSetup, setShowSetup] = useState(false);
   const [dragStudent, setDragStudent] = useState<Student | null>(null);
   const [rowCompleteIds, setRowCompleteIds] = useState<Set<number>>(new Set());
   const [assigningToRow, setAssigningToRow] = useState(false);
@@ -242,6 +244,11 @@ export default function RowsPage() {
     return <RowsSkeleton />;
   }
 
+  // CLASSROOM SETUP
+  if (showSetup) {
+    return <ClassroomSetup onBack={() => setShowSetup(false)} />;
+  }
+
   // CLASSROOM OVERVIEW (default)
   if (!selectedRowId) {
     return (
@@ -254,7 +261,7 @@ export default function RowsPage() {
           setSelectedRowId(rowId);
           setSelectedStudentId(null);
         }}
-        onSetup={() => {/* TODO: ClassroomSetup modal */}}
+        onSetup={() => setShowSetup(true)}
         onMoveStudent={moveStudentToRow}
         rowOverrides={rowOverrides}
         dragStudent={dragStudent}
