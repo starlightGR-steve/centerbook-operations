@@ -65,8 +65,13 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
     { revalidateOnFocus: false }
   );
 
-  // State
-  const defaultMinutes = subjects.length > 1 ? 60 : subjects.includes('Reading') ? 30 : 60;
+  // Detect if scheduled today
+  const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const todayDetail = student.schedule_detail?.[todayDay];
+  const isScheduledToday = !!todayDetail;
+
+  // State — use schedule_detail duration if available, else default 60
+  const defaultMinutes = todayDetail?.duration ?? (subjects.length > 1 ? 60 : 60);
   const [sessionMinutes, setSessionMinutes] = useState(defaultMinutes);
   const [pickupContactId, setPickupContactId] = useState<number | null>(null);
   const [selectedChecklist, setSelectedChecklist] = useState<string[]>([]);
@@ -173,6 +178,11 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
                 <span className={styles.gradeText}>Grade {student.grade_level}</span>
               )}
             </div>
+            {!isScheduledToday && (
+              <span className={styles.unscheduledBadge}>
+                Not scheduled today — walk-in / makeup
+              </span>
+            )}
           </div>
           <div className={styles.headerRight}>
             {student.medical_notes && (

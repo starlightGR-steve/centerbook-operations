@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { Scan, ArrowRight, Users, UserCheck, Plus, CheckCircle } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { Scan, ArrowRight, Users, UserCheck, Plus, CheckCircle, Search, X } from 'lucide-react';
 import SubjectBadges from '@/components/SubjectBadges';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents, checkInStudent, checkOutStudent } from '@/hooks/useAttendance';
@@ -44,7 +44,9 @@ export default function KioskPage() {
   const [announcement, setAnnouncement] = useState('');
   const [time, setTime] = useState('');
   const [checkInStudent_popup, setCheckInStudentPopup] = useState<Student | null>(null);
+  const [nameSearch, setNameSearch] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const { data: allStudents } = useStudents();
   const { data: checkedIn } = useCheckedInStudents(undefined, 5000);
@@ -62,11 +64,11 @@ export default function KioskPage() {
     return () => clearInterval(id);
   }, []);
 
-  // Auto-focus scanner input
+  // Auto-focus scanner input (skip if search input is focused)
   useEffect(() => {
     inputRef.current?.focus();
     const refocus = setInterval(() => {
-      if (document.activeElement !== inputRef.current) {
+      if (document.activeElement !== inputRef.current && document.activeElement !== searchRef.current) {
         inputRef.current?.focus();
       }
     }, 3000);
@@ -100,6 +102,28 @@ export default function KioskPage() {
       return (a.check_in || '').localeCompare(b.check_in || '');
     });
   }, [checkedIn, allStudents]);
+
+  // Name search filter
+  const matchesSearch = useCallback((s: Student) => {
+    if (!nameSearch.trim()) return true;
+    const q = nameSearch.toLowerCase();
+    const full = `${s.first_name} ${s.last_name}`.toLowerCase();
+    const reversed = `${s.last_name} ${s.first_name}`.toLowerCase();
+    return full.includes(q) || reversed.includes(q) || s.first_name.toLowerCase().includes(q) || s.last_name.toLowerCase().includes(q);
+  }, [nameSearch]);
+
+  const filteredAwaiting = useMemo(
+    () => awaitingCheckIn.filter(matchesSearch),
+    [awaitingCheckIn, matchesSearch]
+  );
+
+  const filteredCheckedIn = useMemo(
+    () => sortedCheckedIn.filter((a) => {
+      const s = a.student || getStudent(a.student_id);
+      return s ? matchesSearch(s) : true;
+    }),
+    [sortedCheckedIn, matchesSearch, allStudents]
+  );
 
   // Staff sorted by role order
   const sortedStaff = useMemo(() => {
@@ -241,6 +265,24 @@ export default function KioskPage() {
 
       <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
 
+      {/* ── Name Search ── */}
+      <div className={styles.searchBar}>
+        <Search size={18} className={styles.searchIcon} />
+        <input
+          ref={searchRef}
+          type="text"
+          value={nameSearch}
+          onChange={(e) => setNameSearch(e.target.value)}
+          placeholder="Search student name..."
+          className={styles.searchInput}
+        />
+        {nameSearch && (
+          <button className={styles.searchClear} onClick={() => setNameSearch('')}>
+            <X size={16} />
+          </button>
+        )}
+      </div>
+
       {/* ── Three Columns ── */}
       <div className={styles.columns}>
         {/* Column 1 — Expected Students */}
@@ -250,10 +292,10 @@ export default function KioskPage() {
             Expected Students
           </div>
           <div className={styles.cardBody}>
-            {awaitingCheckIn.length === 0 ? (
-              <div className={styles.empty}>All students checked in</div>
+            {filteredAwaiting.length === 0 ? (
+              <div className={styles.empty}>{nameSearch ? 'No matches' : 'All students checked in'}</div>
             ) : (
-              awaitingCheckIn.map((s) => (
+              filteredAwaiting.map((s) => (
                 <button
                   key={s.id}
                   className={styles.expectedRow}
@@ -291,10 +333,10 @@ export default function KioskPage() {
             Here Now
           </div>
           <div className={styles.cardBody}>
-            {sortedCheckedIn.length === 0 ? (
-              <div className={styles.empty}>No students checked in yet</div>
+            {filteredCheckedIn.length === 0 ? (
+              <div className={styles.empty}>{nameSearch ? 'No matches' : 'No students checked in yet'}</div>
             ) : (
-              sortedCheckedIn.map((a) => {
+              filteredCheckedIn.map((a) => {
                 const student = a.student || getStudent(a.student_id);
                 if (!student) return null;
                 return (

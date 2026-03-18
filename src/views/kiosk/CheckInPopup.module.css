@@ -89,6 +89,19 @@
   color: var(--neutral);
 }
 
+.unscheduledBadge {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: #92400e;
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+
 .headerRight {
   display: flex;
   align-items: flex-start;
