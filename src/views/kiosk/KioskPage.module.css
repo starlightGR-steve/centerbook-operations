@@ -94,7 +94,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  margin: 12px 20px 0;
+  margin-bottom: 16px;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 16px;
