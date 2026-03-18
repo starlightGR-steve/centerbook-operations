@@ -119,7 +119,7 @@ export default function KioskPage() {
 
   const filteredCheckedIn = useMemo(
     () => sortedCheckedIn.filter((a) => {
-      const s = a.student || getStudent(a.student_id);
+      const s = a.student || allStudents?.find((st) => st.id === a.student_id);
       return s ? matchesSearch(s) : true;
     }),
     [sortedCheckedIn, matchesSearch, allStudents]
