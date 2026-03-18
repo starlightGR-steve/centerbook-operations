@@ -11,9 +11,15 @@ import { useStudents } from '@/hooks/useStudents';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useStaffSlots, assignStaffToSlot, removeStaffFromSlot } from '@/hooks/useStaffSlots';
 import { createOverride } from '@/hooks/useScheduleOverrides';
-import type { CapacityCell, Student, ScheduleOverride } from '@/lib/types';
+import type { CapacityCell, Student, Staff, ScheduleOverride } from '@/lib/types';
 import { parseScheduleDays, bucketTimeKey, formatTimeSortKey, getRecommendedStaff } from '@/lib/types';
 import styles from './SlotDetailModal.module.css';
+
+function getStaffName(s: Staff): string {
+  if (s.full_name) return s.full_name;
+  if (s.first_name && s.last_name) return `${s.first_name} ${s.last_name}`;
+  return s.first_name || s.last_name || 'Unnamed';
+}
 
 interface SlotDetailModalProps {
   open: boolean;
@@ -110,7 +116,7 @@ export default function SlotDetailModal({
     return allStaff
       .filter((s) => !assignedIds.has(s.id))
       .filter((s) =>
-        staffQuery ? s.full_name.toLowerCase().includes(staffQuery.toLowerCase()) : true
+        staffQuery ? getStaffName(s).toLowerCase().includes(staffQuery.toLowerCase()) : true
       );
   }, [allStaff, slotStaff, staffQuery]);
 
@@ -184,7 +190,7 @@ export default function SlotDetailModal({
           <div className={styles.list}>
             {slotStaff?.map((assignment) => (
               <div key={assignment.id} className={styles.staffRow}>
-                <span className={styles.staffName}>{assignment.staff?.full_name || `Staff #${assignment.staff_id}`}</span>
+                <span className={styles.staffName}>{assignment.staff ? getStaffName(assignment.staff) : `Staff #${assignment.staff_id}`}</span>
                 <button
                   className={styles.removeBtn}
                   onClick={() => handleRemoveStaff(assignment.id)}
@@ -212,7 +218,7 @@ export default function SlotDetailModal({
               <div className={styles.searchResults}>
                 {availableStaff.map((s) => (
                   <button key={s.id} className={styles.searchRow} onClick={() => handleAssignStaff(s.id)}>
-                    {s.full_name}
+                    {getStaffName(s)}
                     <Plus size={14} />
                   </button>
                 ))}

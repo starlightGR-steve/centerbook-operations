@@ -18,7 +18,7 @@ import StaffSkeleton from './StaffSkeleton';
 import styles from './StaffPage.module.css';
 
 function getStaffName(s: Staff): string {
-  if (getStaffName(s)) return getStaffName(s);
+  if (s.full_name) return s.full_name;
   if (s.first_name && s.last_name) return `${s.first_name} ${s.last_name}`;
   return s.first_name || s.last_name || 'Unnamed';
 }
