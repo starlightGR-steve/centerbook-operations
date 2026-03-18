@@ -33,7 +33,7 @@ export interface Student {
   medical_notes: string | null;
   enrollment_status: 'Active' | 'On Hold' | 'Withdrawn' | 'Inactive';
   program_type: 'Paper' | 'Digital' | 'Kumon Connect' | null;
-  subjects: string; // "Math, Reading" — comma-separated
+  subjects: string | null; // "Math, Reading" — comma-separated, null for unseeded students
   enroll_date: string | null;
   classroom_position: 'Early Learners' | 'Main Classroom' | 'Upper Classroom' | null;
   class_schedule_days: string | null; // "Monday, Wednesday" — comma-separated
@@ -521,7 +521,8 @@ export interface CapacityGridData {
 // ── Utility Types ──────────────────────────
 
 /** Parse comma-separated subjects string into typed array */
-export function parseSubjects(subjects: string): SubjectType[] {
+export function parseSubjects(subjects: string | null | undefined): SubjectType[] {
+  if (!subjects) return [];
   return subjects
     .split(',')
     .map((s) => s.trim())
@@ -545,17 +546,18 @@ export function formatTimeKey(key: number | null): string {
 }
 
 /** Get session duration in minutes based on subjects (30 min per subject) */
-export function getSessionDuration(subjects: string | string[]): number {
+export function getSessionDuration(subjects: string | string[] | null | undefined): number {
+  if (!subjects) return 30;
   const parsed =
     typeof subjects === 'string'
       ? subjects.split(',').map((s) => s.trim()).filter(Boolean)
       : subjects;
-  return parsed.length * 30;
+  return parsed.length * 30 || 30;
 }
 
 /** Get time remaining in minutes from check-in time and subjects */
 export function getTimeRemaining(
-  subjects: string | string[],
+  subjects: string | string[] | null | undefined,
   checkInTime: string | Date
 ): number {
   const duration = getSessionDuration(subjects);

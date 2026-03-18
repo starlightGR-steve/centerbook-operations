@@ -318,10 +318,10 @@ export default function ClassroomOverview({
 
                       {rs.length > 0 && (
                         <div className={styles.rowBadges}>
-                          {rs.some((s) => s.subjects.includes('Math')) && (
+                          {rs.some((s) => s.subjects?.includes('Math')) && (
                             <span className={styles.subBadgeMath}>Math</span>
                           )}
-                          {rs.some((s) => s.subjects.includes('Reading')) && (
+                          {rs.some((s) => s.subjects?.includes('Reading')) && (
                             <span className={styles.subBadgeReading}>
                               Reading
                             </span>

@@ -1,7 +1,7 @@
 import { getSessionDuration } from '@/lib/types';
 
 interface DurationBadgeProps {
-  subjects: string | string[];
+  subjects: string | string[] | null | undefined;
 }
 
 export default function DurationBadge({ subjects }: DurationBadgeProps) {
