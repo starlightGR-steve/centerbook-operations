@@ -13,9 +13,9 @@ import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { useNotes } from '@/hooks/useNotes';
-import { useClassroomAssignments, buildOverridesMap, assignStudentToRow, removeStudentFromRow } from '@/hooks/useRows';
+import { useClassroomAssignments, buildOverridesMap, buildFlagsMap, assignStudentToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
-import type { Student, Attendance, ClassroomSection, ClassroomRow } from '@/lib/types';
+import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
 import styles from './RowsPage.module.css';
@@ -104,11 +104,11 @@ export default function RowsPage() {
   const [movingStudent, setMovingStudent] = useState<number | null>(null);
   const [, setTick] = useState(0);
 
-  // Live Class feature state (local/in-memory)
-  const [taskCompletions, setTaskCompletions] = useState<Record<string, boolean>>({});
+  // Live Class feature state
   const [taskNoteInput, setTaskNoteInput] = useState<string | null>(null); // task id being noted
   const [taskNoteText, setTaskNoteText] = useState('');
-  const [studentFlags, setStudentFlags] = useState<Record<number, string[]>>({});
+  // Local optimistic flag overrides (cleared on SWR revalidation)
+  const [optimisticFlags, setOptimisticFlags] = useState<Record<number, RowAssignmentFlags>>({});
   const { adjustments: sessionAdjustments, adjustBy: adjustSessionBy, setAdjustment: setSessionAdjustment } = useSessionAdjust();
   const [sessionPopoverStudent, setSessionPopoverStudent] = useState<number | null>(null);
   const [expandedNoteStudent, setExpandedNoteStudent] = useState<number | null>(null);
@@ -144,6 +144,12 @@ export default function RowsPage() {
     [persistedAssignments, rowLabelToId]
   );
 
+  // Flags from persisted assignments
+  const flagsMap = useMemo(
+    () => buildFlagsMap(persistedAssignments),
+    [persistedAssignments]
+  );
+
   const attendanceMap = useMemo(() => {
     const map = new Map<number, Attendance>();
     checkedIn?.forEach((a) => map.set(a.student_id, a));
@@ -177,36 +183,47 @@ export default function RowsPage() {
     [checkedInStudents, rows, rowOverrides]
   );
 
-  // Helper: get effective flags for a student (mock data + local toggles)
+  // Helper: get effective flags for a student from persisted + optimistic
+  const getStudentFlags = useCallback((studentId: number): RowAssignmentFlags => {
+    return optimisticFlags[studentId] || flagsMap[studentId] || {};
+  }, [optimisticFlags, flagsMap]);
+
+  // Helper: get flag names array for display
   const getFlags = useCallback((s: Student): string[] => {
-    if (studentFlags[s.id] !== undefined) return studentFlags[s.id];
-    return s.flags || [];
-  }, [studentFlags]);
+    const f = getStudentFlags(s.id);
+    const result: string[] = [];
+    if (f.new_concept) result.push('new_concept');
+    if (f.needs_help) result.push('needs_help');
+    if (f.work_with_amy) result.push('work_with_amy');
+    return result;
+  }, [getStudentFlags]);
 
   const toggleFlag = useCallback((studentId: number, flag: string) => {
-    setStudentFlags((prev) => {
-      const current = prev[studentId] !== undefined
-        ? prev[studentId]
-        : (allStudents?.find((s) => s.id === studentId)?.flags || []);
-      const next = current.includes(flag)
-        ? current.filter((f) => f !== flag)
-        : [...current, flag];
-      return { ...prev, [studentId]: next };
+    const current = getStudentFlags(studentId);
+    const key = flag as keyof RowAssignmentFlags;
+    const updated: RowAssignmentFlags = { ...current, [key]: !current[key] };
+    // Optimistic update
+    setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
+    // Persist
+    updateStudentFlags(studentId, updated, today).then(() => {
+      // Clear optimistic on success (SWR will have fresh data)
+      setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
     });
-  }, [allStudents]);
+  }, [getStudentFlags, today]);
 
-  // Helper: toggle task completion
-  const toggleTask = useCallback((taskId: string) => {
-    setTaskCompletions((prev) => {
-      const wasDone = prev[taskId];
-      if (!wasDone) {
-        // Just completed — show note input
-        setTaskNoteInput(taskId);
-        setTaskNoteText('');
-      }
-      return { ...prev, [taskId]: !wasDone };
+  // Helper: toggle task completion (persists to flags.tasks)
+  const toggleTask = useCallback((studentId: number, taskKey: string) => {
+    const current = getStudentFlags(studentId);
+    const tasks = { ...(current.tasks || {}) };
+    if (taskKey === 'sound_cards' || taskKey === 'flash_cards' || taskKey === 'spelling') {
+      (tasks as Record<string, boolean>)[taskKey] = !(tasks as Record<string, boolean>)[taskKey];
+    }
+    const updated: RowAssignmentFlags = { ...current, tasks };
+    setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
+    updateStudentFlags(studentId, updated, today).then(() => {
+      setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
     });
-  }, []);
+  }, [getStudentFlags, today]);
 
   const dismissTaskNote = useCallback(() => {
     setTaskNoteInput(null);
@@ -362,8 +379,18 @@ export default function RowsPage() {
                     : String(remaining);
               const isMoveOpen = movingStudent === s.id;
               const flags = getFlags(s);
+              const studentFlagsObj = getStudentFlags(s.id);
               const hasPertinentNote = !!s.pertinent_note;
-              const tasks = s.tasks || [];
+              const flagTasks = studentFlagsObj.tasks || {};
+              const taskItems = [
+                { key: 'sound_cards', label: 'Sound Cards', done: !!flagTasks.sound_cards },
+                { key: 'flash_cards', label: 'Flash Cards', done: !!flagTasks.flash_cards },
+                { key: 'spelling', label: 'Spelling', done: !!flagTasks.spelling },
+                ...(flagTasks.custom ? [{ key: 'custom', label: flagTasks.custom, done: true }] : []),
+              ].filter((t) => t.done || Object.values(flagTasks).some(Boolean));
+              // Only show task items that have been assigned (at least one task is set)
+              const hasAnyTask = Object.values(flagTasks).some(Boolean);
+              const tasks = hasAnyTask ? taskItems : (s.tasks || []);
               const adj = sessionAdjustments[s.id] || 0;
               const isSessionOpen = sessionPopoverStudent === s.id;
               const isNoteExpanded = expandedNoteStudent === s.id;
@@ -469,44 +496,30 @@ export default function RowsPage() {
                             <HelpCircle size={10} /> Needs Help
                           </span>
                         )}
+                        {flags.includes('work_with_amy') && (
+                          <span className={styles.flagWorkWithAmy}>
+                            Work with Amy
+                          </span>
+                        )}
                       </div>
                     )}
 
                     {/* 5. Task assignments */}
-                    {tasks.length > 0 && (
+                    {hasAnyTask && (
                       <div className={styles.taskList} onClick={(e) => e.stopPropagation()}>
-                        {tasks.map((task) => {
-                          const isDone = taskCompletions[task.id] ?? task.completed;
-                          return (
-                            <div key={task.id}>
-                              <button
-                                className={`${styles.taskChip} ${isDone ? styles.taskDone : ''}`}
-                                onClick={() => toggleTask(task.id)}
-                              >
-                                {isDone
-                                  ? <CheckCircle2 size={10} color="#16a34a" />
-                                  : <Circle size={10} />
-                                }
-                                <span>{task.label}</span>
-                              </button>
-                              {taskNoteInput === task.id && isDone && (
-                                <div className={styles.taskNoteWrap}>
-                                  <input
-                                    className={styles.taskNoteInput}
-                                    placeholder="Quick note (optional)"
-                                    value={taskNoteText}
-                                    onChange={(e) => setTaskNoteText(e.target.value)}
-                                    autoFocus
-                                    onKeyDown={(e) => { if (e.key === 'Enter') dismissTaskNote(); }}
-                                  />
-                                  <button className={styles.taskNoteSave} onClick={dismissTaskNote}>
-                                    OK
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {taskItems.map((task) => (
+                          <button
+                            key={task.key}
+                            className={`${styles.taskChip} ${task.done ? styles.taskDone : ''}`}
+                            onClick={() => task.key !== 'custom' && toggleTask(s.id, task.key)}
+                          >
+                            {task.done
+                              ? <CheckCircle2 size={10} color="#16a34a" />
+                              : <Circle size={10} />
+                            }
+                            <span>{task.label}</span>
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -610,6 +623,13 @@ export default function RowsPage() {
                       title="Needs Teacher Help"
                     >
                       <HelpCircle size={10} />
+                    </button>
+                    <button
+                      className={`${styles.flagToggleBtn} ${flags.includes('work_with_amy') ? styles.flagToggleAmyActive : ''}`}
+                      onClick={() => toggleFlag(s.id, 'work_with_amy')}
+                      title="Work with Amy"
+                    >
+                      A
                     </button>
                   </div>
 

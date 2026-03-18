@@ -5,6 +5,7 @@ import { Scan, ArrowRight, Users, UserCheck, Plus, CheckCircle } from 'lucide-re
 import SubjectBadges from '@/components/SubjectBadges';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents, checkInStudent, checkOutStudent } from '@/hooks/useAttendance';
+import { updateStudentFlags } from '@/hooks/useRows';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { getSessionDuration, formatTimeKey, formatTime } from '@/lib/types';
@@ -163,6 +164,30 @@ export default function KioskPage() {
       checked_in_by: 'kiosk',
       session_duration_minutes: options.sessionMinutes,
     });
+
+    // Persist flags from check-in popup to row assignment
+    const hasFlags = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0;
+    if (hasFlags) {
+      const flags: Record<string, unknown> = {};
+      if (options.selectedFlags.includes('New Concept')) flags.new_concept = true;
+      if (options.selectedFlags.includes('Needs Help')) flags.needs_help = true;
+      if (options.selectedFlags.includes('Work with Amy')) flags.work_with_amy = true;
+      const tasks: Record<string, unknown> = {};
+      options.selectedChecklist.forEach((item) => {
+        if (item.includes('Sound Cards')) tasks.sound_cards = true;
+        else if (item.includes('Flash Cards')) tasks.flash_cards = true;
+        else if (item.includes('Spelling')) tasks.spelling = true;
+        else tasks.custom = item;
+      });
+      if (Object.keys(tasks).length > 0) flags.tasks = tasks;
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        await updateStudentFlags(options.studentId, flags, today);
+      } catch {
+        // Non-critical -- flags will be set manually in row view
+      }
+    }
+
     setCheckInStudentPopup(null);
     setAnnouncement(`${checkInStudent_popup?.first_name} ${checkInStudent_popup?.last_name} checked in`);
   };

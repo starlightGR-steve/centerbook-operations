@@ -2,7 +2,7 @@ import useSWR, { mutate as globalMutate } from 'swr';
 import { api } from '@/lib/api';
 import { useDemoMode, isDemoModeActive } from '@/context/MockDataContext';
 import { MOCK_ROW_ASSIGNMENTS } from '@/lib/mock-data';
-import type { RowAssignment, AssignRowRequest, RowTeacher, AssignRowTeacherRequest } from '@/lib/types';
+import type { RowAssignment, RowAssignmentFlags, AssignRowRequest, RowTeacher, AssignRowTeacherRequest } from '@/lib/types';
 
 function todayStr(): string {
   return new Date().toISOString().split('T')[0];
@@ -118,6 +118,33 @@ export async function removeStudentFromRow(
   }
   await api.classroom.unassign(studentId, d);
   globalMutate(assignmentsKey(d, false));
+}
+
+/** Update flags on a student's row assignment */
+export async function updateStudentFlags(
+  studentId: number,
+  flags: RowAssignmentFlags,
+  date?: string
+): Promise<void> {
+  const d = date || todayStr();
+  if (isDemoModeActive()) {
+    globalMutate(assignmentsKey(d, true));
+    return;
+  }
+  await api.classroom.updateFlags(studentId, flags, d);
+  globalMutate(assignmentsKey(d, false));
+}
+
+/** Build a flags lookup: studentId -> RowAssignmentFlags from assignments */
+export function buildFlagsMap(
+  assignments: RowAssignment[] | undefined
+): Record<number, RowAssignmentFlags> {
+  if (!assignments) return {};
+  const map: Record<number, RowAssignmentFlags> = {};
+  assignments.forEach((a) => {
+    if (a.flags) map[a.student_id] = a.flags;
+  });
+  return map;
 }
 
 // ── Teacher Row Assignments ────────────────

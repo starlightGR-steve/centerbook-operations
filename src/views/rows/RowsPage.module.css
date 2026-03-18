@@ -607,6 +607,24 @@
   color: #E0712C;
 }
 
+.flagToggleAmyActive {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: #a855f7;
+  color: #a855f7;
+}
+
+.flagWorkWithAmy {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* ── Session Time Adjust ── */
 .sessionAdjustWrap {
   position: relative;

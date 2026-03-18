@@ -31,6 +31,7 @@ import type {
   CheckoutBookRequest,
   ReturnBookRequest,
   RowAssignment,
+  RowAssignmentFlags,
   AssignRowRequest,
   RowTeacher,
   AssignRowTeacherRequest,
@@ -427,6 +428,15 @@ export const api = {
       return directFetch<{ deleted: boolean }>(
         `/classroom/assignments/${studentId}?date=${d}`,
         { method: 'DELETE' }
+      );
+    },
+
+    /** Update flags on a student's row assignment */
+    updateFlags: (studentId: number, flags: RowAssignmentFlags, date?: string) => {
+      const d = date || new Date().toISOString().split('T')[0];
+      return directFetch<RowAssignment>(
+        `/classroom/assignments/${studentId}/flags?date=${d}`,
+        { method: 'PATCH', body: JSON.stringify({ flags }) }
       );
     },
 

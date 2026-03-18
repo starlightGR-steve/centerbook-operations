@@ -400,6 +400,18 @@ export interface ReturnBookRequest {
 
 // ── Row Assignments ────────────────────────
 
+export interface RowAssignmentFlags {
+  new_concept?: boolean;
+  needs_help?: boolean;
+  work_with_amy?: boolean;
+  tasks?: {
+    sound_cards?: boolean;
+    flash_cards?: boolean;
+    spelling?: boolean;
+    custom?: string | null;
+  };
+}
+
 export interface RowAssignment {
   id: number;
   session_date: string;       // YYYY-MM-DD
@@ -407,6 +419,7 @@ export interface RowAssignment {
   row_label: string;          // "EL Row 1", "Row 3", "Upper Row"
   assigned_at: string;        // ISO datetime
   assigned_by: string | null;
+  flags?: RowAssignmentFlags | null;
 }
 
 export interface AssignRowRequest {
