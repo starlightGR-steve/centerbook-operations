@@ -133,7 +133,7 @@ export function useClassroomTeachers(date?: string) {
       if (isDemoMode) return [];
       return api.classroom.teachers(d);
     },
-    { dedupingInterval: isDemoMode ? 60000 : 10000, revalidateOnFocus: !isDemoMode }
+    { dedupingInterval: isDemoMode ? 60000 : 5000, refreshInterval: isDemoMode ? 0 : 5000, revalidateOnFocus: !isDemoMode }
   );
 }
 

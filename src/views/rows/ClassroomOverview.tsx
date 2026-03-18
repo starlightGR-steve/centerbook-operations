@@ -1,9 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Edit2 } from 'lucide-react';
+import { useMemo, useCallback } from 'react';
+import { Edit2, ChevronDown } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
 import SeatSlot from './SeatSlot';
+import { useActiveStaff } from '@/hooks/useStaff';
+import { useTimeclock } from '@/hooks/useTimeclock';
+import { useClassroomTeachers, assignTeacherToRow } from '@/hooks/useRows';
 import type { Student, Attendance, ClassroomSection, ClassroomRow } from '@/lib/types';
 import styles from './ClassroomOverview.module.css';
 
@@ -119,6 +122,60 @@ export default function ClassroomOverview({
 
   const totalIn = checkedInStudents.length;
 
+  // Teacher assignments
+  const today = new Date().toISOString().split('T')[0];
+  const { data: teacherAssignments, mutate: mutateTeachers } = useClassroomTeachers(today);
+  const { data: allStaff } = useActiveStaff();
+  const { data: timeclockEntries } = useTimeclock(today);
+
+  // Build teacher lookup: row_label -> staff_id
+  const teacherMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    teacherAssignments?.forEach((t) => { map[t.row_label] = t.staff_id; });
+    return map;
+  }, [teacherAssignments]);
+
+  // Clocked-in staff IDs
+  const clockedInIds = useMemo(() => {
+    if (!timeclockEntries) return new Set<number>();
+    return new Set(
+      timeclockEntries
+        .filter((e) => !e.clock_out)
+        .map((e) => e.staff_id)
+    );
+  }, [timeclockEntries]);
+
+  // Staff options: exclude superuser (id=3), sort clocked-in first
+  const staffOptions = useMemo(() => {
+    if (!allStaff) return [];
+    return [...allStaff]
+      .filter((s) => s.role !== 'superuser')
+      .sort((a, b) => {
+        const aIn = clockedInIds.has(a.id) ? 0 : 1;
+        const bIn = clockedInIds.has(b.id) ? 0 : 1;
+        if (aIn !== bIn) return aIn - bIn;
+        const aName = `${a.first_name || ''} ${a.last_name || ''}`;
+        const bName = `${b.first_name || ''} ${b.last_name || ''}`;
+        return aName.localeCompare(bName);
+      });
+  }, [allStaff, clockedInIds]);
+
+  const handleTeacherChange = useCallback(async (rowLabel: string, staffId: number) => {
+    if (!staffId) return;
+    await assignTeacherToRow({
+      staff_id: staffId,
+      row_label: rowLabel,
+      session_date: today,
+    });
+    mutateTeachers();
+  }, [today, mutateTeachers]);
+
+  const getStaffDisplay = (s: { first_name?: string | null; last_name?: string | null; full_name?: string }) => {
+    if (s.first_name && s.last_name) return `${s.first_name} ${s.last_name[0]}.`;
+    if (s.full_name) return s.full_name;
+    return 'Staff';
+  };
+
   const handleDrop = (rowId: string) => {
     if (dragStudent) {
       onMoveStudent(dragStudent.id, rowId);
@@ -200,10 +257,23 @@ export default function ClassroomOverview({
                       <div className={styles.rowCardHeader}>
                         <div>
                           <h3 className={styles.rowLabel}>{row.label}</h3>
-                          <p className={styles.rowTeacher}>
-                            {row.teacher}
-                            {row.ratio ? ` · ${row.ratio}` : ''}
-                          </p>
+                          <div className={styles.teacherDropdownWrap} onClick={(e) => e.stopPropagation()}>
+                            <select
+                              className={styles.teacherDropdown}
+                              value={teacherMap[row.label] ?? ''}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                if (val) handleTeacherChange(row.label, val);
+                              }}
+                            >
+                              <option value="">Assign</option>
+                              {staffOptions.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {getStaffDisplay(s)}{clockedInIds.has(s.id) ? ' ●' : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                         <span className={styles.rowCount}>
                           {rs.length}/{row.seats}
