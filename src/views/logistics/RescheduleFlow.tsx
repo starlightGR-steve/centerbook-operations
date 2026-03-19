@@ -53,7 +53,7 @@ export default function RescheduleFlow({
           <span className={styles.name}>{student.first_name} {student.last_name}</span>
           <div className={styles.meta}>
             <SubjectBadges subjects={student.subjects} />
-            <DurationBadge subjects={student.subjects} />
+            <DurationBadge subjects={student.subjects} scheduleDetail={student.schedule_detail} />
           </div>
           <p className={styles.current}>
             Currently: {fromCell.day} at {fromCell.timeDisplay}

@@ -234,8 +234,9 @@ export default function RowsPage() {
 
   // Helper: get adjusted time remaining
   const getAdjustedTimeRemaining = useCallback((s: Student, att: Attendance | undefined): number => {
-    if (!att) return getSessionDuration(s.subjects);
-    const base = getTimeRemaining(s.subjects, att.check_in);
+    const opts = { scheduleDetail: s.schedule_detail, sessionDurationMinutes: att?.session_duration_minutes };
+    if (!att) return getSessionDuration(s.subjects, opts);
+    const base = getTimeRemaining(s.subjects, att.check_in, opts);
     const adj = sessionAdjustments[s.id] || 0;
     return base + adj;
   }, [sessionAdjustments]);
@@ -276,8 +277,8 @@ export default function RowsPage() {
   const rowStudents = (assignments[selectedRowId] || []).sort((a, b) => {
     const aAtt = attendanceMap.get(a.id);
     const bAtt = attendanceMap.get(b.id);
-    const aRem = aAtt ? getTimeRemaining(a.subjects, aAtt.check_in) : 999;
-    const bRem = bAtt ? getTimeRemaining(b.subjects, bAtt.check_in) : 999;
+    const aRem = aAtt ? getTimeRemaining(a.subjects, aAtt.check_in, { scheduleDetail: a.schedule_detail, sessionDurationMinutes: aAtt.session_duration_minutes }) : 999;
+    const bRem = bAtt ? getTimeRemaining(b.subjects, bAtt.check_in, { scheduleDetail: b.schedule_detail, sessionDurationMinutes: bAtt.session_duration_minutes }) : 999;
     return aRem - bRem;
   });
 
@@ -587,7 +588,7 @@ export default function RowsPage() {
                               -15
                             </button>
                             <span className={styles.sessionCurrent}>
-                              {getSessionDuration(s.subjects) + (sessionAdjustments[s.id] || 0)}m
+                              {getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail }) + (sessionAdjustments[s.id] || 0)}m
                             </span>
                             <button
                               className={styles.sessionDelta}
@@ -602,7 +603,7 @@ export default function RowsPage() {
                                 key={d}
                                 className={styles.sessionPreset}
                                 onClick={() => {
-                                  const base = getSessionDuration(s.subjects);
+                                  const base = getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
                                   setSessionAdjustment(s.id, d - base);
                                 }}
                               >

@@ -19,9 +19,10 @@ export default function StudentCard({
   isSelected,
   onClick,
 }: StudentCardProps) {
+  const durationOpts = { scheduleDetail: student.schedule_detail, sessionDurationMinutes: attendance?.session_duration_minutes };
   const timeLeft = attendance
-    ? getTimeRemaining(student.subjects, attendance.check_in)
-    : getSessionDuration(student.subjects);
+    ? getTimeRemaining(student.subjects, attendance.check_in, durationOpts)
+    : getSessionDuration(student.subjects, durationOpts);
   const isOver = attendance ? timeLeft <= 0 : false;
   const isWarn = attendance ? timeLeft <= 5 && timeLeft > 0 : false;
   const subjects = parseSubjects(student.subjects);

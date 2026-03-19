@@ -244,7 +244,7 @@ export default function SlotDetailModal({
                   <span className={styles.studentName}>{student.first_name} {student.last_name}</span>
                   <div className={styles.studentMeta}>
                     <SubjectBadges subjects={student.subjects} />
-                    <DurationBadge subjects={student.subjects} />
+                    <DurationBadge subjects={student.subjects} scheduleDetail={student.schedule_detail} />
                     {override && (
                       <Badge variant="info">
                         {override.override_type === 'add' ? 'Makeup' : `Moved from ${override.original_day} ${formatTimeSortKey(override.original_time || 0)}`}

@@ -23,8 +23,9 @@ export default function SeatSlot({
     return <div className={styles.empty} />;
   }
 
+  const durationOpts = { scheduleDetail: student.schedule_detail, sessionDurationMinutes: attendance?.session_duration_minutes };
   const remaining = attendance
-    ? getTimeRemaining(student.subjects, attendance.check_in)
+    ? getTimeRemaining(student.subjects, attendance.check_in, durationOpts)
     : null;
   const isOver = remaining !== null && remaining <= 0;
   const isWarn = remaining !== null && remaining > 0 && remaining <= 5;

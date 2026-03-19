@@ -8,14 +8,15 @@ import { getSessionDuration } from '@/lib/types';
 interface SessionTimeAdjustProps {
   studentId: number;
   subjects: string | string[] | null;
+  scheduleDetail?: Record<string, { start: string; sort_key: number; duration: number }> | null;
 }
 
-export default function SessionTimeAdjust({ studentId, subjects }: SessionTimeAdjustProps) {
+export default function SessionTimeAdjust({ studentId, subjects, scheduleDetail }: SessionTimeAdjustProps) {
   const [open, setOpen] = useState(false);
   const { getAdjustment, setAdjustment, adjustBy } = useSessionAdjust();
 
   const adj = getAdjustment(studentId);
-  const base = getSessionDuration(subjects || '');
+  const base = getSessionDuration(subjects || '', scheduleDetail ? { scheduleDetail } : undefined);
   const current = base + adj;
 
   return (

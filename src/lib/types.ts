@@ -545,8 +545,26 @@ export function formatTimeKey(key: number | null): string {
   return `${hour}:${String(m).padStart(2, '0')} ${period}`;
 }
 
-/** Get session duration in minutes based on subjects (30 min per subject) */
-export function getSessionDuration(subjects: string | string[] | null | undefined): number {
+/** Get session duration in minutes.
+ *  Priority: schedule_detail[today] → attendance session_duration_minutes → 60 min default → subject-count fallback */
+export function getSessionDuration(
+  subjects: string | string[] | null | undefined,
+  options?: {
+    scheduleDetail?: Record<string, { start: string; sort_key: number; duration: number }> | null;
+    sessionDurationMinutes?: number | null;
+  }
+): number {
+  // 1. schedule_detail for today
+  if (options?.scheduleDetail) {
+    const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const todayEntry = options.scheduleDetail[todayDay];
+    if (todayEntry?.duration) return todayEntry.duration;
+  }
+  // 2. Attendance record's session_duration_minutes (walk-ins / unseeded)
+  if (options?.sessionDurationMinutes) return options.sessionDurationMinutes;
+  // 3. Default 60 when options were provided but had no data
+  if (options) return 60;
+  // 4. Legacy subject-count fallback (callers that don't pass options)
   if (!subjects) return 30;
   const parsed =
     typeof subjects === 'string'
@@ -555,12 +573,16 @@ export function getSessionDuration(subjects: string | string[] | null | undefine
   return parsed.length * 30 || 30;
 }
 
-/** Get time remaining in minutes from check-in time and subjects */
+/** Get time remaining in minutes from check-in time and session duration */
 export function getTimeRemaining(
   subjects: string | string[] | null | undefined,
-  checkInTime: string | Date
+  checkInTime: string | Date,
+  options?: {
+    scheduleDetail?: Record<string, { start: string; sort_key: number; duration: number }> | null;
+    sessionDurationMinutes?: number | null;
+  }
 ): number {
-  const duration = getSessionDuration(subjects);
+  const duration = getSessionDuration(subjects, options);
   const checkIn = new Date(checkInTime);
   const now = new Date();
   const elapsed = Math.floor((now.getTime() - checkIn.getTime()) / 60000);

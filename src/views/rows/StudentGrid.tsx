@@ -28,10 +28,10 @@ export default function StudentGrid({
     const aAttendance = attendanceMap.get(a.id);
     const bAttendance = attendanceMap.get(b.id);
     const aTime = aAttendance
-      ? getTimeRemaining(a.subjects, aAttendance.check_in)
+      ? getTimeRemaining(a.subjects, aAttendance.check_in, { scheduleDetail: a.schedule_detail, sessionDurationMinutes: aAttendance.session_duration_minutes })
       : 999;
     const bTime = bAttendance
-      ? getTimeRemaining(b.subjects, bAttendance.check_in)
+      ? getTimeRemaining(b.subjects, bAttendance.check_in, { scheduleDetail: b.schedule_detail, sessionDurationMinutes: bAttendance.session_duration_minutes })
       : 999;
     return aTime - bTime;
   });

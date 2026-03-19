@@ -50,7 +50,7 @@ export default function StudentRow({
         )}
         <div className={styles.badges}>
           <SubjectBadges subjects={student.subjects} />
-          {showDuration && <DurationBadge subjects={student.subjects} />}
+          {showDuration && <DurationBadge subjects={student.subjects} scheduleDetail={student.schedule_detail} />}
         </div>
       </div>
       {rightElement}

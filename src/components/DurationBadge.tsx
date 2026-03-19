@@ -2,10 +2,11 @@ import { getSessionDuration } from '@/lib/types';
 
 interface DurationBadgeProps {
   subjects: string | string[] | null | undefined;
+  scheduleDetail?: Record<string, { start: string; sort_key: number; duration: number }> | null;
 }
 
-export default function DurationBadge({ subjects }: DurationBadgeProps) {
-  const duration = getSessionDuration(subjects);
+export default function DurationBadge({ subjects, scheduleDetail }: DurationBadgeProps) {
+  const duration = getSessionDuration(subjects, scheduleDetail ? { scheduleDetail } : undefined);
 
   return (
     <span

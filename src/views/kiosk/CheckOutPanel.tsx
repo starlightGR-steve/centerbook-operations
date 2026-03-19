@@ -61,7 +61,7 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
           if (!student) return null;
 
           const adj = getAdjustment(a.student_id);
-          const baseTimeLeft = getTimeRemaining(student.subjects, a.check_in);
+          const baseTimeLeft = getTimeRemaining(student.subjects, a.check_in, { scheduleDetail: student.schedule_detail, sessionDurationMinutes: a.session_duration_minutes });
           const timeLeft = baseTimeLeft + adj;
           const isWarn = timeLeft <= 5;
 
@@ -104,7 +104,7 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
                   </span>
                 </div>
               </button>
-              <SessionTimeAdjust studentId={a.student_id} subjects={student.subjects} />
+              <SessionTimeAdjust studentId={a.student_id} subjects={student.subjects} scheduleDetail={student.schedule_detail} />
             </div>
           );
         })}
