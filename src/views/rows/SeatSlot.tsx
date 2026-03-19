@@ -9,6 +9,7 @@ interface SeatSlotProps {
   attendance?: Attendance;
   onDragStart?: () => void;
   onDragEnd?: () => void;
+  onTouchDragStart?: () => void;
   isDragging?: boolean;
 }
 
@@ -17,6 +18,7 @@ export default function SeatSlot({
   attendance,
   onDragStart,
   onDragEnd,
+  onTouchDragStart,
   isDragging,
 }: SeatSlotProps) {
   if (!student) {
@@ -48,6 +50,12 @@ export default function SeatSlot({
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onTouchStart={(e) => {
+        if (onTouchDragStart) {
+          e.preventDefault();
+          onTouchDragStart();
+        }
+      }}
       style={{ opacity: isDragging ? 0.5 : 1 }}
       title={`${student.first_name} ${student.last_name} — ${timeStr || 'not checked in'}`}
     >

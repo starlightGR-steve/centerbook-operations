@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { Edit2, ChevronDown } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
 import SeatSlot from './SeatSlot';
@@ -175,12 +175,62 @@ export default function ClassroomOverview({
     return 'Staff';
   };
 
-  const handleDrop = (rowId: string) => {
+  const handleDrop = useCallback((rowId: string) => {
     if (dragStudent) {
       onMoveStudent(dragStudent.id, rowId);
       onDragEnd();
     }
-  };
+  }, [dragStudent, onMoveStudent, onDragEnd]);
+
+  // ── Touch drag support for iPad / mobile ──
+  const touchHoverRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!dragStudent) return;
+
+    const findRowCard = (x: number, y: number): HTMLElement | null => {
+      const el = document.elementFromPoint(x, y);
+      return el?.closest('[data-row-id]') as HTMLElement | null;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault(); // prevent scroll during drag
+      const touch = e.touches[0];
+      const target = findRowCard(touch.clientX, touch.clientY);
+
+      // Update hover highlight
+      if (touchHoverRef.current !== target) {
+        touchHoverRef.current?.classList.remove(styles.rowCardDragOver);
+        target?.classList.add(styles.rowCardDragOver);
+        touchHoverRef.current = target;
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const touch = e.changedTouches[0];
+      const target = findRowCard(touch.clientX, touch.clientY);
+      const rowId = target?.getAttribute('data-row-id');
+
+      // Clean up hover highlight
+      touchHoverRef.current?.classList.remove(styles.rowCardDragOver);
+      touchHoverRef.current = null;
+
+      if (rowId) {
+        handleDrop(rowId);
+      } else {
+        onDragEnd();
+      }
+    };
+
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
+    return () => {
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+      touchHoverRef.current?.classList.remove(styles.rowCardDragOver);
+      touchHoverRef.current = null;
+    };
+  }, [dragStudent, onDragEnd, handleDrop]);
 
   return (
     <div className={styles.page}>
@@ -236,6 +286,7 @@ export default function ClassroomOverview({
                   return (
                     <div
                       key={row.id}
+                      data-row-id={row.id}
                       className={`${styles.rowCard} ${dragStudent ? styles.rowCardDropTarget : ''}`}
                       onClick={() => {
                         if (!dragStudent) onSelectRow(row.id);
@@ -293,6 +344,9 @@ export default function ClassroomOverview({
                                 table.s1 && onDragStart(table.s1)
                               }
                               onDragEnd={onDragEnd}
+                              onTouchDragStart={() =>
+                                table.s1 && onDragStart(table.s1)
+                              }
                               isDragging={
                                 dragStudent?.id === table.s1?.id
                               }
@@ -308,6 +362,9 @@ export default function ClassroomOverview({
                                 table.s2 && onDragStart(table.s2)
                               }
                               onDragEnd={onDragEnd}
+                              onTouchDragStart={() =>
+                                table.s2 && onDragStart(table.s2)
+                              }
                               isDragging={
                                 dragStudent?.id === table.s2?.id
                               }

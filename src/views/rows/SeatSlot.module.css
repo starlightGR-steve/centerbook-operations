@@ -17,6 +17,10 @@
   cursor: grab;
   transition: all 0.15s;
   gap: 6px;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .slot:active {
