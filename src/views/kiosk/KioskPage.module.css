@@ -268,12 +268,10 @@
 .hereRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.12s;
-  border: none;
   background: none;
   width: 100%;
   text-align: left;
@@ -298,10 +296,36 @@
   color: var(--neutral);
 }
 
+.hereEdit {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.hereEdit:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
 .hereCheck {
   color: #16a34a;
   flex-shrink: 0;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
 /* ── Staff Row ── */

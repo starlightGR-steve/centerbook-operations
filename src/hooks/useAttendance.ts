@@ -45,6 +45,21 @@ export async function checkInStudent(data: CheckInRequest): Promise<Attendance> 
   return result;
 }
 
+/** Delete an attendance record (undo check-in) */
+export async function deleteAttendance(id: number): Promise<void> {
+  await api.attendance.delete(id);
+  const d = new Date().toISOString().split('T')[0];
+  await mutate(`attendance-${d}`);
+}
+
+/** Update an attendance record (undo check-out or adjust times) */
+export async function updateAttendance(id: number, data: { check_in?: string; check_out?: string | null }): Promise<Attendance> {
+  const result = await api.attendance.update(id, data);
+  const d = new Date().toISOString().split('T')[0];
+  await mutate(`attendance-${d}`);
+  return result;
+}
+
 /** Check out a student */
 export async function checkOutStudent(data: CheckOutRequest): Promise<Attendance> {
   if (isDemoModeActive()) {

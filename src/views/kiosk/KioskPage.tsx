@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Scan, ArrowRight, Users, UserCheck, Plus, CheckCircle, Search, X } from 'lucide-react';
+import { Scan, ArrowRight, Users, UserCheck, Plus, CheckCircle, Search, X, Pencil } from 'lucide-react';
+import AttendanceEditModal from '@/components/AttendanceEditModal';
 import SubjectBadges from '@/components/SubjectBadges';
 import { useStudents } from '@/hooks/useStudents';
-import { useCheckedInStudents, checkInStudent, checkOutStudent } from '@/hooks/useAttendance';
-import { updateStudentFlags } from '@/hooks/useRows';
+import { useCheckedInStudents, checkInStudent, checkOutStudent, deleteAttendance, updateAttendance } from '@/hooks/useAttendance';
+import { updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
+import UndoToast from '@/components/ui/UndoToast';
+import type { UndoToastItem } from '@/components/ui/UndoToast';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { getSessionDuration, formatTimeKey, formatTime } from '@/lib/types';
@@ -45,6 +48,9 @@ export default function KioskPage() {
   const [time, setTime] = useState('');
   const [checkInStudent_popup, setCheckInStudentPopup] = useState<Student | null>(null);
   const [nameSearch, setNameSearch] = useState('');
+  const [undoToast, setUndoToast] = useState<UndoToastItem | null>(null);
+  const [editAttendance, setEditAttendance] = useState<{ attendance: import('@/lib/types').Attendance; studentName: string } | null>(null);
+  const toastIdRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -174,15 +180,33 @@ export default function KioskPage() {
 
     const isIn = checkedIn?.some((a) => a.student_id === student.id);
     if (isIn) {
+      const existing = checkedIn?.find((a) => a.student_id === student.id);
       await checkOutStudent({ student_id: student.id });
       setAnnouncement(`${student.first_name} ${student.last_name} checked out`);
+      if (existing) {
+        setUndoToast({
+          id: ++toastIdRef.current,
+          message: `${student.first_name} ${student.last_name} checked out`,
+          onUndo: async () => {
+            await updateAttendance(existing.id, { check_out: null });
+          },
+        });
+      }
     } else {
-      await checkInStudent({
+      const result = await checkInStudent({
         student_id: student.id,
         source: 'barcode',
         session_duration_minutes: getSessionDuration(student.subjects),
       });
       setAnnouncement(`${student.first_name} ${student.last_name} checked in`);
+      setUndoToast({
+        id: ++toastIdRef.current,
+        message: `${student.first_name} ${student.last_name} checked in`,
+        onUndo: async () => {
+          await deleteAttendance(result.id);
+          try { await removeStudentFromRow(student.id); } catch { /* may not have assignment */ }
+        },
+      });
     }
     setScan('');
   };
@@ -192,7 +216,11 @@ export default function KioskPage() {
   };
 
   const handleCheckInConfirm = async (options: CheckInOptions) => {
-    await checkInStudent({
+    const studentName = checkInStudent_popup
+      ? `${checkInStudent_popup.first_name} ${checkInStudent_popup.last_name}`
+      : 'Student';
+
+    const result = await checkInStudent({
       student_id: options.studentId,
       source: 'kiosk',
       checked_in_by: 'kiosk',
@@ -223,11 +251,31 @@ export default function KioskPage() {
     }
 
     setCheckInStudentPopup(null);
-    setAnnouncement(`${checkInStudent_popup?.first_name} ${checkInStudent_popup?.last_name} checked in`);
+    setAnnouncement(`${studentName} checked in`);
+    setUndoToast({
+      id: ++toastIdRef.current,
+      message: `${studentName} checked in`,
+      onUndo: async () => {
+        await deleteAttendance(result.id);
+        try { await removeStudentFromRow(options.studentId); } catch { /* may not have assignment */ }
+      },
+    });
   };
 
   const handleCheckOut = async (studentId: number) => {
+    const student = getStudent(studentId);
+    const existing = checkedIn?.find((a) => a.student_id === studentId);
     await checkOutStudent({ student_id: studentId });
+    if (student && existing) {
+      setAnnouncement(`${student.first_name} ${student.last_name} checked out`);
+      setUndoToast({
+        id: ++toastIdRef.current,
+        message: `${student.first_name} ${student.last_name} checked out`,
+        onUndo: async () => {
+          await updateAttendance(existing.id, { check_out: null });
+        },
+      });
+    }
   };
 
   const handleClockIn = async (staffId: number) => {
@@ -399,13 +447,8 @@ export default function KioskPage() {
                 const student = a.student || getStudent(a.student_id);
                 if (!student) return null;
                 return (
-                  <button
-                    key={a.id}
-                    className={styles.hereRow}
-                    onClick={() => handleCheckOut(a.student_id)}
-                    aria-label={`Check out ${student.first_name} ${student.last_name}`}
-                  >
-                    <div>
+                  <div key={a.id} className={styles.hereRow}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <p className={styles.hereName}>
                         {student.first_name} {student.last_name}
                       </p>
@@ -413,10 +456,21 @@ export default function KioskPage() {
                         Arrived {formatTime(a.check_in)}
                       </p>
                     </div>
-                    <span className={styles.hereCheck}>
+                    <button
+                      className={styles.hereEdit}
+                      onClick={() => setEditAttendance({ attendance: a, studentName: `${student.first_name} ${student.last_name}` })}
+                      aria-label={`Edit attendance for ${student.first_name} ${student.last_name}`}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      className={styles.hereCheck}
+                      onClick={() => handleCheckOut(a.student_id)}
+                      aria-label={`Check out ${student.first_name} ${student.last_name}`}
+                    >
                       <CheckCircle size={20} />
-                    </span>
-                  </button>
+                    </button>
+                  </div>
                 );
               })
             )}
@@ -474,6 +528,16 @@ export default function KioskPage() {
           onConfirm={handleCheckInConfirm}
         />
       )}
+
+      {editAttendance && (
+        <AttendanceEditModal
+          attendance={editAttendance.attendance}
+          studentName={editAttendance.studentName}
+          onClose={() => setEditAttendance(null)}
+        />
+      )}
+
+      <UndoToast item={undoToast} onDismiss={() => setUndoToast(null)} />
     </div>
   );
 }

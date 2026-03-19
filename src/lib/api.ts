@@ -278,6 +278,15 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    delete: (id: number) =>
+      directFetch<{ deleted: boolean; id: number }>(`/attendance/${id}`, {
+        method: 'DELETE',
+      }),
+    update: (id: number, data: { check_in?: string; check_out?: string | null }) =>
+      directFetch<Attendance>(`/attendance/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
   },
 
   // ── Timeclock (Staff) ──

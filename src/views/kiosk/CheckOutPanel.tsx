@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { LogOut } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { LogOut, Pencil } from 'lucide-react';
+import AttendanceEditModal from '@/components/AttendanceEditModal';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
@@ -9,7 +10,9 @@ import SessionTimeAdjust from '@/components/SessionTimeAdjust';
 import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import type { Attendance, Student } from '@/lib/types';
 import { getTimeRemaining, formatTime } from '@/lib/types';
-import { checkOutStudent } from '@/hooks/useAttendance';
+import { checkOutStudent, updateAttendance } from '@/hooks/useAttendance';
+import UndoToast from '@/components/ui/UndoToast';
+import type { UndoToastItem } from '@/components/ui/UndoToast';
 import styles from './CheckOutPanel.module.css';
 
 interface CheckOutPanelProps {
@@ -20,6 +23,9 @@ interface CheckOutPanelProps {
 export default function CheckOutPanel({ attendance, students }: CheckOutPanelProps) {
   const { getAdjustment } = useSessionAdjust();
   const [, setTick] = useState(0);
+  const [undoToast, setUndoToast] = useState<UndoToastItem | null>(null);
+  const toastIdRef = useRef(0);
+  const [editAttendance, setEditAttendance] = useState<{ attendance: Attendance; studentName: string } | null>(null);
 
   // Force re-render every 15s to update time remaining
   useEffect(() => {
@@ -28,7 +34,18 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
   }, []);
 
   const handleCheckOut = async (studentId: number) => {
+    const student = getStudent(studentId);
+    const existing = attendance.find((a) => a.student_id === studentId);
     await checkOutStudent({ student_id: studentId });
+    if (student && existing) {
+      setUndoToast({
+        id: ++toastIdRef.current,
+        message: `${student.first_name} ${student.last_name} checked out`,
+        onUndo: async () => {
+          await updateAttendance(existing.id, { check_out: null });
+        },
+      });
+    }
   };
 
   const getStudent = (id: number) => students.find((s) => s.id === id);
@@ -104,11 +121,31 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
                   </span>
                 </div>
               </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setEditAttendance({ attendance: a, studentName: `${student.first_name} ${student.last_name}` }); }}
+                aria-label="Edit attendance time"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 28, height: 28, borderRadius: '50%',
+                  border: '1px solid var(--border)', background: 'var(--white)',
+                  color: 'var(--neutral)', cursor: 'pointer',
+                }}
+              >
+                <Pencil size={14} />
+              </button>
               <SessionTimeAdjust studentId={a.student_id} subjects={student.subjects} scheduleDetail={student.schedule_detail} />
             </div>
           );
         })}
       </div>
+      {editAttendance && (
+        <AttendanceEditModal
+          attendance={editAttendance.attendance}
+          studentName={editAttendance.studentName}
+          onClose={() => setEditAttendance(null)}
+        />
+      )}
+      <UndoToast item={undoToast} onDismiss={() => setUndoToast(null)} />
     </Card>
   );
 }

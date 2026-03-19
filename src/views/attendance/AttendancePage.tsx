@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Send, CheckCircle2, Clock, AlertTriangle, UserCheck, CalendarPlus } from 'lucide-react';
+import { Send, CheckCircle2, Clock, AlertTriangle, UserCheck, CalendarPlus, Pencil } from 'lucide-react';
+import AttendanceEditModal from '@/components/AttendanceEditModal';
 import SectionHeader from '@/components/ui/SectionHeader';
 import SubjectBadges from '@/components/SubjectBadges';
 import Modal from '@/components/ui/Modal';
@@ -42,6 +43,7 @@ export default function AttendancePage() {
   const [makeupTime, setMakeupTime] = useState('16:00');
   const [makeupScheduled, setMakeupScheduled] = useState<Record<string, string>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [editAttendance, setEditAttendance] = useState<{ attendance: import('@/lib/types').Attendance; studentName: string } | null>(null);
 
   const today = getToday();
 
@@ -289,19 +291,33 @@ export default function AttendancePage() {
                 <span className={styles.colBadge}>{checkedInStudents.length}</span>
               </div>
               <div className={styles.colBody}>
-                {checkedInStudents.map((s) => (
-                  <div key={s.id} className={styles.attendanceCard}>
-                    <div className={styles.cardTop}>
-                      <h4 className={styles.cardName}>
-                        {s.first_name} {s.last_name}
-                      </h4>
-                      <SubjectBadges subjects={parseSubjects(s.subjects)} />
+                {checkedInStudents.map((s) => {
+                  const att = checkedIn?.find((a) => a.student_id === s.id);
+                  return (
+                    <div key={s.id} className={styles.attendanceCard}>
+                      <div className={styles.cardTop}>
+                        <h4 className={styles.cardName}>
+                          {s.first_name} {s.last_name}
+                        </h4>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <SubjectBadges subjects={parseSubjects(s.subjects)} />
+                          {att && (
+                            <button
+                              className={styles.editBtn}
+                              onClick={() => setEditAttendance({ attendance: att, studentName: `${s.first_name} ${s.last_name}` })}
+                              aria-label={`Edit attendance for ${s.first_name} ${s.last_name}`}
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p className={styles.cardTime}>
+                        Scheduled: {formatTimeKey(s.class_time_sort_key)}
+                      </p>
                     </div>
-                    <p className={styles.cardTime}>
-                      Scheduled: {formatTimeKey(s.class_time_sort_key)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
                 {checkedInStudents.length === 0 && (
                   <p className={styles.emptyCol}>No students checked in yet.</p>
                 )}
@@ -364,6 +380,14 @@ export default function AttendancePage() {
           </Button>
         </div>
       </Modal>
+
+      {editAttendance && (
+        <AttendanceEditModal
+          attendance={editAttendance.attendance}
+          studentName={editAttendance.studentName}
+          onClose={() => setEditAttendance(null)}
+        />
+      )}
 
       {/* Toast */}
       {toastMessage && (

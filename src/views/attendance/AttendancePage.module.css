@@ -124,6 +124,26 @@
   color: var(--primary);
 }
 
+.editBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.editBtn:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
 .cardTime {
   margin: 0;
   font-family: var(--font-primary);
