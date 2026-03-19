@@ -169,7 +169,7 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 4px;
-  background: #0091ff;
+  background: var(--math);
   color: var(--white);
 }
 

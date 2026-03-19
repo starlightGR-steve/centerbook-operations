@@ -70,7 +70,7 @@
   width: 14px;
   height: 14px;
   border-radius: 3px;
-  background: #0091ff;
+  background: var(--math);
   color: var(--white);
   display: flex;
   align-items: center;
