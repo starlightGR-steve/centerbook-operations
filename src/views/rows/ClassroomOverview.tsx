@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
-import { Edit2, ChevronDown } from 'lucide-react';
+import { Edit2, ChevronDown, Plus } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
 import SeatSlot from './SeatSlot';
 import { useActiveStaff } from '@/hooks/useStaff';
@@ -21,6 +21,8 @@ interface ClassroomOverviewProps {
   attendanceMap: Map<number, Attendance>;
   checkedInStudents: Student[];
   onSelectRow: (rowId: string) => void;
+  onSelectStudent: (student: Student) => void;
+  onAddToRow: (rowLabel: string) => void;
   onSetup: () => void;
   onMoveStudent: (studentId: number, targetRowId: string) => void;
   rowOverrides: Record<string, string>;
@@ -106,6 +108,8 @@ export default function ClassroomOverview({
   attendanceMap,
   checkedInStudents,
   onSelectRow,
+  onSelectStudent,
+  onAddToRow,
   onSetup,
   onMoveStudent,
   rowOverrides,
@@ -331,47 +335,73 @@ export default function ClassroomOverview({
                       </div>
 
                       <div className={styles.tables}>
-                        {tables.map((table, ti) => (
-                          <div key={ti} className={styles.tablePair}>
-                            <SeatSlot
-                              student={table.s1}
-                              attendance={
-                                table.s1
-                                  ? attendanceMap.get(table.s1.id)
-                                  : undefined
-                              }
-                              onDragStart={() =>
-                                table.s1 && onDragStart(table.s1)
-                              }
-                              onDragEnd={onDragEnd}
-                              onTouchDragStart={() =>
-                                table.s1 && onDragStart(table.s1)
-                              }
-                              isDragging={
-                                dragStudent?.id === table.s1?.id
-                              }
-                            />
-                            <SeatSlot
-                              student={table.s2}
-                              attendance={
-                                table.s2
-                                  ? attendanceMap.get(table.s2.id)
-                                  : undefined
-                              }
-                              onDragStart={() =>
-                                table.s2 && onDragStart(table.s2)
-                              }
-                              onDragEnd={onDragEnd}
-                              onTouchDragStart={() =>
-                                table.s2 && onDragStart(table.s2)
-                              }
-                              isDragging={
-                                dragStudent?.id === table.s2?.id
-                              }
-                            />
-                          </div>
-                        ))}
+                        {tables.map((table, ti) => {
+                          const bothEmpty = !table.s1 && !table.s2;
+                          return (
+                            <div
+                              key={ti}
+                              className={`${styles.tablePair} ${bothEmpty ? styles.mobileHideEmpty : ''}`}
+                            >
+                              <div className={!table.s1 ? styles.mobileHideEmpty : undefined}>
+                                <SeatSlot
+                                  student={table.s1}
+                                  attendance={
+                                    table.s1
+                                      ? attendanceMap.get(table.s1.id)
+                                      : undefined
+                                  }
+                                  onDragStart={() =>
+                                    table.s1 && onDragStart(table.s1)
+                                  }
+                                  onDragEnd={onDragEnd}
+                                  onTouchDragStart={() =>
+                                    table.s1 && onDragStart(table.s1)
+                                  }
+                                  onSelect={() =>
+                                    table.s1 && onSelectStudent(table.s1)
+                                  }
+                                  isDragging={
+                                    dragStudent?.id === table.s1?.id
+                                  }
+                                />
+                              </div>
+                              <div className={!table.s2 ? styles.mobileHideEmpty : undefined}>
+                                <SeatSlot
+                                  student={table.s2}
+                                  attendance={
+                                    table.s2
+                                      ? attendanceMap.get(table.s2.id)
+                                      : undefined
+                                  }
+                                  onDragStart={() =>
+                                    table.s2 && onDragStart(table.s2)
+                                  }
+                                  onDragEnd={onDragEnd}
+                                  onTouchDragStart={() =>
+                                    table.s2 && onDragStart(table.s2)
+                                  }
+                                  onSelect={() =>
+                                    table.s2 && onSelectStudent(table.s2)
+                                  }
+                                  isDragging={
+                                    dragStudent?.id === table.s2?.id
+                                  }
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
+
+                      {rs.length < row.seats && (
+                        <div
+                          className={styles.mobileAddStudent}
+                          onClick={(e) => { e.stopPropagation(); onAddToRow(row.label); }}
+                        >
+                          <Plus size={14} />
+                          <span>Add Student ({row.seats - rs.length} open)</span>
+                        </div>
+                      )}
 
                       {rs.length > 0 && (
                         <div className={styles.rowBadges}>

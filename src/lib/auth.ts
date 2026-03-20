@@ -4,6 +4,21 @@ import bcrypt from 'bcryptjs';
 
 export type AppRole = 'superuser' | 'admin' | 'staff';
 
+/** Map WordPress cb_staff.role values to AppRole for nav gating */
+function toAppRole(wpRole: string): AppRole {
+  switch (wpRole.toLowerCase()) {
+    case 'superuser':
+      return 'superuser';
+    case 'owner':
+    case 'admin':
+    case 'instruction_manager':
+    case 'center_manager':
+      return 'admin';
+    default:
+      return 'staff';
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -47,7 +62,7 @@ export const authOptions: NextAuthOptions = {
           id: String(staff.id),
           name: `${staff.first_name} ${staff.last_name}`,
           email: staff.email,
-          role: staff.role as AppRole,
+          role: toAppRole(staff.role || 'staff'),
         };
       },
     }),

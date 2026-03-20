@@ -8,9 +8,9 @@
 }
 
 .card {
-  max-width: 480px;
+  max-width: min(480px, 95vw);
   width: 100%;
-  padding: 40px;
+  padding: clamp(24px, 5vw, 40px);
   text-align: center;
 }
 

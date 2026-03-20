@@ -116,8 +116,9 @@
   padding: 24px;
   cursor: pointer;
   transition: all 0.15s;
-  width: 320px;
-  flex: 0 0 320px;
+  width: clamp(260px, 30vw, 320px);
+  flex: 1 1 clamp(260px, 30vw, 320px);
+  min-width: 0;
 }
 
 .rowCard:hover {
@@ -239,8 +240,8 @@
   }
 
   .rowCard {
-    width: 280px;
-    flex: 0 0 280px;
+    width: clamp(240px, 42vw, 280px);
+    flex: 1 1 clamp(240px, 42vw, 280px);
   }
 }
 
@@ -284,5 +285,57 @@
 
   .tablePair {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .content {
+    padding: 12px;
+  }
+
+  .rowCard {
+    padding: 12px;
+  }
+
+  .tablePair {
+    grid-template-columns: 1fr;
+  }
+
+  .rowGrid {
+    gap: 8px;
+  }
+}
+
+/* ── Mobile: hide empty seats, show add-student button ── */
+.mobileAddStudent {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobileHideEmpty {
+    display: none;
+  }
+
+  .mobileAddStudent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--base);
+    color: var(--neutral);
+    font-family: var(--font-primary);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .mobileAddStudent:hover {
+    border-color: var(--secondary);
+    color: var(--secondary);
   }
 }

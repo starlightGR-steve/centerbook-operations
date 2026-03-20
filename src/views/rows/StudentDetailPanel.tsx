@@ -154,7 +154,19 @@ export default function StudentDetailPanel({
           <SmsStatusIndicator attendance={attendance} variant="detail" />
         )}
 
-        {/* 3. Schedule */}
+        {/* 3. Medical / Allergies */}
+        {student.medical_notes && (
+          <div className={styles.medicalAlert}>
+            <Heart size={16} color="var(--red)" />
+            <div>
+              <p className={styles.medicalTitle}>Medical / Allergies</p>
+              <p className={styles.medicalText}>{student.medical_notes}</p>
+            </div>
+          </div>
+        )}
+
+        {/* 4. Schedule */}
+
         <div>
           <label className={styles.label}>Schedule</label>
           <div className={styles.scheduleDays}>
@@ -176,7 +188,7 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* 4. Add Note */}
+        {/* 5. Add Note */}
         <div>
           <label className={styles.label}>Add Note</label>
           <div className={styles.noteInputWrap}>
@@ -215,7 +227,7 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* 5. Notes History */}
+        {/* 6. Notes History */}
         <div>
           <label className={`${styles.label} ${styles.labelSpaced}`}>
             Notes History
@@ -252,7 +264,7 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* 6. Library Books */}
+        {/* 7. Library Books */}
         <div>
           <label className={styles.label}>Library Books</label>
           {studentLoans && studentLoans.length > 0 ? (
@@ -269,16 +281,6 @@ export default function StudentDetailPanel({
           )}
         </div>
 
-        {/* 7. Medical Alert (moved to bottom) */}
-        {student.medical_notes && (
-          <div className={styles.medicalAlert}>
-            <Heart size={16} color="var(--red)" />
-            <div>
-              <p className={styles.medicalTitle}>Medical / Allergies</p>
-              <p className={styles.medicalText}>{student.medical_notes}</p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignment
 import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
 import ClassroomSetup from './ClassroomSetup';
+import AddStudentPicker from './AddStudentPicker';
 import styles from './RowsPage.module.css';
 
 interface FlatRow extends ClassroomRow {
@@ -101,6 +102,8 @@ export default function RowsPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [showSetup, setShowSetup] = useState(false);
   const [dragStudent, setDragStudent] = useState<Student | null>(null);
+  const [overviewStudent, setOverviewStudent] = useState<Student | null>(null);
+  const [addToRowLabel, setAddToRowLabel] = useState<string | null>(null);
   const [rowCompleteIds, setRowCompleteIds] = useState<Set<number>>(new Set());
   const [assigningToRow, setAssigningToRow] = useState(false);
   const [movingStudent, setMovingStudent] = useState<number | null>(null);
@@ -241,6 +244,15 @@ export default function RowsPage() {
     return base + adj;
   }, [sessionAdjustments]);
 
+  // Students checked in but not assigned to any row
+  const unassignedStudents = useMemo(() => {
+    if (!checkedInStudents || !persistedAssignments) return [];
+    const assignedIds = new Set(persistedAssignments.map((a) => a.student_id));
+    return checkedInStudents
+      .filter((s) => !assignedIds.has(s.id))
+      .sort((a, b) => a.last_name.localeCompare(b.last_name));
+  }, [checkedInStudents, persistedAssignments]);
+
   if (!allStudents || !checkedIn) {
     return <RowsSkeleton />;
   }
@@ -253,22 +265,50 @@ export default function RowsPage() {
   // CLASSROOM OVERVIEW (default)
   if (!selectedRowId) {
     return (
-      <ClassroomOverview
-        sections={sections}
-        students={allStudents}
-        attendanceMap={attendanceMap}
-        checkedInStudents={checkedInStudents}
-        onSelectRow={(rowId) => {
-          setSelectedRowId(rowId);
-          setSelectedStudentId(null);
-        }}
-        onSetup={() => setShowSetup(true)}
-        onMoveStudent={moveStudentToRow}
-        rowOverrides={rowOverrides}
-        dragStudent={dragStudent}
-        onDragStart={setDragStudent}
-        onDragEnd={() => setDragStudent(null)}
-      />
+      <>
+        <ClassroomOverview
+          sections={sections}
+          students={allStudents}
+          attendanceMap={attendanceMap}
+          checkedInStudents={checkedInStudents}
+          onSelectRow={(rowId) => {
+            setSelectedRowId(rowId);
+            setSelectedStudentId(null);
+          }}
+          onSelectStudent={setOverviewStudent}
+          onAddToRow={setAddToRowLabel}
+          onSetup={() => setShowSetup(true)}
+          onMoveStudent={moveStudentToRow}
+          rowOverrides={rowOverrides}
+          dragStudent={dragStudent}
+          onDragStart={setDragStudent}
+          onDragEnd={() => setDragStudent(null)}
+        />
+
+        {overviewStudent && (
+          <StudentDetailPanel
+            student={overviewStudent}
+            attendance={attendanceMap.get(overviewStudent.id)}
+            onClose={() => setOverviewStudent(null)}
+          />
+        )}
+
+        {addToRowLabel && (
+          <AddStudentPicker
+            rowLabel={addToRowLabel}
+            unassignedStudents={unassignedStudents}
+            onAssign={async (studentId) => {
+              await assignStudentToRow({
+                student_id: studentId,
+                row_label: addToRowLabel,
+                session_date: today,
+              });
+              setAddToRowLabel(null);
+            }}
+            onClose={() => setAddToRowLabel(null)}
+          />
+        )}
+      </>
     );
   }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import type { Student, Attendance } from '@/lib/types';
 import { getTimeRemaining, parseSubjects } from '@/lib/types';
 import styles from './SeatSlot.module.css';
@@ -10,8 +11,11 @@ interface SeatSlotProps {
   onDragStart?: () => void;
   onDragEnd?: () => void;
   onTouchDragStart?: () => void;
+  onSelect?: () => void;
   isDragging?: boolean;
 }
+
+const DRAG_THRESHOLD = 8;
 
 export default function SeatSlot({
   student,
@@ -19,8 +23,11 @@ export default function SeatSlot({
   onDragStart,
   onDragEnd,
   onTouchDragStart,
+  onSelect,
   isDragging,
 }: SeatSlotProps) {
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const dragFiredRef = useRef(false);
   if (!student) {
     return <div className={styles.empty} />;
   }
@@ -50,11 +57,33 @@ export default function SeatSlot({
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      onTouchStart={(e) => {
-        if (onTouchDragStart) {
-          e.preventDefault();
-          onTouchDragStart();
+      onClick={(e) => {
+        if (onSelect) {
+          e.stopPropagation();
+          onSelect();
         }
+      }}
+      onTouchStart={(e) => {
+        if (onTouchDragStart || onSelect) {
+          e.preventDefault();
+          touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          dragFiredRef.current = false;
+        }
+      }}
+      onTouchMove={(e) => {
+        if (!touchStartRef.current || dragFiredRef.current) return;
+        const dx = e.touches[0].clientX - touchStartRef.current.x;
+        const dy = e.touches[0].clientY - touchStartRef.current.y;
+        if (Math.abs(dx) + Math.abs(dy) > DRAG_THRESHOLD) {
+          dragFiredRef.current = true;
+          onTouchDragStart?.();
+        }
+      }}
+      onTouchEnd={() => {
+        if (touchStartRef.current && !dragFiredRef.current) {
+          onSelect?.();
+        }
+        touchStartRef.current = null;
       }}
       style={{ opacity: isDragging ? 0.5 : 1 }}
       title={`${student.first_name} ${student.last_name} — ${timeStr || 'not checked in'}`}

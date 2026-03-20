@@ -234,12 +234,16 @@
   font-weight: 500;
   color: var(--primary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .expectedBadges {
   display: flex;
   gap: 4px;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  flex-wrap: wrap;
 }
 
 .expectedRight {
@@ -435,6 +439,10 @@
 @media (max-width: 1024px) {
   .page {
     padding: 20px;
+  }
+
+  .scannerWrap {
+    display: none;
   }
 }
 

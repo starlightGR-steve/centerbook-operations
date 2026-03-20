@@ -29,7 +29,7 @@
 
 .timeclockWrap {
   margin-top: 24px;
-  max-width: 400px;
+  max-width: min(400px, 100%);
 }
 
 .loading {
@@ -239,7 +239,7 @@
 .modalCard {
   background: var(--white);
   border-radius: var(--radius-card);
-  max-width: 480px;
+  max-width: min(480px, 95vw);
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
