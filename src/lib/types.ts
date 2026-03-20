@@ -435,13 +435,22 @@ export interface ReturnBookRequest {
 
 export type FamilyPipelineStatus = 'prospect' | 'assessment_scheduled' | 'lead' | 'trial' | 'enrolled';
 
+export type AssessmentOutcome = 'Completed' | 'Rescheduled' | 'No-Show';
+
 export interface Family {
   id: number;
   family_name: string;
   primary_contact_name: string;
+  primary_contact_email?: string | null;
+  primary_contact_phone?: string | null;
   lead_source: string | null;
+  referral_name?: string | null;
   inquiry_date: string | null;
+  number_of_students?: number | null;
   pipeline_status: FamilyPipelineStatus;
+  assessment_date?: string | null;
+  assessment_outcome?: AssessmentOutcome | null;
+  assessment_notes?: string | null;
   notes: string | null;
   created_at: string;
 }

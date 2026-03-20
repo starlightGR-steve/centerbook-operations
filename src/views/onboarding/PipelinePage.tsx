@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import NewFamilyLeadModal from '@/components/pipeline/NewFamilyLeadModal';
+import FamilyDetailModal from '@/components/pipeline/FamilyDetailModal';
 import { usePipelineSummary, useFamilies, updateFamilyStatus } from '@/hooks/usePipeline';
 import { useAllStudents } from '@/hooks/useStudents';
 import type { Family, FamilyPipelineStatus, Student } from '@/lib/types';
@@ -55,6 +56,7 @@ export default function PipelinePage() {
 
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
+  const [detailFamily, setDetailFamily] = useState<Family | null>(null);
   const [draggedFamily, setDraggedFamily] = useState<Family | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
@@ -162,12 +164,18 @@ export default function PipelinePage() {
                       draggable
                       onDragStart={() => setDraggedFamily(fam)}
                       onDragEnd={() => { setDraggedFamily(null); setDragOverCol(null); }}
+                      onClick={() => setDetailFamily(fam)}
                     >
                       <span className={styles.familyName}>{fam.family_name}</span>
                       <span className={styles.contactName}>{fam.primary_contact_name}</span>
                       <div className={styles.familyMeta}>
                         {fam.lead_source && (
                           <span className={styles.leadBadge}>{fam.lead_source}</span>
+                        )}
+                        {fam.assessment_outcome && (
+                          <span className={`${styles.assessmentBadge} ${styles[`assessment${fam.assessment_outcome.replace('-', '')}`]}`}>
+                            {fam.assessment_outcome}
+                          </span>
                         )}
                         {fam.inquiry_date && (
                           <span className={styles.inquiryDate}>
@@ -277,6 +285,14 @@ export default function PipelinePage() {
         <NewFamilyLeadModal
           onClose={() => setShowNewLead(false)}
           onCreated={() => mutateFamilies()}
+        />
+      )}
+
+      {detailFamily && (
+        <FamilyDetailModal
+          family={detailFamily}
+          onClose={() => setDetailFamily(null)}
+          onSaved={() => mutateFamilies()}
         />
       )}
     </div>
