@@ -92,6 +92,8 @@ export default function StudentsRosterPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [subjectFilter, setSubjectFilter] = useState<string>('All');
   const [posFilter, setPosFilter] = useState<string>('All');
+  const [dayFilter, setDayFilter] = useState<string>('All');
+  const [programFilter, setProgramFilter] = useState<string>('All');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
@@ -124,8 +126,8 @@ export default function StudentsRosterPage() {
     if (subjectFilter !== 'All') {
       result = result.filter((s) => {
         const subs = parseSubjects(s.subjects);
-        if (subjectFilter === 'Math') return subs.includes('Math') && !subs.includes('Reading');
-        if (subjectFilter === 'Reading') return subs.includes('Reading') && !subs.includes('Math');
+        if (subjectFilter === 'Math') return subs.includes('Math');
+        if (subjectFilter === 'Reading') return subs.includes('Reading');
         if (subjectFilter === 'Math + Reading') return subs.includes('Math') && subs.includes('Reading');
         return true;
       });
@@ -135,8 +137,20 @@ export default function StudentsRosterPage() {
       result = result.filter((s) => s.classroom_position === posFilter);
     }
 
+    if (dayFilter !== 'All') {
+      result = result.filter((s) => {
+        const days = s.class_schedule_days?.split(',').map((d) => d.trim()) || [];
+        const detailDays = s.schedule_detail ? Object.keys(s.schedule_detail) : [];
+        return days.includes(dayFilter) || detailDays.includes(dayFilter);
+      });
+    }
+
+    if (programFilter !== 'All') {
+      result = result.filter((s) => s.program_type === programFilter);
+    }
+
     return sortStudents(result, sortKey, sortDir);
-  }, [students, search, statusFilter, subjectFilter, posFilter, sortKey, sortDir]);
+  }, [students, search, statusFilter, subjectFilter, posFilter, dayFilter, programFilter, sortKey, sortDir]);
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return null;
@@ -154,7 +168,16 @@ export default function StudentsRosterPage() {
 
   const total = students?.length ?? 0;
   const showing = filtered.length;
-  const countLabel = showing === total ? `${total} students` : `${showing} of ${total}`;
+  const countLabel = showing === total ? `${total} students` : `Showing ${showing} of ${total} students`;
+
+  const activeFilterCount = [statusFilter, subjectFilter, posFilter, dayFilter, programFilter].filter((f) => f !== 'All').length;
+  const clearAllFilters = () => {
+    setStatusFilter('All');
+    setSubjectFilter('All');
+    setPosFilter('All');
+    setDayFilter('All');
+    setProgramFilter('All');
+  };
 
   return (
     <div className={styles.page}>
@@ -180,7 +203,7 @@ export default function StudentsRosterPage() {
             className={styles.search}
           />
           <select
-            className={styles.filter}
+            className={`${styles.filter} ${statusFilter !== 'All' ? styles.filterActive : ''}`}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -190,7 +213,7 @@ export default function StudentsRosterPage() {
             <option value="Withdrawn">Withdrawn</option>
           </select>
           <select
-            className={styles.filter}
+            className={`${styles.filter} ${subjectFilter !== 'All' ? styles.filterActive : ''}`}
             value={subjectFilter}
             onChange={(e) => setSubjectFilter(e.target.value)}
           >
@@ -200,7 +223,7 @@ export default function StudentsRosterPage() {
             <option value="Math + Reading">Math + Reading</option>
           </select>
           <select
-            className={styles.filter}
+            className={`${styles.filter} ${posFilter !== 'All' ? styles.filterActive : ''}`}
             value={posFilter}
             onChange={(e) => setPosFilter(e.target.value)}
           >
@@ -209,6 +232,32 @@ export default function StudentsRosterPage() {
             <option value="Main Classroom">Main Classroom</option>
             <option value="Upper Classroom">Upper Classroom</option>
           </select>
+          <select
+            className={`${styles.filter} ${dayFilter !== 'All' ? styles.filterActive : ''}`}
+            value={dayFilter}
+            onChange={(e) => setDayFilter(e.target.value)}
+          >
+            <option value="All">All Days</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+          </select>
+          <select
+            className={`${styles.filter} ${programFilter !== 'All' ? styles.filterActive : ''}`}
+            value={programFilter}
+            onChange={(e) => setProgramFilter(e.target.value)}
+          >
+            <option value="All">All Programs</option>
+            <option value="Paper">Paper</option>
+            <option value="Kumon Connect">Kumon Connect</option>
+          </select>
+          {activeFilterCount > 0 && (
+            <button className={styles.clearFilters} onClick={clearAllFilters}>
+              {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} — Clear all
+            </button>
+          )}
         </div>
       </div>
 
