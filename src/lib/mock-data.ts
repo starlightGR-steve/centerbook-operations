@@ -21,6 +21,7 @@ import type {
   ClassroomSection,
   ClassroomNote,
   RowAssignmentFlags,
+  Absence,
 } from './types';
 import { generateTimeSlots } from './types';
 
@@ -2440,5 +2441,17 @@ export const MOCK_JOURNAL_ENTRIES: JournalEntry[] = [
     author_id: 6, author_name: 'Ms. Rodriguez',
     goal_status: null, task_id: null,
     created_at: daysAgo(2) + 'T15:30:00Z', updated_at: now,
+  },
+];
+
+// ── Absences ──────────────────────────────
+
+export const MOCK_ABSENCES: Absence[] = [
+  {
+    id: 1, student_id: 35, absence_date: today,
+    reason: 'sick', vacation_start: null, vacation_end: null,
+    makeup_scheduled: false, makeup_date: null, makeup_time: null,
+    homework_out: true, notes: 'Mom called — flu this week',
+    created_by: 4, created_at: todayAt(14, 30), updated_at: todayAt(14, 30),
   },
 ];

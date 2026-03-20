@@ -476,6 +476,41 @@ export interface AssignRowTeacherRequest {
   session_date: string;
 }
 
+// ── Absences ──────────────────────────────
+
+export type AbsenceReason = 'sick' | 'vacation' | 'family' | 'other';
+
+export interface Absence {
+  id: number;
+  student_id: number;
+  absence_date: string;
+  reason: AbsenceReason;
+  vacation_start: string | null;
+  vacation_end: string | null;
+  makeup_scheduled: boolean;
+  makeup_date: string | null;
+  makeup_time: string | null;
+  homework_out: boolean;
+  notes: string | null;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAbsenceRequest {
+  student_id: number;
+  absence_date: string;
+  reason: AbsenceReason;
+  vacation_start?: string | null;
+  vacation_end?: string | null;
+  makeup_scheduled?: boolean;
+  makeup_date?: string | null;
+  makeup_time?: string | null;
+  homework_out?: boolean;
+  notes?: string | null;
+  created_by?: number | null;
+}
+
 // ── Center Settings (Logistics) ──────────
 
 export interface FlagConfigItem {

@@ -6,6 +6,7 @@ import {
   AlertTriangle, CalendarPlus, Plus, Check,
 } from 'lucide-react';
 import AttendanceEditModal from '@/components/AttendanceEditModal';
+import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
 import SubjectBadges from '@/components/SubjectBadges';
 import CheckInPopup from '@/views/kiosk/CheckInPopup';
 import type { CheckInOptions } from '@/views/kiosk/CheckInPopup';
@@ -19,6 +20,7 @@ import {
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
+import { useAbsences } from '@/hooks/useAbsences';
 import {
   getTimeRemaining, getSessionDuration, formatTimeKey, formatTime, parseSubjects,
 } from '@/lib/types';
@@ -32,12 +34,6 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 const ROLE_ORDER: Record<string, number> = {
   owner: 0, instruction_manager: 1, center_manager: 2,
   project_manager: 3, admin: 4, teacher: 5, grader: 6,
-};
-
-const EXCUSE_REASONS = ['Illness', 'Other activity', 'Vacation'] as const;
-const MAKEUP_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const MAKEUP_DAY_SHORT: Record<string, string> = {
-  Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri',
 };
 
 /* ── Helpers ── */
@@ -114,16 +110,8 @@ export default function AttendancePage() {
   const [sentMissedYou, setSentMissedYou] = useState<Set<string>>(new Set());
   const [sendingMissedYou, setSendingMissedYou] = useState<Set<string>>(new Set());
 
-  // Excused inline form
-  const [excuseFormStudent, setExcuseFormStudent] = useState<string | null>(null);
-  const [excuseReason, setExcuseReason] = useState<string>('Illness');
-  const [excuseHomework, setExcuseHomework] = useState(false);
-  const [excuseMakeup, setExcuseMakeup] = useState(false);
-  const [excuseMakeupDay, setExcuseMakeupDay] = useState('');
-  const [excuseMakeupTime, setExcuseMakeupTime] = useState('16:00');
-  const [excusedStudents, setExcusedStudents] = useState<
-    Map<string, { reason: string; homework: boolean; makeup?: string }>
-  >(new Map());
+  // Excused absence modal
+  const [excuseModalStudent, setExcuseModalStudent] = useState<Student | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -134,6 +122,7 @@ export default function AttendancePage() {
   const { data: checkedIn } = useCheckedInStudents(undefined, 5000);
   const { data: activeStaff } = useActiveStaff();
   const { data: timeEntries } = useTimeclock();
+  const { data: todayAbsences, mutate: mutateAbsences } = useAbsences();
 
   const today = getToday();
   const todayDay = today;
@@ -220,20 +209,26 @@ export default function AttendancePage() {
       .filter((x) => !!x.student);
   }, [allAttendance, allStudents]);
 
+  // Excused student IDs from absence records
+  const excusedIds = useMemo(() => {
+    if (!todayAbsences) return new Set<number>();
+    return new Set(todayAbsences.map((a) => a.student_id));
+  }, [todayAbsences]);
+
   // Column 4: No-Show — scheduled 15+ min ago, no attendance record, not excused
   const noShowStudents = useMemo(
     () => scheduledToday.filter(
-      (s) => isNoShow(s) && !allAttendanceMap.has(s.id) && !excusedStudents.has(String(s.id))
+      (s) => isNoShow(s) && !allAttendanceMap.has(s.id) && !excusedIds.has(s.id)
     ),
-    [scheduledToday, allAttendanceMap, excusedStudents]
+    [scheduledToday, allAttendanceMap, excusedIds]
   );
 
-  // Excused students shown separately in no-show column
+  // Excused students shown below no-show column
   const excusedList = useMemo(
     () => scheduledToday.filter(
-      (s) => isNoShow(s) && !allAttendanceMap.has(s.id) && excusedStudents.has(String(s.id))
+      (s) => !allAttendanceMap.has(s.id) && excusedIds.has(s.id)
     ),
-    [scheduledToday, allAttendanceMap, excusedStudents]
+    [scheduledToday, allAttendanceMap, excusedIds]
   );
 
   // Staff sorted by role, excluding superusers
@@ -428,33 +423,6 @@ export default function AttendancePage() {
       setSendingMissedYou((prev) => { const next = new Set(prev); next.delete(sid); return next; });
       setMissedYouConfirm(null);
     }
-  };
-
-  /* ── Mark Excused ── */
-  const handleSaveExcuse = (student: Student) => {
-    const sid = String(student.id);
-    let makeupLabel: string | undefined;
-    if (excuseMakeup && excuseMakeupDay) {
-      const [h, m] = excuseMakeupTime.split(':').map(Number);
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      makeupLabel = `${MAKEUP_DAY_SHORT[excuseMakeupDay] || excuseMakeupDay} ${displayH}:${String(m).padStart(2, '0')} ${ampm}`;
-    }
-    setExcusedStudents((prev) => {
-      const next = new Map(prev);
-      next.set(sid, { reason: excuseReason, homework: excuseHomework, makeup: makeupLabel });
-      return next;
-    });
-    setExcuseFormStudent(null);
-    resetExcuseForm();
-  };
-
-  const resetExcuseForm = () => {
-    setExcuseReason('Illness');
-    setExcuseHomework(false);
-    setExcuseMakeup(false);
-    setExcuseMakeupDay('');
-    setExcuseMakeupTime('16:00');
   };
 
   /* ── Time remaining helper ── */
@@ -816,71 +784,6 @@ export default function AttendancePage() {
                             </button>
                           </div>
                         </div>
-                      ) : excuseFormStudent === sid ? (
-                        /* Mark Excused Inline Form */
-                        <div className={styles.excusePanel}>
-                          <div className={styles.excuseRadios}>
-                            {EXCUSE_REASONS.map((reason) => (
-                              <label key={reason} className={styles.radioLabel}>
-                                <input
-                                  type="radio"
-                                  name={`excuse-${sid}`}
-                                  value={reason}
-                                  checked={excuseReason === reason}
-                                  onChange={() => setExcuseReason(reason)}
-                                />
-                                {reason}
-                              </label>
-                            ))}
-                          </div>
-                          <label className={styles.checkboxLabel}>
-                            <input
-                              type="checkbox"
-                              checked={excuseHomework}
-                              onChange={(e) => setExcuseHomework(e.target.checked)}
-                            />
-                            Homework put in pickup bin
-                          </label>
-                          <label className={styles.checkboxLabel}>
-                            <input
-                              type="checkbox"
-                              checked={excuseMakeup}
-                              onChange={(e) => setExcuseMakeup(e.target.checked)}
-                            />
-                            Schedule a makeup day
-                          </label>
-                          {excuseMakeup && (
-                            <div className={styles.makeupPicker}>
-                              <select
-                                className={styles.makeupSelect}
-                                value={excuseMakeupDay}
-                                onChange={(e) => setExcuseMakeupDay(e.target.value)}
-                              >
-                                <option value="">Select day...</option>
-                                {MAKEUP_DAYS.map((d) => (
-                                  <option key={d} value={d}>{MAKEUP_DAY_SHORT[d]}</option>
-                                ))}
-                              </select>
-                              <input
-                                type="time"
-                                className={styles.makeupTimeInput}
-                                value={excuseMakeupTime}
-                                onChange={(e) => setExcuseMakeupTime(e.target.value)}
-                              />
-                            </div>
-                          )}
-                          <div className={styles.panelActions}>
-                            <button className={styles.saveExcuseBtn} onClick={() => handleSaveExcuse(s)}>
-                              Save
-                            </button>
-                            <button
-                              className={styles.cancelSmBtn}
-                              onClick={() => { setExcuseFormStudent(null); resetExcuseForm(); }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
                       ) : (
                         <div className={styles.noShowActions}>
                           {isSent ? (
@@ -897,7 +800,7 @@ export default function AttendancePage() {
                           )}
                           <button
                             className={styles.excuseBtn}
-                            onClick={() => { setExcuseFormStudent(sid); resetExcuseForm(); }}
+                            onClick={() => setExcuseModalStudent(s)}
                           >
                             Mark Excused
                           </button>
@@ -909,8 +812,7 @@ export default function AttendancePage() {
 
                 {/* Excused students */}
                 {filteredExcused.map((s) => {
-                  const sid = String(s.id);
-                  const info = excusedStudents.get(sid);
+                  const absence = todayAbsences?.find((a) => a.student_id === s.id);
                   return (
                     <div key={s.id} className={`${styles.attendanceCard} ${styles.cardExcused}`}>
                       <div className={styles.cardTop}>
@@ -918,14 +820,14 @@ export default function AttendancePage() {
                         <span className={styles.excusedBadge}>Excused</span>
                       </div>
                       <p className={styles.cardTime}>
-                        {formatTimeKey(s.class_time_sort_key)} &mdash; {info?.reason}
+                        {formatTimeKey(s.class_time_sort_key)} — {absence?.reason || 'excused'}
                       </p>
-                      {info?.homework && (
+                      {absence?.homework_out && (
                         <p className={styles.excuseDetail}>Homework in pickup bin</p>
                       )}
-                      {info?.makeup && (
+                      {absence?.makeup_scheduled && absence.makeup_date && (
                         <p className={styles.makeupLine}>
-                          <CalendarPlus size={11} /> Makeup: {info.makeup}
+                          <CalendarPlus size={11} /> Makeup: {absence.makeup_date} {absence.makeup_time || ''}
                         </p>
                       )}
                     </div>
@@ -957,6 +859,15 @@ export default function AttendancePage() {
           attendance={editAttendance.attendance}
           studentName={editAttendance.studentName}
           onClose={() => setEditAttendance(null)}
+        />
+      )}
+
+      {/* ── Excused Absence Modal ── */}
+      {excuseModalStudent && (
+        <ExcusedAbsenceModal
+          student={excuseModalStudent}
+          onClose={() => setExcuseModalStudent(null)}
+          onSave={() => mutateAbsences()}
         />
       )}
 

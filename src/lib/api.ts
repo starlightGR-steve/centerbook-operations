@@ -38,6 +38,8 @@ import type {
   AssignRowRequest,
   RowTeacher,
   AssignRowTeacherRequest,
+  Absence,
+  CreateAbsenceRequest,
 } from './types';
 import { MOCK_BOOKS, MOCK_BOOK_LOANS } from './mock-data';
 
@@ -497,6 +499,26 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+  },
+
+  // ── Absences ──
+  absences: {
+    forDate: (date: string) =>
+      directFetch<Absence[]>(`/absences?date=${date}`),
+    forStudent: (studentId: number) =>
+      directFetch<Absence[]>(`/absences?student_id=${studentId}`),
+    create: (data: CreateAbsenceRequest) =>
+      directFetch<Absence>('/absences', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: number, data: Partial<CreateAbsenceRequest>) =>
+      directFetch<Absence>(`/absences/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: number) =>
+      directFetch<void>(`/absences/${id}`, { method: 'DELETE' }),
   },
 
   // ── Batch utility for bulk operations ──

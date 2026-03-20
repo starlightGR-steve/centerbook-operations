@@ -1,0 +1,287 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2vw, 1rem);
+}
+
+/* ── Fields ─────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary, #555);
+}
+
+.select {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: #fff;
+  color: var(--text-primary, #1a1a1a);
+  width: 100%;
+}
+
+/* ── Vacation card ──────────────────────── */
+
+.vacationCard {
+  background: #eef5f6;
+  border: 1px solid #c6e8ec;
+  border-radius: 8px;
+  padding: clamp(0.625rem, 2vw, 0.875rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dateRange {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dateInput {
+  flex: 1;
+  padding: 0.4375rem 0.5rem;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  background: #fff;
+  color: var(--text-primary, #1a1a1a);
+  min-width: 0;
+}
+
+.arrowIcon {
+  flex-shrink: 0;
+  color: var(--secondary, #009aab);
+}
+
+.vacationSummary {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--secondary, #009aab);
+  margin: 0;
+}
+
+/* ── Radio group ────────────────────────── */
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 0.25rem;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--text-primary, #1a1a1a);
+  cursor: pointer;
+}
+
+.radioLabel input[type='radio'] {
+  accent-color: var(--secondary, #009aab);
+}
+
+/* ── Dimmed state ───────────────────────── */
+
+.dimmed {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ── Day pills ──────────────────────────── */
+
+.dayPills {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.375rem;
+}
+
+.dayPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  min-width: 3.25rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.dayPill:hover:not(:disabled) {
+  border-color: var(--secondary, #009aab);
+}
+
+.dayPillSelected {
+  border-color: var(--secondary, #009aab);
+  background: #eef5f6;
+}
+
+.dayPillPast {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f3f3f3;
+}
+
+.dayPillAbbrev {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.dayPillLabel {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ── Custom date row ────────────────────── */
+
+.customDateRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.customDateText {
+  font-size: 0.75rem;
+  color: var(--text-muted, #888);
+  white-space: nowrap;
+}
+
+/* ── Time slot card ─────────────────────── */
+
+.timeSlotCard {
+  background: #f8f8f8;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: clamp(0.5rem, 1.5vw, 0.75rem);
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.timeSlots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.timeChip {
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.timeChip:hover {
+  border-color: var(--secondary, #009aab);
+}
+
+.timeChipSelected {
+  border-color: var(--secondary, #009aab);
+  background: #eef5f6;
+  font-weight: 600;
+}
+
+/* ── Checkbox ───────────────────────────── */
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-primary, #1a1a1a);
+  cursor: pointer;
+}
+
+.checkbox {
+  accent-color: var(--secondary, #009aab);
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ── Textarea ───────────────────────────── */
+
+.textarea {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  resize: vertical;
+  background: #fff;
+  color: var(--text-primary, #1a1a1a);
+  width: 100%;
+}
+
+.textarea::placeholder {
+  color: var(--text-muted, #999);
+}
+
+/* ── Footer ─────────────────────────────── */
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.cancelBtn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: 6px;
+  background: #f3f3f3;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  cursor: pointer;
+  min-width: 5.5rem;
+  transition: background 0.15s;
+}
+
+.cancelBtn:hover {
+  background: #e8e8e8;
+}
+
+.saveBtn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent, #e0712c);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  min-width: 7.5rem;
+  transition: opacity 0.15s;
+}
+
+.saveBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
