@@ -8,6 +8,7 @@ import {
 import SectionHeader from '@/components/ui/SectionHeader';
 import NewFamilyLeadModal from '@/components/pipeline/NewFamilyLeadModal';
 import FamilyDetailModal from '@/components/pipeline/FamilyDetailModal';
+import EnrollmentWizard from '@/components/pipeline/EnrollmentWizard';
 import { usePipelineSummary, useFamilies, updateFamilyStatus } from '@/hooks/usePipeline';
 import { useAllStudents } from '@/hooks/useStudents';
 import type { Family, FamilyPipelineStatus, Student } from '@/lib/types';
@@ -57,6 +58,7 @@ export default function PipelinePage() {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [detailFamily, setDetailFamily] = useState<Family | null>(null);
+  const [enrollWizardFamily, setEnrollWizardFamily] = useState<Family | null>(null);
   const [draggedFamily, setDraggedFamily] = useState<Family | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
@@ -66,17 +68,22 @@ export default function PipelinePage() {
       setDragOverCol(null);
       return;
     }
-    const prev = draggedFamily.pipeline_status;
+    const fam = draggedFamily;
+    const prev = fam.pipeline_status;
     // Optimistic: update in local groups immediately
-    draggedFamily.pipeline_status = targetStatus;
+    fam.pipeline_status = targetStatus;
     mutateFamilies();
     setDraggedFamily(null);
     setDragOverCol(null);
     try {
-      await updateFamilyStatus(draggedFamily.id, { pipeline_status: targetStatus });
+      await updateFamilyStatus(fam.id, { pipeline_status: targetStatus });
+      // Open enrollment wizard when moved to Enrolled
+      if (targetStatus === 'enrolled') {
+        setEnrollWizardFamily(fam);
+      }
     } catch {
       // Revert on error
-      draggedFamily.pipeline_status = prev;
+      fam.pipeline_status = prev;
       mutateFamilies();
     }
   }, [draggedFamily, mutateFamilies]);
@@ -293,6 +300,14 @@ export default function PipelinePage() {
           family={detailFamily}
           onClose={() => setDetailFamily(null)}
           onSaved={() => mutateFamilies()}
+        />
+      )}
+
+      {enrollWizardFamily && (
+        <EnrollmentWizard
+          family={enrollWizardFamily}
+          onClose={() => setEnrollWizardFamily(null)}
+          onComplete={() => { setEnrollWizardFamily(null); mutateFamilies(); }}
         />
       )}
     </div>
