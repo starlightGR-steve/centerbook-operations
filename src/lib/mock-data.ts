@@ -23,6 +23,8 @@ import type {
   RowAssignmentFlags,
   Absence,
   LevelHistoryEntry,
+  Family,
+  PipelineSummary,
 } from './types';
 import { generateTimeSlots } from './types';
 
@@ -2527,3 +2529,31 @@ export const MOCK_LEVEL_HISTORY: LevelHistoryEntry[] = [
   { id: 25, student_id: 39, subject: 'Reading', level_from: 'F', level_to: 'GI', changed_at: '2024-11-01' },
   { id: 26, student_id: 39, subject: 'Reading', level_from: 'GI', level_to: 'GII', changed_at: '2025-02-15' },
 ];
+
+// ── Pipeline / Families ──────────────────
+
+export const MOCK_FAMILIES: Family[] = [
+  { id: 1, family_name: 'Johnson Family', primary_contact_name: 'Sarah Johnson', lead_source: 'Google', inquiry_date: '2026-03-01', pipeline_status: 'prospect', notes: 'Called about Math for 2nd grader', created_at: '2026-03-01T10:00:00Z' },
+  { id: 2, family_name: 'Martinez Family', primary_contact_name: 'Elena Martinez', lead_source: 'Referral', inquiry_date: '2026-02-20', pipeline_status: 'assessment_scheduled', notes: 'Assessment scheduled for Mar 22', created_at: '2026-02-20T14:00:00Z' },
+  { id: 3, family_name: 'Chen Family', primary_contact_name: 'Wei Chen', lead_source: 'Walk-in', inquiry_date: '2026-02-15', pipeline_status: 'lead', notes: 'Visited center, interested in Reading', created_at: '2026-02-15T16:00:00Z' },
+  { id: 4, family_name: 'Patel Family', primary_contact_name: 'Priya Patel', lead_source: 'Facebook', inquiry_date: '2026-03-05', pipeline_status: 'prospect', notes: null, created_at: '2026-03-05T09:00:00Z' },
+  { id: 5, family_name: 'Williams Family', primary_contact_name: 'Marcus Williams', lead_source: 'Referral', inquiry_date: '2026-01-20', pipeline_status: 'trial', notes: 'Trial started Mar 10', created_at: '2026-01-20T11:00:00Z' },
+  { id: 6, family_name: 'Kim Family', primary_contact_name: 'Soo-Jin Kim', lead_source: 'Google', inquiry_date: '2026-02-28', pipeline_status: 'lead', notes: 'Wants Math+Reading for twins', created_at: '2026-02-28T13:00:00Z' },
+  { id: 7, family_name: 'Brown Family', primary_contact_name: 'Lisa Brown', lead_source: 'School event', inquiry_date: '2026-03-10', pipeline_status: 'prospect', notes: null, created_at: '2026-03-10T10:00:00Z' },
+  { id: 8, family_name: 'Garcia Family', primary_contact_name: 'Carlos Garcia', lead_source: 'Yelp', inquiry_date: '2026-01-15', pipeline_status: 'enrolled', notes: 'Enrolled Mar 1', created_at: '2026-01-15T15:00:00Z' },
+  { id: 9, family_name: 'Thompson Family', primary_contact_name: 'Amanda Thompson', lead_source: 'Instagram', inquiry_date: '2026-03-08', pipeline_status: 'assessment_scheduled', notes: null, created_at: '2026-03-08T12:00:00Z' },
+  { id: 10, family_name: 'Lee Family', primary_contact_name: 'David Lee', lead_source: 'Referral', inquiry_date: '2026-02-10', pipeline_status: 'trial', notes: 'Trial for 6th grader Math', created_at: '2026-02-10T10:00:00Z' },
+];
+
+export const MOCK_PIPELINE_SUMMARY: PipelineSummary = {
+  family_pipeline: { prospect: 3, assessment_scheduled: 2, lead: 2, trial: 2, enrolled: 1 },
+  student_statuses: { Active: 44, Trial: 2, 'On Hold': 1, Withdrawn: 1 },
+  monthly_summary: {
+    '2025-10': { gained: 3, lost: 1, net: 2 },
+    '2025-11': { gained: 2, lost: 0, net: 2 },
+    '2025-12': { gained: 1, lost: 2, net: -1 },
+    '2026-01': { gained: 4, lost: 1, net: 3 },
+    '2026-02': { gained: 3, lost: 0, net: 3 },
+    '2026-03': { gained: 2, lost: 1, net: 1 },
+  },
+};

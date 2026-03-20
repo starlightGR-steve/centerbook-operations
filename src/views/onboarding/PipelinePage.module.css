@@ -1,0 +1,355 @@
+/* ── Page layout ──────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: clamp(1rem, 3vw, 2rem);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.header {
+  margin-bottom: 0.25rem;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.sectionTitle {
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+}
+
+/* ── Kanban board ─────────────────────────────────────────── */
+
+.kanban {
+  display: flex;
+  gap: 0.875rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kanbanCol {
+  min-width: 14rem;
+  max-width: 18rem;
+  flex: 1 0 14rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kanbanHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.kanbanLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.kanbanCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.kanbanCards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.emptyCol {
+  font-size: 0.8rem;
+  color: var(--text-muted, #6b7280);
+  text-align: center;
+  padding: 1rem 0;
+  margin: 0;
+}
+
+/* ── Family card ──────────────────────────────────────────── */
+
+.familyCard {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 3px solid;
+  border-radius: 6px;
+  padding: 0.625rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.familyName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.contactName {
+  font-size: 0.78rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.familyMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.leadBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: var(--bg-muted, #f3f4f6);
+  color: var(--text-muted, #6b7280);
+  text-transform: capitalize;
+}
+
+.inquiryDate {
+  font-size: 0.7rem;
+  color: var(--text-muted, #6b7280);
+}
+
+/* ── Status stat cards ────────────────────────────────────── */
+
+.statsRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.statCard {
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  text-align: center;
+}
+
+.statCard:hover {
+  border-color: var(--stat-color, var(--secondary));
+}
+
+.statCardActive {
+  border-color: var(--stat-color, var(--secondary));
+  border-width: 2px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--stat-color, var(--secondary)) 20%, transparent);
+}
+
+.statCount {
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted, #6b7280);
+}
+
+/* ── Monthly gain/loss table ──────────────────────────────── */
+
+.tableWrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-muted, #f9fafb);
+}
+
+.table td {
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.gained {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.lost {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* ── Student list ─────────────────────────────────────────── */
+
+.studentList {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.studentListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.studentListHeader h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.clearBtn {
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.clearBtn:hover {
+  background: var(--bg-muted, #f3f4f6);
+}
+
+.studentRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.studentRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.studentRow:last-child {
+  border-bottom: none;
+}
+
+.studentName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1 1 40%;
+  min-width: 0;
+}
+
+.studentSubjects {
+  font-size: 0.8rem;
+  color: var(--text-muted, #6b7280);
+  flex: 0 0 auto;
+}
+
+.studentDate {
+  font-size: 0.78rem;
+  color: var(--text-muted, #6b7280);
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .kanban {
+    gap: 0.625rem;
+  }
+
+  .kanbanCol {
+    min-width: 12rem;
+    flex: 1 0 12rem;
+  }
+
+  .statsRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .studentRow {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+  }
+
+  .studentName {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 0.75rem;
+  }
+
+  .kanbanCol {
+    min-width: 11rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8rem;
+  }
+}

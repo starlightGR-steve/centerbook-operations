@@ -116,17 +116,7 @@ export interface StudentContact {
   is_billing_contact: boolean;
 }
 
-// ── Families (read-only for Operations — sales pipeline) ──
-
-export interface Family {
-  id: number;
-  system_id: string;
-  clickup_task_id: string | null;
-  lead_name: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+// ── Families — see Pipeline / Onboarding section for the Family interface ──
 
 // ── Staff ──────────────────────────────────
 
@@ -431,6 +421,27 @@ export interface CheckoutBookRequest {
 export interface ReturnBookRequest {
   book_id: number;
   returned_to?: string;
+}
+
+// ── Pipeline / Onboarding ─────────────────
+
+export type FamilyPipelineStatus = 'prospect' | 'assessment_scheduled' | 'lead' | 'trial' | 'enrolled';
+
+export interface Family {
+  id: number;
+  family_name: string;
+  primary_contact_name: string;
+  lead_source: string | null;
+  inquiry_date: string | null;
+  pipeline_status: FamilyPipelineStatus;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface PipelineSummary {
+  family_pipeline: Record<string, number>;
+  student_statuses: Record<string, number>;
+  monthly_summary: Record<string, { gained: number; lost: number; net: number }>;
 }
 
 // ── Level History ──────────────────────────

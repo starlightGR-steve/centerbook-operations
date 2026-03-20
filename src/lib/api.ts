@@ -41,6 +41,8 @@ import type {
   Absence,
   CreateAbsenceRequest,
   LevelHistoryEntry,
+  Family,
+  PipelineSummary,
 } from './types';
 import { MOCK_BOOKS, MOCK_BOOK_LOANS } from './mock-data';
 
@@ -500,6 +502,15 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+  },
+
+  // ── Pipeline / Families ──
+  pipeline: {
+    summary: () => directFetch<PipelineSummary>('/pipeline/summary'),
+    families: (status?: string) => {
+      const qs = status ? `?status=${status}` : '';
+      return directFetch<Family[]>(`/families${qs}`);
+    },
   },
 
   // ── Level History ──
