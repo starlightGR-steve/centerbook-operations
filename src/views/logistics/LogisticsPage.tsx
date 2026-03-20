@@ -114,7 +114,6 @@ export default function LogisticsPage() {
           onClose={() => setSelectedCell(null)}
           cell={selectedCell}
           overrides={overrides || []}
-          staffStudentRatio={settings?.staff_student_ratio || 8}
           onReschedule={(student) => {
             setRescheduleStudent(student);
           }}

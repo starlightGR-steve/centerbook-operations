@@ -29,15 +29,7 @@ function CapacityBar({ cell }: { cell: CapacityCell }) {
   );
 }
 
-function StaffCount({ cell }: { cell: CapacityCell }) {
-  return (
-    <span
-      className={`${styles.staffCount} ${cell.isUnderstaffed ? styles.staffUnderstaffed : ''}`}
-    >
-      {cell.staffAssigned}/{cell.staffRecommended} staff
-    </span>
-  );
-}
+// Staff count removed — staff scheduling is on a separate page
 
 function PosBadges({ cell }: { cell: CapacityCell }) {
   if (cell.studentCount === 0) return null;
@@ -120,7 +112,6 @@ export default function CapacityGrid({ data, onCellClick }: CapacityGridProps) {
                   <div className={styles.mobileCardBody}>
                     <div className={styles.mobileCardRow}>
                       <StoplightBadge cell={cell} />
-                      <StaffCount cell={cell} />
                     </div>
                     <CapacityBar cell={cell} />
                     <PosBadges cell={cell} />
@@ -175,7 +166,6 @@ export default function CapacityGrid({ data, onCellClick }: CapacityGridProps) {
                     <>
                       <div className={styles.cellTop}>
                         <StoplightBadge cell={cell} />
-                        <StaffCount cell={cell} />
                       </div>
                       <CapacityBar cell={cell} />
                       <PosBadges cell={cell} />
