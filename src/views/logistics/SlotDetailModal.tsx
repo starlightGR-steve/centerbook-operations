@@ -1,14 +1,19 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, Video, CalendarX } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import SubjectBadges from '@/components/SubjectBadges';
 import DurationBadge from '@/components/DurationBadge';
 import SearchInput from '@/components/ui/SearchInput';
+import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
 import { useStudents } from '@/hooks/useStudents';
 import { createOverride } from '@/hooks/useScheduleOverrides';
+import { api } from '@/lib/api';
+import { isDemoModeActive } from '@/context/MockDataContext';
+import type { AppRole } from '@/lib/auth';
 import type { CapacityCell, Student, ScheduleOverride } from '@/lib/types';
 import { parseScheduleDays, bucketTimeKey, formatTimeSortKey } from '@/lib/types';
 import styles from './SlotDetailModal.module.css';
@@ -30,8 +35,13 @@ export default function SlotDetailModal({
 }: SlotDetailModalProps) {
   const [showStudentSearch, setShowStudentSearch] = useState(false);
   const [studentQuery, setStudentQuery] = useState('');
+  const [excuseStudent, setExcuseStudent] = useState<Student | null>(null);
 
-  const { data: allStudents } = useStudents();
+  const { data: session } = useSession();
+  const role = (session?.user as { role?: AppRole } | undefined)?.role;
+  const isAdmin = role === 'admin' || role === 'superuser';
+
+  const { data: allStudents, mutate: mutateStudents } = useStudents();
 
   // Students scheduled for this slot (regular + overrides)
   const scheduledStudents = useMemo(() => {
@@ -95,6 +105,18 @@ export default function SlotDetailModal({
       );
   }, [allStudents, scheduledStudents, studentQuery]);
 
+  async function handleToggleZoom(student: Student) {
+    const detail = { ...(student.schedule_detail || {}) };
+    const dayDetail = detail[cell.day];
+    if (!dayDetail) return;
+    const isZoom = !dayDetail.is_zoom;
+    detail[cell.day] = { ...dayDetail, is_zoom: isZoom };
+    if (!isDemoModeActive()) {
+      await api.students.update(student.id, { schedule_detail: detail, zoom_student: isZoom || undefined } as Partial<Student>);
+    }
+    mutateStudents();
+  }
+
   async function handleAddStudent(studentId: number) {
     await createOverride({
       student_id: studentId,
@@ -130,6 +152,7 @@ export default function SlotDetailModal({
   });
 
   return (
+    <>
     <Modal open={open} onClose={onClose} title="" maxWidth="580px">
       <div className={styles.header}>
         <h3 className={styles.title}>{cell.day} at {cell.timeDisplay}</h3>
@@ -164,6 +187,29 @@ export default function SlotDetailModal({
                   </div>
                 </div>
                 <div className={styles.studentActions}>
+                  {isAdmin && (
+                    <label className={styles.zoomToggle} title="Zoom session">
+                      <input
+                        type="checkbox"
+                        checked={!!student.schedule_detail?.[cell.day]?.is_zoom}
+                        onChange={() => handleToggleZoom(student)}
+                      />
+                      <Video size={12} />
+                      <span className={styles.zoomLabel}>Zoom</span>
+                    </label>
+                  )}
+                  {!isAdmin && student.schedule_detail?.[cell.day]?.is_zoom && (
+                    <span className={styles.zoomBadge}><Video size={10} /> Zoom</span>
+                  )}
+                  {isAdmin && (
+                    <button
+                      className={styles.iconBtnWarn}
+                      onClick={() => setExcuseStudent(student)}
+                      title="Mark Absent"
+                    >
+                      <CalendarX size={14} />
+                    </button>
+                  )}
                   <button
                     className={styles.iconBtn}
                     onClick={() => onReschedule(student)}
@@ -210,5 +256,14 @@ export default function SlotDetailModal({
         </div>
       </div>
     </Modal>
+
+      {excuseStudent && (
+        <ExcusedAbsenceModal
+          student={excuseStudent}
+          onClose={() => setExcuseStudent(null)}
+          onSave={() => { setExcuseStudent(null); }}
+        />
+      )}
+    </>
   );
 }

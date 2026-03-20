@@ -38,7 +38,7 @@ export interface Student {
   classroom_position: 'Early Learners' | 'Main Classroom' | 'Upper Classroom' | null;
   class_schedule_days: string | null; // "Monday, Wednesday" — comma-separated
   class_time_sort_key: number | null; // 1500, 1530, etc.
-  schedule_detail?: Record<string, { start: string; sort_key: number; duration: number }> | null;
+  schedule_detail?: Record<string, { start: string; sort_key: number; duration: number; is_zoom?: boolean }> | null;
   current_level_math: string | null;
   current_level_reading: string | null;
   ashr_math_status: 'Not Yet ASHR' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | null;
@@ -51,6 +51,7 @@ export interface Student {
   created_at: string;
   updated_at: string;
   // UI-only fields (populated by mock data, not from API)
+  zoom_student?: boolean;
   pertinent_note?: string | null;
   tasks?: Array<{ id: string; label: string; completed: boolean }>;
   flags?: string[]; // "new_concept" | "needs_help"

@@ -77,7 +77,7 @@ const SUBJECT_OPTIONS = [
   { label: 'Math & Reading', value: 'Math, Reading' },
 ];
 const GRADE_LEVELS = ['PK2', 'PK1', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'];
-const SCHEDULE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+const SCHEDULE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const TIME_SLOTS = [
   { label: '1:00 PM', sort_key: 1300 },
@@ -96,7 +96,7 @@ const TIME_SLOTS = [
 
 const DURATION_OPTIONS = [30, 45, 60, 90, 120];
 
-type ScheduleDetailEntry = { start: string; sort_key: number; duration: number };
+type ScheduleDetailEntry = { start: string; sort_key: number; duration: number; is_zoom?: boolean };
 type ScheduleDetailMap = Record<string, ScheduleDetailEntry>;
 
 type EditableFields = {
@@ -667,6 +667,9 @@ export default function StudentProfilePage({ studentId }: Props) {
                         <>
                           <span className={styles.scheduleTime}>{detail.start}</span>
                           <span className={styles.scheduleDuration}>{detail.duration} min</span>
+                          {detail.is_zoom && (
+                            <span className={styles.zoomBadge}>Zoom</span>
+                          )}
                         </>
                       )}
                     </div>

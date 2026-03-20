@@ -2,13 +2,16 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useStudents } from '@/hooks/useStudents';
-import { parseSubjects, formatTimeSortKey, bucketTimeKey } from '@/lib/types';
-import type { Student } from '@/lib/types';
+import { useWeekAbsences } from '@/hooks/useAbsences';
+import { parseSubjects, formatTimeSortKey, bucketTimeKey, getWeekDates } from '@/lib/types';
+import type { Student, Absence } from '@/lib/types';
+import { Video } from 'lucide-react';
 import SubjectBadges from '@/components/SubjectBadges';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const DAY_SHORT: Record<string, string> = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri' };
-const TIME_SLOTS = [1500, 1530, 1600, 1630, 1700, 1730];
+// Standard center hours + extended Zoom morning slots
+const TIME_SLOTS = [800, 830, 900, 930, 1000, 1030, 1100, 1130, 1200, 1230, 1300, 1330, 1400, 1430, 1500, 1530, 1600, 1630, 1700, 1730];
 
 function cellColor(count: number): string {
   if (count === 0) return '#ffffff';
@@ -16,6 +19,11 @@ function cellColor(count: number): string {
   if (count <= 6) return '#fef9c3';
   if (count <= 9) return '#ffedd5';
   return '#fee2e2';
+}
+
+function isAbsent(absenceMap: Map<string, Absence>, studentId: number, dayDate: string | undefined): Absence | undefined {
+  if (!dayDate) return undefined;
+  return absenceMap.get(`${studentId}-${dayDate}`);
 }
 
 function getTodayIdx(): number {
@@ -28,6 +36,30 @@ export default function WeeklyPlanGrid() {
   const { data: students } = useStudents();
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Fetch absences for this week
+  const weekDates = useMemo(() => getWeekDates(new Date(), DAYS), []);
+  const weekStart = weekDates[0]?.date || '';
+  const weekEnd = weekDates[weekDates.length - 1]?.date || '';
+  const { data: weekAbsences } = useWeekAbsences(weekStart, weekEnd);
+
+  // Build lookup: "studentId-date" -> Absence
+  const absenceMap = useMemo(() => {
+    const map = new Map<string, Absence>();
+    weekAbsences?.forEach((a) => map.set(`${a.student_id}-${a.absence_date}`, a));
+    return map;
+  }, [weekAbsences]);
+
+  // Count absences per day
+  const absenceCountByDay = useMemo(() => {
+    const counts: Record<string, number> = {};
+    DAYS.forEach((day) => {
+      const dayDate = weekDates.find((d) => d.name === day)?.date;
+      if (!dayDate || !weekAbsences) { counts[day] = 0; return; }
+      counts[day] = weekAbsences.filter((a) => a.absence_date === dayDate).length;
+    });
+    return counts;
+  }, [weekAbsences, weekDates]);
   const [selectedDayIdx, setSelectedDayIdx] = useState(getTodayIdx);
 
   useEffect(() => {
@@ -46,16 +78,30 @@ export default function WeeklyPlanGrid() {
     });
     if (!students) return map;
     students.forEach((s) => {
-      if (!s.class_schedule_days || !s.class_time_sort_key) return;
+      if (!s.class_schedule_days) return;
       const days = s.class_schedule_days.split(',').map((d) => d.trim());
-      const slot = bucketTimeKey(s.class_time_sort_key);
       days.forEach((day) => {
+        // Use schedule_detail sort_key if available, fall back to class_time_sort_key
+        const detail = s.schedule_detail?.[day];
+        const sortKey = detail?.sort_key ?? s.class_time_sort_key;
+        if (!sortKey) return;
+        const slot = bucketTimeKey(sortKey);
         const key = `${day}-${slot}`;
         if (map[key]) map[key].push(s);
       });
     });
     return map;
   }, [students]);
+
+  // Only show time slots that have students or are in normal center hours (1500-1730)
+  const visibleSlots = useMemo(() => {
+    return TIME_SLOTS.filter((slot) => {
+      // Always show normal center hours
+      if (slot >= 1500 && slot <= 1730) return true;
+      // Show extended slots only if any day has students there
+      return DAYS.some((day) => (grid[`${day}-${slot}`]?.length ?? 0) > 0);
+    });
+  }, [grid]);
 
   const dayTotals = useMemo(() => {
     const totals: Record<string, number> = {};
@@ -107,6 +153,11 @@ export default function WeeklyPlanGrid() {
                 color: i === selectedDayIdx ? 'rgba(255,255,255,0.7)' : 'var(--neutral)',
               }}>
                 {dayTotals[d]} stu
+                {absenceCountByDay[d] > 0 && (
+                  <span style={{ color: i === selectedDayIdx ? 'rgba(255,200,200,0.9)' : '#ef4444', fontSize: 9 }}>
+                    {absenceCountByDay[d]} absent
+                  </span>
+                )}
               </span>
             </button>
           ))}
@@ -114,7 +165,7 @@ export default function WeeklyPlanGrid() {
 
         {/* Time slot cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {TIME_SLOTS.map((slot) => {
+          {visibleSlots.map((slot) => {
             const key = `${day}-${slot}`;
             const cellStudents = grid[key] || [];
             const count = cellStudents.length;
@@ -174,9 +225,25 @@ export default function WeeklyPlanGrid() {
                           gap: 8, padding: '5px 6px', fontSize: 12,
                         }}
                       >
-                        <span style={{ fontWeight: 500, color: 'var(--primary)' }}>
-                          {s.first_name} {s.last_name}
-                        </span>
+                        {(() => {
+                          const dayDate = weekDates.find((wd) => wd.name === day)?.date;
+                          const absence = isAbsent(absenceMap, s.id, dayDate);
+                          return (
+                            <span style={{ fontWeight: 500, color: absence ? 'var(--neutral)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4, opacity: absence ? 0.4 : 1, textDecoration: absence ? 'line-through' : 'none' }}>
+                              {s.first_name} {s.last_name}
+                              {absence && (
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#ef4444', textDecoration: 'none', opacity: 1 }}>
+                                  {absence.reason}
+                                </span>
+                              )}
+                              {s.schedule_detail?.[day]?.is_zoom && !absence && (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 9, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
+                                  <Video size={9} /> Zoom
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })()}
                         <SubjectBadges subjects={parseSubjects(s.subjects)} />
                       </div>
                     ))}
@@ -236,12 +303,17 @@ export default function WeeklyPlanGrid() {
                 }}
               >
                 {DAY_SHORT[day]}
+                {absenceCountByDay[day] > 0 && (
+                  <div style={{ fontSize: 9, fontWeight: 600, color: '#ef4444', marginTop: 2 }}>
+                    {absenceCountByDay[day]} absent
+                  </div>
+                )}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {TIME_SLOTS.map((slot) => (
+          {visibleSlots.map((slot) => (
             <tr key={slot}>
               <td
                 style={{
@@ -302,9 +374,25 @@ export default function WeeklyPlanGrid() {
                               padding: '4px 6px', borderRadius: 4, fontSize: 11,
                             }}
                           >
-                            <span style={{ fontWeight: 500, color: '#355caa' }}>
-                              {s.first_name} {s.last_name}
-                            </span>
+                            {(() => {
+                              const dayDate = weekDates.find((wd) => wd.name === day)?.date;
+                              const absence = isAbsent(absenceMap, s.id, dayDate);
+                              return (
+                                <span style={{ fontWeight: 500, color: absence ? 'var(--neutral)' : '#355caa', display: 'flex', alignItems: 'center', gap: 4, opacity: absence ? 0.4 : 1, textDecoration: absence ? 'line-through' : 'none' }}>
+                                  {s.first_name} {s.last_name}
+                                  {absence && (
+                                    <span style={{ fontSize: 9, fontWeight: 700, color: '#ef4444', textDecoration: 'none', opacity: 1 }}>
+                                      {absence.reason}
+                                    </span>
+                                  )}
+                                  {s.schedule_detail?.[day]?.is_zoom && !absence && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 9, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
+                                      <Video size={9} /> Zoom
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })()}
                             <SubjectBadges subjects={parseSubjects(s.subjects)} />
                           </div>
                         ))}

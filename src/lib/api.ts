@@ -505,6 +505,8 @@ export const api = {
   absences: {
     forDate: (date: string) =>
       directFetch<Absence[]>(`/absences?date=${date}`),
+    forRange: (from: string, to: string) =>
+      directFetch<Absence[]>(`/absences?from=${from}&to=${to}`),
     forStudent: (studentId: number) =>
       directFetch<Absence[]>(`/absences?student_id=${studentId}`),
     create: (data: CreateAbsenceRequest) =>

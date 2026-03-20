@@ -24,6 +24,24 @@ export function useAbsences(date?: string) {
   );
 }
 
+/** Fetch absences for a date range (e.g., a week) */
+export function useWeekAbsences(from?: string, to?: string) {
+  const { isDemoMode } = useDemoMode();
+  const key = from && to ? (isDemoMode ? `demo-absences-${from}-${to}` : `absences-${from}-${to}`) : null;
+
+  return useSWR<Absence[]>(
+    key,
+    async () => {
+      if (!from || !to) return [];
+      if (isDemoMode) {
+        return MOCK_ABSENCES.filter((a) => a.absence_date >= from && a.absence_date <= to);
+      }
+      return api.absences.forRange(from, to);
+    },
+    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
+  );
+}
+
 /** Create an absence record */
 export async function createAbsence(data: CreateAbsenceRequest): Promise<Absence> {
   if (isDemoModeActive()) {
