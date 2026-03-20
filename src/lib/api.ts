@@ -517,6 +517,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    updateFamily: (id: number, data: Partial<Family>) =>
+      directFetch<Family>(`/family/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
   },
 
   // ── Level History ──

@@ -76,6 +76,16 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.kanbanColDragOver {
+  border-color: var(--secondary);
+  background: rgba(0, 154, 171, 0.04);
+}
+
+.familyCardDragging {
+  opacity: 0.4;
 }
 
 .kanbanHeader {

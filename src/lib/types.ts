@@ -52,6 +52,14 @@ export interface Student {
   updated_at: string;
   // UI-only fields (populated by mock data, not from API)
   zoom_student?: boolean;
+  cancellation_reason?: string | null;
+  last_class_date?: string | null;
+  tuition_cancelled?: boolean;
+  expected_return_date?: string | null;
+  exit_notes?: string | null;
+  returning_status?: 'yes' | 'no' | 'maybe' | null;
+  follow_up_date?: string | null;
+  follow_up_notes?: string | null;
   last_progress_meeting_date?: string | null;
   next_progress_meeting_due?: string | null;
   progress_meeting_cadence?: string | null;

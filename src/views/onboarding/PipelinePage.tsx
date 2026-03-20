@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Users, UserPlus, CalendarCheck, Star,
   CheckCircle2, Clock, AlertTriangle, Pause, XCircle, Plus,
 } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import NewFamilyLeadModal from '@/components/pipeline/NewFamilyLeadModal';
-import { usePipelineSummary, useFamilies } from '@/hooks/usePipeline';
+import { usePipelineSummary, useFamilies, updateFamilyStatus } from '@/hooks/usePipeline';
 import { useAllStudents } from '@/hooks/useStudents';
 import type { Family, FamilyPipelineStatus, Student } from '@/lib/types';
 import styles from './PipelinePage.module.css';
@@ -55,6 +55,29 @@ export default function PipelinePage() {
 
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
+  const [draggedFamily, setDraggedFamily] = useState<Family | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
+  const handleDrop = useCallback(async (targetStatus: FamilyPipelineStatus) => {
+    if (!draggedFamily || draggedFamily.pipeline_status === targetStatus) {
+      setDraggedFamily(null);
+      setDragOverCol(null);
+      return;
+    }
+    const prev = draggedFamily.pipeline_status;
+    // Optimistic: update in local groups immediately
+    draggedFamily.pipeline_status = targetStatus;
+    mutateFamilies();
+    setDraggedFamily(null);
+    setDragOverCol(null);
+    try {
+      await updateFamilyStatus(draggedFamily.id, { pipeline_status: targetStatus });
+    } catch {
+      // Revert on error
+      draggedFamily.pipeline_status = prev;
+      mutateFamilies();
+    }
+  }, [draggedFamily, mutateFamilies]);
 
   /* Group families by pipeline_status */
   const familyGroups = useMemo(() => {
@@ -110,7 +133,13 @@ export default function PipelinePage() {
           {PIPELINE_COLUMNS.map((col) => {
             const items = familyGroups[col.status] || [];
             return (
-              <div className={styles.kanbanCol} key={col.status}>
+              <div
+                className={`${styles.kanbanCol} ${dragOverCol === col.status ? styles.kanbanColDragOver : ''}`}
+                key={col.status}
+                onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.status); }}
+                onDragLeave={() => setDragOverCol(null)}
+                onDrop={(e) => { e.preventDefault(); handleDrop(col.status); }}
+              >
                 <div className={styles.kanbanHeader}>
                   <span className={styles.kanbanLabel}>{col.label}</span>
                   <span
@@ -127,9 +156,12 @@ export default function PipelinePage() {
                   )}
                   {items.map((fam) => (
                     <div
-                      className={styles.familyCard}
+                      className={`${styles.familyCard} ${draggedFamily?.id === fam.id ? styles.familyCardDragging : ''}`}
                       key={fam.id}
                       style={{ borderLeftColor: col.color }}
+                      draggable
+                      onDragStart={() => setDraggedFamily(fam)}
+                      onDragEnd={() => { setDraggedFamily(null); setDragOverCol(null); }}
                     >
                       <span className={styles.familyName}>{fam.family_name}</span>
                       <span className={styles.contactName}>{fam.primary_contact_name}</span>

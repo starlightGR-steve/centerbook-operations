@@ -60,3 +60,18 @@ export async function createFamilyLead(data: CreateFamilyRequest): Promise<Famil
   mutate('pipeline-summary');
   return result;
 }
+
+/** Update a family's status (or other fields) */
+export async function updateFamilyStatus(id: number, updates: Partial<Family>): Promise<Family> {
+  if (isDemoModeActive()) {
+    const idx = MOCK_FAMILIES.findIndex((f) => f.id === id);
+    if (idx >= 0) Object.assign(MOCK_FAMILIES[idx], updates);
+    mutate('demo-families-all');
+    mutate('demo-pipeline-summary');
+    return MOCK_FAMILIES[idx] ?? ({} as Family);
+  }
+  const result = await api.pipeline.updateFamily(id, updates);
+  mutate('families-all');
+  mutate('pipeline-summary');
+  return result;
+}

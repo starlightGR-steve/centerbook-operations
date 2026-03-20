@@ -71,7 +71,7 @@ const MATH_LEVELS = ['6A', '5A', '4A', '3A', '2A', 'A', 'B', 'C', 'D', 'E', 'F',
 const READING_LEVELS = ['7A', '6A', '5A', '4A', '3A', '2A', 'AI', 'AII', 'BI', 'BII', 'CI', 'CII', 'DI', 'DII', 'EI', 'EII', 'FI', 'FII', 'GI', 'GII', 'HI', 'HII', 'II', 'III', 'J', 'K', 'L'];
 const ASHR_STATUSES = ['Not Yet ASHR', 'Bronze', 'Silver', 'Gold', 'Platinum'];
 const CLASSROOM_POSITIONS = ['Early Learners', 'Main Classroom', 'Upper Classroom'];
-const ENROLLMENT_STATUSES = ['Active', 'On Hold', 'Withdrawn'];
+const ENROLLMENT_STATUSES = ['Active', 'Trial', 'On Hold', 'Month Off', 'Paused', 'Cancel', 'Withdrawn', 'Returning'];
 const PROGRAM_TYPES = ['Paper', 'Kumon Connect'];
 const SUBJECT_OPTIONS = [
   { label: 'Math', value: 'Math' },
@@ -123,6 +123,13 @@ type EditableFields = {
   progress_meeting_cadence?: string | null;
   next_progress_meeting_due?: string | null;
   last_progress_meeting_date?: string | null;
+  cancellation_reason?: string | null;
+  last_class_date?: string | null;
+  tuition_cancelled?: boolean;
+  expected_return_date?: string | null;
+  exit_notes?: string | null;
+  follow_up_date?: string | null;
+  follow_up_notes?: string | null;
 };
 
 function statusVariant(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
@@ -160,6 +167,9 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [taskAssignedTo, setTaskAssignedTo] = useState<number>(1);
   const [taskSaving, setTaskSaving] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
+
+  // Status change confirmation
+  const [statusConfirm, setStatusConfirm] = useState<string | null>(null);
 
   // Notes / Daily Observation
   const [noteText, setNoteText] = useState('');
@@ -565,14 +575,101 @@ export default function StudentProfilePage({ studentId }: Props) {
             )}
 
             {isEditing ? (
-              <div className={`${styles.detailItem} ${isChanged('enrollment_status') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>Enrollment Status</span>
-                <select className={styles.editSelect} value={getField('enrollment_status')} onChange={(e) => setField('enrollment_status', e.target.value)}>
-                  {ENROLLMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+              <>
+                <div className={`${styles.detailItem} ${isChanged('enrollment_status') ? styles.fieldChanged : ''}`}>
+                  <span className={styles.detailLabel}>Enrollment Status</span>
+                  <select className={styles.editSelect} value={getField('enrollment_status')} onChange={(e) => {
+                    const newStatus = e.target.value;
+                    const exitStatuses = ['Cancel', 'Month Off', 'Paused', 'Withdrawn'];
+                    if (student.enrollment_status === 'Active' && exitStatuses.includes(newStatus)) {
+                      setStatusConfirm(newStatus);
+                    } else {
+                      setField('enrollment_status', newStatus);
+                    }
+                  }}>
+                    <optgroup label="Enrollment">
+                      <option value="Active">Active</option>
+                      <option value="Trial">Trial</option>
+                    </optgroup>
+                    <optgroup label="Exit">
+                      <option value="Cancel">Cancel</option>
+                      <option value="Month Off">Month Off</option>
+                      <option value="Paused">Paused</option>
+                      <option value="Withdrawn">Withdrawn</option>
+                    </optgroup>
+                    <optgroup label="Return">
+                      <option value="Returning">Returning</option>
+                    </optgroup>
+                    <optgroup label="Hold">
+                      <option value="On Hold">On Hold</option>
+                    </optgroup>
+                  </select>
+                </div>
+                {/* Exit fields (Cancel, Month Off, Paused, Withdrawn) */}
+                {['Cancel', 'Month Off', 'Paused', 'Withdrawn'].includes(getField('enrollment_status')) && (
+                  <div className={`${styles.detailItem} ${styles.detailFull}`}>
+                    <div className={styles.detailsGrid}>
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Cancellation Reason</span>
+                        <input className={styles.editInput} value={getField('cancellation_reason')} onChange={(e) => setField('cancellation_reason', e.target.value || null)} placeholder="Reason for exit..." />
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Last Class Date</span>
+                        <input type="date" className={styles.editInput} value={getField('last_class_date')} onChange={(e) => setField('last_class_date', e.target.value || null)} />
+                      </div>
+                      {['Month Off', 'Paused'].includes(getField('enrollment_status')) && (
+                        <div className={styles.detailItem}>
+                          <span className={styles.detailLabel}>Expected Return Date</span>
+                          <input type="date" className={styles.editInput} value={getField('expected_return_date')} onChange={(e) => setField('expected_return_date', e.target.value || null)} />
+                        </div>
+                      )}
+                      <div className={`${styles.detailItem} ${styles.detailFull}`}>
+                        <span className={styles.detailLabel}>Exit Notes</span>
+                        <textarea className={styles.editTextarea} value={getField('exit_notes')} onChange={(e) => setField('exit_notes', e.target.value || null)} rows={2} placeholder="Additional notes..." />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Return fields */}
+                {getField('enrollment_status') === 'Returning' && (
+                  <div className={`${styles.detailItem} ${styles.detailFull}`}>
+                    <div className={styles.detailsGrid}>
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Follow-up Date</span>
+                        <input type="date" className={styles.editInput} value={getField('follow_up_date')} onChange={(e) => setField('follow_up_date', e.target.value || null)} />
+                      </div>
+                      <div className={`${styles.detailItem} ${styles.detailFull}`}>
+                        <span className={styles.detailLabel}>Follow-up Notes</span>
+                        <textarea className={styles.editTextarea} value={getField('follow_up_notes')} onChange={(e) => setField('follow_up_notes', e.target.value || null)} rows={2} placeholder="Follow-up details..." />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <DetailRow label="Enrollment Status" value={student.enrollment_status} />
+            )}
+
+            {/* Status change confirmation dialog */}
+            {statusConfirm && (
+              <div className={`${styles.detailItem} ${styles.detailFull}`}>
+                <div className={styles.medicalValue} style={{ background: 'rgba(239, 68, 68, 0.04)', borderColor: 'rgba(239, 68, 68, 0.12)', color: 'var(--text)' }}>
+                  <p style={{ margin: '0 0 0.5rem', fontWeight: 600 }}>
+                    Change {student.first_name}&apos;s status from {student.enrollment_status} to {statusConfirm}?
+                  </p>
+                  <p style={{ margin: '0 0 0.75rem', fontSize: '0.75rem', color: 'var(--neutral)' }}>
+                    This will mark them as inactive.
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className={styles.formSubmit} style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }} onClick={() => { setField('enrollment_status', statusConfirm); setStatusConfirm(null); }}>
+                      Confirm
+                    </button>
+                    <button className={styles.formCancel} style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }} onClick={() => setStatusConfirm(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {isEditing ? (
