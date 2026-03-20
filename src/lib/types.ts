@@ -52,6 +52,9 @@ export interface Student {
   updated_at: string;
   // UI-only fields (populated by mock data, not from API)
   zoom_student?: boolean;
+  last_progress_meeting_date?: string | null;
+  next_progress_meeting_due?: string | null;
+  progress_meeting_cadence?: string | null;
   pertinent_note?: string | null;
   tasks?: Array<{ id: string; label: string; completed: boolean }>;
   flags?: string[]; // "new_concept" | "needs_help"
@@ -428,6 +431,17 @@ export interface CheckoutBookRequest {
 export interface ReturnBookRequest {
   book_id: number;
   returned_to?: string;
+}
+
+// ── Level History ──────────────────────────
+
+export interface LevelHistoryEntry {
+  id: number;
+  student_id: number;
+  subject: 'Math' | 'Reading';
+  level_from: string;
+  level_to: string;
+  changed_at: string;
 }
 
 // ── Row Assignments ────────────────────────

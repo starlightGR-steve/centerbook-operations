@@ -40,6 +40,7 @@ import type {
   AssignRowTeacherRequest,
   Absence,
   CreateAbsenceRequest,
+  LevelHistoryEntry,
 } from './types';
 import { MOCK_BOOKS, MOCK_BOOK_LOANS } from './mock-data';
 
@@ -499,6 +500,12 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+  },
+
+  // ── Level History ──
+  levelHistory: {
+    forStudent: (studentId: number) =>
+      directFetch<LevelHistoryEntry[]>(`/students/${studentId}/level-history`),
   },
 
   // ── Absences ──

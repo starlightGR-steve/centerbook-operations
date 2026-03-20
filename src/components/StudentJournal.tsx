@@ -213,9 +213,10 @@ interface Props {
   studentId: number;
   staffId: number;
   staffName: string;
+  lastProgressMeetingDate?: string | null;
 }
 
-export default function StudentJournal({ studentId, staffId, staffName }: Props) {
+export default function StudentJournal({ studentId, staffId, staffName, lastProgressMeetingDate }: Props) {
   const { data: entries, mutate: mutateEntries } = useStudentJournal(studentId);
 
   // Create form state
@@ -241,6 +242,7 @@ export default function StudentJournal({ studentId, staffId, staffName }: Props)
 
   // Filter state
   const [filterType, setFilterType] = useState<JournalEntryType | 'all'>('all');
+  const [sinceLastMeeting, setSinceLastMeeting] = useState(false);
 
   const resetForm = () => {
     setFormType('behavioral_log');
@@ -319,6 +321,7 @@ export default function StudentJournal({ studentId, staffId, staffName }: Props)
 
   const filtered = entries
     ? (filterType === 'all' ? entries : entries.filter((e) => e.entry_type === filterType))
+        .filter((e) => !sinceLastMeeting || !lastProgressMeetingDate || e.created_at > lastProgressMeetingDate)
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     : [];
 
@@ -394,6 +397,14 @@ export default function StudentJournal({ studentId, staffId, staffName }: Props)
             {t.label}
           </button>
         ))}
+        {lastProgressMeetingDate && (
+          <button
+            className={`${styles.filterPill} ${sinceLastMeeting ? styles.filterPillActive : ''}`}
+            onClick={() => setSinceLastMeeting(!sinceLastMeeting)}
+          >
+            Since Last Meeting
+          </button>
+        )}
       </div>
 
       {/* ── Entry list ── */}

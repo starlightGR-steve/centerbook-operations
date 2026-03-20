@@ -31,6 +31,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import Badge from '@/components/ui/Badge';
 import StudentJournal from '@/components/StudentJournal';
 import StudentAttendanceLog from '@/components/students/StudentAttendanceLog';
+import ProgressMeetingSection from '@/components/students/ProgressMeetingSection';
 import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
 import NoteCard from '@/components/NoteCard';
@@ -119,6 +120,9 @@ type EditableFields = {
   medical_notes?: string | null;
   date_of_birth?: string | null;
   enroll_date?: string | null;
+  progress_meeting_cadence?: string | null;
+  next_progress_meeting_due?: string | null;
+  last_progress_meeting_date?: string | null;
 };
 
 function statusVariant(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
@@ -778,11 +782,27 @@ export default function StudentProfilePage({ studentId }: Props) {
 
           <hr className={styles.groupDivider} />
 
+          {/* ── Progress Meetings + Level Progression ── */}
+          <ProgressMeetingSection
+            studentId={studentId}
+            staffId={staffId}
+            isEditing={isEditing}
+            cadence={student.progress_meeting_cadence ?? null}
+            nextDue={student.next_progress_meeting_due ?? null}
+            lastDate={student.last_progress_meeting_date ?? null}
+            onFieldChange={(key, value) => setField(key as keyof EditableFields, value)}
+            getField={(key) => getField(key as keyof EditableFields)}
+            isChanged={(key) => isChanged(key as keyof EditableFields)}
+          />
+
+          <hr className={styles.groupDivider} />
+
           {/* ── Student Journal ── */}
           <StudentJournal
             studentId={studentId}
             staffId={staffId}
             staffName={session?.user?.name || 'Staff'}
+            lastProgressMeetingDate={student.last_progress_meeting_date}
           />
 
           {/* Future sections: Progress Meetings, Attendance, Absence/Vacation, Classroom Observation Log */}

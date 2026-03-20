@@ -22,6 +22,7 @@ import type {
   ClassroomNote,
   RowAssignmentFlags,
   Absence,
+  LevelHistoryEntry,
 } from './types';
 import { generateTimeSlots } from './types';
 
@@ -85,6 +86,9 @@ export const MOCK_STUDENTS: Student[] = [
     current_level_math: '7A', current_level_reading: '7A',
     ashr_math_status: 'Not Yet ASHR', ashr_reading_status: 'Not Yet ASHR',
     birth_month: 6, enroll_month: 1, starting_grade_level: 'PK2',
+    last_progress_meeting_date: daysAgo(45),
+    next_progress_meeting_due: daysAgo(-15),
+    progress_meeting_cadence: 'every_3_months',
     primary_contact_id: 1, billing_contact_id: 1,
     created_at: '2025-01-10T00:00:00Z', updated_at: now,
     pertinent_note: 'Use large pencil grip — fine motor still developing',
@@ -222,6 +226,9 @@ export const MOCK_STUDENTS: Student[] = [
     ashr_math_status: 'Not Yet ASHR', ashr_reading_status: 'Not Yet ASHR',
     zoom_student: true,
     birth_month: 3, enroll_month: 6, starting_grade_level: '1',
+    last_progress_meeting_date: daysAgo(20),
+    next_progress_meeting_due: daysAgo(-70),
+    progress_meeting_cadence: 'every_3_months',
     primary_contact_id: 9, billing_contact_id: 9,
     created_at: '2024-06-01T00:00:00Z', updated_at: now,
     pertinent_note: 'Has inhaler in backpack — check if wheezing',
@@ -2495,4 +2502,28 @@ export const MOCK_ABSENCES: Absence[] = [
     homework_out: true, notes: 'Spring break trip to Florida',
     created_by: 4, created_at: daysAgo(3) + 'T09:00:00Z', updated_at: daysAgo(3) + 'T09:00:00Z',
   },
+];
+
+// ── Level History ──────────────────────────
+
+export const MOCK_LEVEL_HISTORY: LevelHistoryEntry[] = [
+  // Student 1 (Amara) — enrolled Jan 2025, Math 7A, Reading 7A
+  { id: 1, student_id: 1, subject: 'Math', level_from: '7A', level_to: '6A', changed_at: '2025-02-15' },
+  { id: 2, student_id: 1, subject: 'Reading', level_from: '7A', level_to: '6A', changed_at: '2025-02-20' },
+  { id: 3, student_id: 1, subject: 'Math', level_from: '6A', level_to: '5A', changed_at: '2025-03-10' },
+  // Student 9 (Ethan) — enrolled Jun 2024, Math B, Reading AI
+  { id: 10, student_id: 9, subject: 'Math', level_from: '3A', level_to: '2A', changed_at: '2024-08-01' },
+  { id: 11, student_id: 9, subject: 'Math', level_from: '2A', level_to: 'A', changed_at: '2024-10-15' },
+  { id: 12, student_id: 9, subject: 'Reading', level_from: '4A', level_to: '3A', changed_at: '2024-09-01' },
+  { id: 13, student_id: 9, subject: 'Math', level_from: 'A', level_to: 'B', changed_at: '2025-01-10' },
+  { id: 14, student_id: 9, subject: 'Reading', level_from: '3A', level_to: '2A', changed_at: '2024-11-20' },
+  { id: 15, student_id: 9, subject: 'Reading', level_from: '2A', level_to: 'AI', changed_at: '2025-02-05' },
+  // Student 39 (Marcus) — enrolled Mar 2022, Math K, Reading G
+  { id: 20, student_id: 39, subject: 'Math', level_from: 'G', level_to: 'H', changed_at: '2024-06-15' },
+  { id: 21, student_id: 39, subject: 'Math', level_from: 'H', level_to: 'I', changed_at: '2024-09-20' },
+  { id: 22, student_id: 39, subject: 'Math', level_from: 'I', level_to: 'J', changed_at: '2025-01-05' },
+  { id: 23, student_id: 39, subject: 'Math', level_from: 'J', level_to: 'K', changed_at: '2025-03-01' },
+  { id: 24, student_id: 39, subject: 'Reading', level_from: 'EII', level_to: 'F', changed_at: '2024-07-10' },
+  { id: 25, student_id: 39, subject: 'Reading', level_from: 'F', level_to: 'GI', changed_at: '2024-11-01' },
+  { id: 26, student_id: 39, subject: 'Reading', level_from: 'GI', level_to: 'GII', changed_at: '2025-02-15' },
 ];
