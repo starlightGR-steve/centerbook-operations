@@ -438,6 +438,19 @@ export interface Family {
   created_at: string;
 }
 
+export interface CreateFamilyRequest {
+  family_name: string;
+  status?: string;
+  lead_source?: string;
+  referral_name?: string;
+  primary_contact_name?: string;
+  primary_contact_email?: string;
+  primary_contact_phone?: string;
+  number_of_students?: number;
+  family_notes?: string;
+  inquiry_date?: string;
+}
+
 export interface PipelineSummary {
   family_pipeline: Record<string, number>;
   student_statuses: Record<string, number>;

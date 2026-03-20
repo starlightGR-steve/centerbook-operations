@@ -3,9 +3,10 @@
 import { useState, useMemo } from 'react';
 import {
   Users, UserPlus, CalendarCheck, Star,
-  CheckCircle2, Clock, AlertTriangle, Pause, XCircle,
+  CheckCircle2, Clock, AlertTriangle, Pause, XCircle, Plus,
 } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
+import NewFamilyLeadModal from '@/components/pipeline/NewFamilyLeadModal';
 import { usePipelineSummary, useFamilies } from '@/hooks/usePipeline';
 import { useAllStudents } from '@/hooks/useStudents';
 import type { Family, FamilyPipelineStatus, Student } from '@/lib/types';
@@ -49,10 +50,11 @@ function formatDate(iso: string | null): string {
 
 export default function PipelinePage() {
   const { data: summary }  = usePipelineSummary();
-  const { data: families }  = useFamilies();
+  const { data: families, mutate: mutateFamilies }  = useFamilies();
   const { data: students }  = useAllStudents();
 
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [showNewLead, setShowNewLead] = useState(false);
 
   /* Group families by pipeline_status */
   const familyGroups = useMemo(() => {
@@ -88,11 +90,16 @@ export default function PipelinePage() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <SectionHeader
-          script="Onboarding"
-          title="Pipeline"
-          subtitle="Family leads and student enrollment overview"
-        />
+        <div className={styles.headerTop}>
+          <SectionHeader
+            script="Onboarding"
+            title="Pipeline"
+            subtitle="Family leads and student enrollment overview"
+          />
+          <button className={styles.newLeadBtn} onClick={() => setShowNewLead(true)}>
+            <Plus size={14} /> New Lead
+          </button>
+        </div>
       </div>
 
       <div className={styles.content}>
@@ -233,6 +240,13 @@ export default function PipelinePage() {
           </div>
         )}
       </div>
+
+      {showNewLead && (
+        <NewFamilyLeadModal
+          onClose={() => setShowNewLead(false)}
+          onCreated={() => mutateFamilies()}
+        />
+      )}
     </div>
   );
 }

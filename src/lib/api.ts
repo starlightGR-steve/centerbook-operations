@@ -43,6 +43,7 @@ import type {
   LevelHistoryEntry,
   Family,
   PipelineSummary,
+  CreateFamilyRequest,
 } from './types';
 import { MOCK_BOOKS, MOCK_BOOK_LOANS } from './mock-data';
 
@@ -511,6 +512,11 @@ export const api = {
       const qs = status ? `?status=${status}` : '';
       return directFetch<Family[]>(`/families${qs}`);
     },
+    createFamily: (data: CreateFamilyRequest) =>
+      directFetch<Family>('/family', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   // ── Level History ──
