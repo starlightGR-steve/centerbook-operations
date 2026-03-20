@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Plus, Clock, MapPin, Calendar, Trash2 } from 'lucide-react';
+import { isDemoModeActive } from '@/context/MockDataContext';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -341,7 +342,9 @@ export default function StaffDetailModal({
                   setDeleting(true);
                   setDeleteError(null);
                   try {
-                    await api.staff.deactivate(staff.id);
+                    if (!isDemoModeActive()) {
+                      await api.staff.deactivate(staff.id);
+                    }
                     setShowDeleteConfirm(false);
                     onDelete?.();
                     onClose();

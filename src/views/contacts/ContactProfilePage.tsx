@@ -11,7 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import LinkPickerModal from '@/components/LinkPickerModal';
 import { api } from '@/lib/api';
 import { useAllStudents } from '@/hooks/useStudents';
-import { useDemoMode } from '@/context/MockDataContext';
+import { useDemoMode, isDemoModeActive } from '@/context/MockDataContext';
 import type { Contact, LinkedStudent, Student } from '@/lib/types';
 import styles from './ContactProfilePage.module.css';
 
@@ -138,7 +138,9 @@ export default function ContactProfilePage({ contactId }: Props) {
     setEditSaving(true);
     setEditError(null);
     try {
-      await api.contacts.update(contactId, changedFields as Partial<Contact>);
+      if (!isDemoModeActive()) {
+        await api.contacts.update(contactId, changedFields as Partial<Contact>);
+      }
       await mutateContact();
       setEditFields({});
       setIsEditing(false);
@@ -153,14 +155,18 @@ export default function ContactProfilePage({ contactId }: Props) {
 
   const handleLinkStudent = async (studentId: number, role: string) => {
     setLinkError(null);
-    await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
+    if (!isDemoModeActive()) {
+      await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
+    }
     mutateStudents();
   };
 
   const handleUnlinkStudent = async (studentId: number) => {
     setLinkError(null);
     try {
-      await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
+      if (!isDemoModeActive()) {
+        await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
+      }
       mutateStudents();
       setUnlinkConfirm(null);
     } catch (e) {

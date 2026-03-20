@@ -47,15 +47,27 @@ export async function checkInStudent(data: CheckInRequest): Promise<Attendance> 
 
 /** Delete an attendance record (undo check-in) */
 export async function deleteAttendance(id: number): Promise<void> {
-  await api.attendance.delete(id);
   const d = new Date().toISOString().split('T')[0];
+  if (isDemoModeActive()) {
+    const idx = MOCK_ATTENDANCE.findIndex((a) => a.id === id);
+    if (idx >= 0) MOCK_ATTENDANCE.splice(idx, 1);
+    await mutate(`demo-attendance-${d}`);
+    return;
+  }
+  await api.attendance.delete(id);
   await mutate(`attendance-${d}`);
 }
 
 /** Update an attendance record (undo check-out or adjust times) */
 export async function updateAttendance(id: number, data: { check_in?: string; check_out?: string | null }): Promise<Attendance> {
-  const result = await api.attendance.update(id, data);
   const d = new Date().toISOString().split('T')[0];
+  if (isDemoModeActive()) {
+    const rec = MOCK_ATTENDANCE.find((a) => a.id === id);
+    if (rec) Object.assign(rec, data);
+    await mutate(`demo-attendance-${d}`);
+    return (rec ?? { id }) as Attendance;
+  }
+  const result = await api.attendance.update(id, data);
   await mutate(`attendance-${d}`);
   return result;
 }

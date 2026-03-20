@@ -8,6 +8,8 @@ import {
   X, Heart, Minus, Plus, Check, Send, AlertTriangle, ExternalLink,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { isDemoModeActive } from '@/context/MockDataContext';
+import { MOCK_CONTACTS, MOCK_NOTES } from '@/lib/mock-data';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
 import { createNote } from '@/hooks/useNotes';
@@ -46,16 +48,28 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
 
   // Contacts
+  const isDemo = isDemoModeActive();
   const { data: contacts } = useSWR<StudentContact[]>(
-    `checkin-contacts-${student.id}`,
-    () => api.students.contacts(student.id),
+    isDemo ? `demo-checkin-contacts-${student.id}` : `checkin-contacts-${student.id}`,
+    () => {
+      if (isDemo) {
+        return MOCK_CONTACTS.map((c) => ({ ...c, is_primary_contact: false, is_billing_contact: false, relationship_role: c.relationship_to_students })) as StudentContact[];
+      }
+      return api.students.contacts(student.id);
+    },
     { revalidateOnFocus: false }
   );
 
   // Recent notes
   const { data: recentNotes } = useSWR<StudentNote[]>(
-    `checkin-notes-${student.id}`,
+    isDemo ? `demo-checkin-notes-${student.id}` : `checkin-notes-${student.id}`,
     async () => {
+      if (isDemo) {
+        return MOCK_NOTES
+          .filter((n) => n.student_id === student.id && (n.visibility === 'staff' || n.visibility === 'internal'))
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))
+          .slice(0, 3);
+      }
       const notes = await api.notes.forStudent(student.id);
       return notes
         .filter((n) => n.visibility === 'staff' || n.visibility === 'internal')

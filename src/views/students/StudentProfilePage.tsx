@@ -25,6 +25,8 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { isDemoModeActive } from '@/context/MockDataContext';
+import { MOCK_CONTACTS } from '@/lib/mock-data';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Badge from '@/components/ui/Badge';
 import StudentJournal from '@/components/StudentJournal';
@@ -165,8 +167,8 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [unlinkConfirm, setUnlinkConfirm] = useState<number | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const { data: allContacts, isLoading: allContactsLoading } = useSWR<Contact[]>(
-    showLinkContact ? 'all-contacts-for-picker' : null,
-    () => api.contacts.list()
+    showLinkContact ? (isDemoModeActive() ? 'demo-all-contacts' : 'all-contacts-for-picker') : null,
+    () => isDemoModeActive() ? MOCK_CONTACTS : api.contacts.list()
   );
 
   // Edit mode
@@ -312,7 +314,9 @@ export default function StudentProfilePage({ studentId }: Props) {
     setEditSaving(true);
     setEditError(null);
     try {
-      await api.students.update(studentId, changedFields as Partial<typeof student>);
+      if (!isDemoModeActive()) {
+        await api.students.update(studentId, changedFields as Partial<typeof student>);
+      }
       await mutateStudent();
       setEditFields({});
       setIsEditing(false);
@@ -325,14 +329,18 @@ export default function StudentProfilePage({ studentId }: Props) {
 
   const handleLinkContact = async (contactId: number, role: string) => {
     setLinkError(null);
-    await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
+    if (!isDemoModeActive()) {
+      await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
+    }
     mutateContacts();
   };
 
   const handleUnlinkContact = async (contactId: number) => {
     setLinkError(null);
     try {
-      await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
+      if (!isDemoModeActive()) {
+        await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
+      }
       mutateContacts();
       setUnlinkConfirm(null);
     } catch (e) {
@@ -347,7 +355,9 @@ export default function StudentProfilePage({ studentId }: Props) {
   const handleSetPrimary = async (contactId: number) => {
     setLinkError(null);
     try {
-      await api.students.update(studentId, { primary_contact_id: contactId } as Partial<typeof student>);
+      if (!isDemoModeActive()) {
+        await api.students.update(studentId, { primary_contact_id: contactId } as Partial<typeof student>);
+      }
       await mutateStudent();
       mutateContacts();
     } catch {
@@ -358,7 +368,9 @@ export default function StudentProfilePage({ studentId }: Props) {
   const handleSetBilling = async (contactId: number) => {
     setLinkError(null);
     try {
-      await api.students.update(studentId, { billing_contact_id: contactId } as Partial<typeof student>);
+      if (!isDemoModeActive()) {
+        await api.students.update(studentId, { billing_contact_id: contactId } as Partial<typeof student>);
+      }
       await mutateStudent();
       mutateContacts();
     } catch {
