@@ -478,11 +478,35 @@ export interface AssignRowTeacherRequest {
 
 // ── Center Settings (Logistics) ──────────
 
+export interface FlagConfigItem {
+  key: string;
+  label: string;
+  icon: string;
+  color: string;
+  enabled: boolean;
+  sort_order: number;
+}
+
+export interface ChecklistConfigItem {
+  key: string;
+  label: string;
+  enabled: boolean;
+  sort_order: number;
+}
+
 export interface CenterSettings {
   center_capacity: number;
   operating_days: string[];
   time_slots: TimeSlot[];
   staff_student_ratio: number;
+  flags?: FlagConfigItem[];
+  checklist_items?: ChecklistConfigItem[];
+  center_name?: string;
+  center_address?: string;
+  center_phone?: string;
+  sms_pickup_alert_minutes?: number;
+  no_show_threshold_minutes?: number;
+  default_session_minutes?: number;
 }
 
 export interface TimeSlot {

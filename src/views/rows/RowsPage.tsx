@@ -15,7 +15,8 @@ import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { useNotes } from '@/hooks/useNotes';
 import { useClassroomAssignments, buildOverridesMap, buildFlagsMap, assignStudentToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
-import { FLAG_CONFIG, FLAG_KEYS, CHECKLIST_CONFIG } from '@/lib/flags';
+import { FLAG_CONFIG, CHECKLIST_CONFIG } from '@/lib/flags';
+import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
 import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
@@ -124,6 +125,8 @@ export default function RowsPage() {
 
   const today = new Date().toISOString().split('T')[0];
   const { data: persistedAssignments } = useClassroomAssignments(today);
+  const { flags: flagConfig } = useFlagConfig();
+  const { items: checklistConfig } = useChecklistConfig();
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 15000);
@@ -194,19 +197,19 @@ export default function RowsPage() {
     return optimisticFlags[studentId] || flagsMap[studentId] || {};
   }, [optimisticFlags, flagsMap]);
 
-  // Helper: get flag names array for display (active flags only)
+  // Helper: get flag keys array for display (active flags only)
   const getFlags = useCallback((s: Student): string[] => {
     const f = getStudentFlags(s.id);
-    return FLAG_KEYS.filter((k) => f[k]);
-  }, [getStudentFlags]);
+    return flagConfig.map((fc) => fc.key).filter((k) => (f as Record<string, unknown>)[k]);
+  }, [getStudentFlags, flagConfig]);
 
   // Helper: get all flag keys present in the flags object (for Row View — show active + done)
   const getAllFlags = useCallback((s: Student): { key: string; active: boolean }[] => {
     const f = getStudentFlags(s.id);
-    return FLAG_KEYS
-      .filter((k) => f[k] !== undefined)
-      .map((k) => ({ key: k, active: !!f[k] }));
-  }, [getStudentFlags]);
+    return flagConfig
+      .filter((fc) => (f as Record<string, unknown>)[fc.key] !== undefined)
+      .map((fc) => ({ key: fc.key, active: !!(f as Record<string, unknown>)[fc.key] }));
+  }, [getStudentFlags, flagConfig]);
 
   const toggleFlag = useCallback((studentId: number, flag: string) => {
     const current = getStudentFlags(studentId);
@@ -448,10 +451,11 @@ export default function RowsPage() {
               const hasPertinentNote = !!s.pertinent_note;
               const flagTasks = studentFlagsObj.tasks || {};
               const taskItems = [
-                { key: 'sound_cards', label: 'Sound Cards', done: !!flagTasks.sound_cards },
-                { key: 'flash_cards', label: 'Flash Cards', done: !!flagTasks.flash_cards },
-                { key: 'spelling', label: 'Spelling', done: !!flagTasks.spelling },
-                { key: 'handwriting', label: 'Handwriting Practice', done: !!flagTasks.handwriting },
+                ...checklistConfig.map((ci) => ({
+                  key: ci.key,
+                  label: ci.label,
+                  done: !!(flagTasks as Record<string, unknown>)[ci.key],
+                })),
                 ...(flagTasks.custom ? [{ key: 'custom', label: flagTasks.custom, done: false }] : []),
               ].filter((t) => t.done || t.key === 'custom' || Object.values(flagTasks).some(Boolean));
               // Only show task items that have been assigned (at least one task is set)
@@ -553,19 +557,17 @@ export default function RowsPage() {
                     {getAllFlags(s).length > 0 && (
                       <div className={styles.flagRow} onClick={(e) => e.stopPropagation()}>
                         {getAllFlags(s).map(({ key, active }) => {
-                          const cfg = FLAG_CONFIG[key as keyof typeof FLAG_CONFIG];
-                          if (!cfg) return null;
-                          const IconComp = key === 'new_concept' ? Sparkles : key === 'needs_help' ? HelpCircle : key === 'work_with_amy' ? UserCheck : BookOpen;
+                          const fc = flagConfig.find((f) => f.key === key);
+                          if (!fc) return null;
                           return (
                             <button
                               key={key}
                               className={`${styles.flagPill} ${!active ? styles.flagPillDone : ''}`}
-                              style={{ '--flag-color': cfg.color } as React.CSSProperties}
+                              style={{ '--flag-color': fc.color } as React.CSSProperties}
                               onClick={() => toggleFlag(s.id, key)}
-                              title={active ? `Mark "${cfg.label}" done` : `Re-activate "${cfg.label}"`}
+                              title={active ? `Mark "${fc.label}" done` : `Re-activate "${fc.label}"`}
                             >
-                              <IconComp size={10} />
-                              <span>{cfg.label}</span>
+                              <span>{fc.label}</span>
                             </button>
                           );
                         })}
@@ -678,19 +680,17 @@ export default function RowsPage() {
 
                   {/* Flag toggle buttons */}
                   <div className={styles.flagToggleRow} onClick={(e) => e.stopPropagation()}>
-                    {FLAG_KEYS.map((k) => {
-                      const cfg = FLAG_CONFIG[k];
-                      const IconComp = k === 'new_concept' ? Sparkles : k === 'needs_help' ? HelpCircle : k === 'work_with_amy' ? UserCheck : BookOpen;
-                      const isActive = flags.includes(k);
+                    {flagConfig.map((fc) => {
+                      const isActive = flags.includes(fc.key);
                       return (
                         <button
-                          key={k}
+                          key={fc.key}
                           className={`${styles.flagToggleBtn} ${isActive ? styles.flagToggleBtnOn : ''}`}
-                          style={isActive ? { background: cfg.color + '18', borderColor: cfg.color + '40', color: cfg.color } : undefined}
-                          onClick={() => toggleFlag(s.id, k)}
-                          title={cfg.label}
+                          style={isActive ? { background: fc.color + '18', borderColor: fc.color + '40', color: fc.color } : undefined}
+                          onClick={() => toggleFlag(s.id, fc.key)}
+                          title={fc.label}
                         >
-                          <IconComp size={10} />
+                          <span style={{ fontSize: 10, fontWeight: 700 }}>{fc.label[0]}</span>
                         </button>
                       );
                     })}

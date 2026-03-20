@@ -13,6 +13,7 @@ import { MOCK_CONTACTS, MOCK_NOTES } from '@/lib/mock-data';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
 import { createNote } from '@/hooks/useNotes';
+import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
 import styles from './CheckInPopup.module.css';
 
 export interface CheckInOptions {
@@ -32,17 +33,15 @@ interface CheckInPopupProps {
 
 const PRESET_TIMES = [30, 45, 60, 90];
 
-const CHECKLIST_ITEMS = [
-  '5A Sound Cards', '4A Sound Cards', '3A Sound Cards',
-  'Spelling Practice', 'Addition Flash Cards', 'Subtraction Flash Cards',
-  'Multiplication Flash Cards', 'Division Flash Cards',
-];
-
-const FLAG_OPTIONS = ['New Concept', 'Needs Help', 'Work with Amy', 'Needs Homework'];
+// Checklist items and flag options are now loaded from center config via hooks
 
 export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPopupProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const { flags: flagConfigItems } = useFlagConfig();
+  const { items: checklistConfigItems } = useChecklistConfig();
+  const FLAG_OPTIONS = flagConfigItems.map((f) => f.label);
+  const CHECKLIST_ITEMS = checklistConfigItems.map((c) => c.label);
   const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const subjects = parseSubjects(student.subjects);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);

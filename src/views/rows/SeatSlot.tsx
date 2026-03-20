@@ -1,10 +1,10 @@
 'use client';
 
 import { useRef } from 'react';
-import { Heart, Flag, Lightbulb, CircleHelp, BookOpen } from 'lucide-react';
+import { Heart, Flag, Lightbulb, CircleHelp, BookOpen, Star, AlertCircle, Zap, UserCheck, Sparkles } from 'lucide-react';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, parseSubjects } from '@/lib/types';
-import { FLAG_KEYS } from '@/lib/flags';
+import { useFlagConfig } from '@/hooks/useFlagConfig';
 import styles from './SeatSlot.module.css';
 
 interface SeatSlotProps {
@@ -20,19 +20,24 @@ interface SeatSlotProps {
 
 const DRAG_THRESHOLD = 8;
 
-/** Render the icon inside a dark navy flag circle */
-function FlagCircleIcon({ flagKey }: { flagKey: string }) {
-  switch (flagKey) {
-    case 'new_concept':
-      return <Lightbulb size={8} color="#fff" />;
-    case 'needs_help':
-      return <CircleHelp size={8} color="#fff" />;
-    case 'work_with_amy':
-      return <span className={styles.flagCircleText}>A</span>;
-    case 'needs_homework':
-      return <BookOpen size={8} color="#fff" />;
-    default:
-      return null;
+/** Render an icon from a config string inside a dark navy flag circle */
+function FlagCircleIcon({ icon }: { icon: string }) {
+  if (icon.startsWith('text:')) {
+    return <span className={styles.flagCircleText}>{icon.slice(5)}</span>;
+  }
+  const props = { size: 8, color: '#fff' };
+  switch (icon) {
+    case 'Lightbulb': return <Lightbulb {...props} />;
+    case 'CircleHelp': return <CircleHelp {...props} />;
+    case 'BookOpen': return <BookOpen {...props} />;
+    case 'Star': return <Star {...props} />;
+    case 'AlertCircle': return <AlertCircle {...props} />;
+    case 'Zap': return <Zap {...props} />;
+    case 'Flag': return <Flag {...props} />;
+    case 'Heart': return <Heart {...props} />;
+    case 'UserCheck': return <UserCheck {...props} />;
+    case 'Sparkles': return <Sparkles {...props} />;
+    default: return <Flag {...props} />;
   }
 }
 
@@ -72,8 +77,11 @@ export default function SeatSlot({
   const hasMedical = !!student.medical_notes;
   const variant = isOver ? styles.over : isWarn ? styles.warn : '';
 
-  // Active flags for the second-line navy circles
-  const activeFlags = flags ? FLAG_KEYS.filter((k) => flags[k]) : [];
+  // Active flags for the second-line navy circles (from dynamic config)
+  const { flags: flagConfig } = useFlagConfig();
+  const activeFlags = flags
+    ? flagConfig.filter((fc) => (flags as Record<string, unknown>)[fc.key])
+    : [];
 
   // Outstanding tasks indicator (red flag top-right)
   const hasOutstandingTasks = flags?.tasks
@@ -147,9 +155,9 @@ export default function SeatSlot({
       {/* Line 2: Classroom flag circles (only when flags exist) */}
       {activeFlags.length > 0 && (
         <div className={styles.flagLine}>
-          {activeFlags.map((k) => (
-            <span key={k} className={styles.flagCircle} title={k.replace(/_/g, ' ')}>
-              <FlagCircleIcon flagKey={k} />
+          {activeFlags.map((fc) => (
+            <span key={fc.key} className={styles.flagCircle} title={fc.label}>
+              <FlagCircleIcon icon={fc.icon} />
             </span>
           ))}
         </div>

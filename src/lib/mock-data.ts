@@ -2090,6 +2090,24 @@ export const MOCK_CENTER_SETTINGS: CenterSettings = {
     Thursday: { start: 1500, end: 1900 },
   }),
   staff_student_ratio: 3,
+  flags: [
+    { key: 'new_concept', label: 'New Concept', icon: 'Lightbulb', color: '#8b5cf6', enabled: true, sort_order: 0 },
+    { key: 'needs_help', label: 'Needs Help', icon: 'CircleHelp', color: '#ef4444', enabled: true, sort_order: 1 },
+    { key: 'work_with_amy', label: 'Work with Amy', icon: 'text:A', color: '#f59e0b', enabled: true, sort_order: 2 },
+    { key: 'needs_homework', label: 'Needs Homework', icon: 'BookOpen', color: '#3b82f6', enabled: true, sort_order: 3 },
+  ],
+  checklist_items: [
+    { key: 'sound_cards', label: 'Sound Cards', enabled: true, sort_order: 0 },
+    { key: 'flash_cards', label: 'Flash Cards', enabled: true, sort_order: 1 },
+    { key: 'spelling', label: 'Spelling', enabled: true, sort_order: 2 },
+    { key: 'handwriting', label: 'Handwriting Practice', enabled: true, sort_order: 3 },
+  ],
+  center_name: 'Kumon Grand Rapids North',
+  center_address: '2971 Knapp St NE, Grand Rapids, MI 49525',
+  center_phone: '616-363-1800',
+  sms_pickup_alert_minutes: 10,
+  no_show_threshold_minutes: 15,
+  default_session_minutes: 60,
 };
 
 // ── Staff Slot Assignments (recurring weekly schedule) ──

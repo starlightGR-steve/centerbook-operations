@@ -18,6 +18,7 @@ import {
   TrendingUp,
   UserCircle,
   FlaskConical,
+  Settings,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppRole } from '@/lib/auth';
@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/library', icon: BookOpen, label: 'Library' },
   { href: '/progress', icon: BarChart2, label: 'Progress', roles: ['superuser', 'admin'] },
   { href: '/intelligence', icon: TrendingUp, label: 'Insights', roles: ['superuser', 'admin'] },
+  { href: '/settings', icon: Settings, label: 'Settings', roles: ['superuser', 'admin'] },
   { href: '/me', icon: UserCircle, label: 'Me' },
 ];
 

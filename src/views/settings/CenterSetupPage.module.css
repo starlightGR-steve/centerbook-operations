@@ -1,0 +1,487 @@
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--base);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-size: 14px;
+  color: var(--neutral);
+  font-family: var(--font-primary);
+}
+
+/* ── Header ── */
+.header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: clamp(1rem, 2.5vw, 1.25rem) clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.pageTitle {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: clamp(1.1rem, 2.2vw, 1.375rem);
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.pageSubtitle {
+  margin: clamp(0.25rem, 0.5vw, 0.375rem) 0 0;
+  font-family: var(--font-primary);
+  font-size: clamp(0.75rem, 1.2vw, 0.875rem);
+  font-weight: 400;
+  color: var(--neutral);
+}
+
+/* ── Body ── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: clamp(1rem, 3vw, 1.75rem) clamp(1.25rem, 4vw, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+}
+
+/* ── Sections ── */
+.section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+/* ── Group Headings & Dividers ── */
+.groupHeading {
+  margin: 0 0 clamp(0.5rem, 1.5vw, 0.75rem);
+  font-family: var(--font-primary);
+  font-size: clamp(0.65rem, 1.2vw, 0.75rem);
+  font-weight: 700;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.groupDivider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: clamp(1rem, 2.5vw, 1.5rem) 0;
+}
+
+.sectionDescription {
+  margin: 0 0 clamp(0.75rem, 1.5vw, 1rem);
+  font-family: var(--font-primary);
+  font-size: clamp(0.75rem, 1.1vw, 0.8125rem);
+  font-weight: 400;
+  color: var(--neutral);
+  line-height: 1.5;
+}
+
+/* ── Flag / Checklist Card List ── */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1vw, 0.625rem);
+}
+
+.itemCard {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1vw, 0.75rem);
+  padding: clamp(0.5rem, 1.2vw, 0.75rem) clamp(0.625rem, 1.5vw, 1rem);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  transition: border-color 0.15s;
+}
+
+.itemCard:hover {
+  border-color: var(--secondary);
+}
+
+/* ── Drag Handle ── */
+.dragHandle {
+  display: flex;
+  align-items: center;
+  color: var(--neutral);
+  cursor: grab;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* ── Flag Preview Circle ── */
+.flagPreview {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1E335E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Inputs ── */
+.labelInput {
+  flex: 1;
+  min-width: 0;
+  padding: clamp(0.3rem, 0.8vw, 0.4375rem) clamp(0.5rem, 1vw, 0.625rem);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: clamp(0.75rem, 1.1vw, 0.8125rem);
+  font-weight: 500;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+}
+
+.labelInput:focus {
+  border-color: var(--secondary);
+}
+
+.iconSelect {
+  padding: clamp(0.3rem, 0.8vw, 0.4375rem) clamp(0.375rem, 0.8vw, 0.5rem);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: clamp(0.6875rem, 1vw, 0.75rem);
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+  max-width: clamp(6rem, 14vw, 9rem);
+}
+
+.iconSelect:focus {
+  border-color: var(--secondary);
+}
+
+.colorInput {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+}
+
+.colorInput::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.colorInput::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+/* ── Toggle Switch ── */
+.toggleWrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--border);
+  border-radius: 10px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  flex-shrink: 0;
+}
+
+.toggle:checked {
+  background: var(--secondary);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--white);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle:checked::after {
+  transform: translateX(16px);
+}
+
+/* ── Reorder Buttons ── */
+.reorderBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.reorderBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 14px;
+  border: none;
+  background: none;
+  color: var(--neutral);
+  cursor: pointer;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.reorderBtn:hover:not(:disabled) {
+  background: var(--base);
+  color: var(--primary);
+}
+
+.reorderBtn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* ── Delete Button ── */
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--neutral);
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.deleteBtn:hover {
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+/* ── Inline Delete Confirm ── */
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.confirmText {
+  font-family: var(--font-primary);
+  font-size: clamp(0.5625rem, 0.9vw, 0.625rem);
+  font-weight: 600;
+  color: var(--red);
+  white-space: nowrap;
+}
+
+.confirmYes {
+  padding: 2px 8px;
+  border: 1px solid var(--red);
+  border-radius: 4px;
+  background: var(--red);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: clamp(0.5625rem, 0.9vw, 0.625rem);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmNo {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--neutral);
+  font-family: var(--font-primary);
+  font-size: clamp(0.5625rem, 0.9vw, 0.625rem);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Add Button ── */
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: clamp(0.375rem, 0.8vw, 0.5rem) clamp(0.75rem, 1.5vw, 1rem);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--secondary);
+  font-family: var(--font-primary);
+  font-size: clamp(0.6875rem, 1vw, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: clamp(0.5rem, 1vw, 0.75rem);
+}
+
+.addBtn:hover {
+  border-color: var(--secondary);
+  background: var(--secondary-ul);
+}
+
+/* ── Save Button ── */
+.saveRow {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1vw, 0.75rem);
+  margin-top: clamp(0.75rem, 1.5vw, 1rem);
+}
+
+.saveBtn {
+  padding: clamp(0.4375rem, 0.9vw, 0.5rem) clamp(1rem, 2vw, 1.25rem);
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: clamp(0.6875rem, 1vw, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  min-width: 120px;
+}
+
+.saveBtn:hover {
+  opacity: 0.85;
+}
+
+.saveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.savedMsg {
+  font-family: var(--font-primary);
+  font-size: clamp(0.6875rem, 1vw, 0.75rem);
+  font-weight: 600;
+  color: var(--green);
+}
+
+/* ── Note Text ── */
+.noteText {
+  margin: clamp(0.5rem, 1vw, 0.75rem) 0 0;
+  font-family: var(--font-primary);
+  font-size: clamp(0.6875rem, 1vw, 0.75rem);
+  font-weight: 400;
+  color: var(--neutral);
+  font-style: italic;
+}
+
+/* ── Info Grid ── */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.75rem, 2vw, 1rem);
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoLabel {
+  font-family: var(--font-primary);
+  font-size: clamp(0.625rem, 1vw, 0.6875rem);
+  font-weight: 600;
+  color: var(--neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.infoValue {
+  font-family: var(--font-primary);
+  font-size: clamp(0.8125rem, 1.2vw, 0.875rem);
+  font-weight: 500;
+  color: var(--text);
+}
+
+.muted {
+  font-family: var(--font-primary);
+  font-size: clamp(0.75rem, 1.1vw, 0.8125rem);
+  font-weight: 400;
+  color: var(--neutral);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── Placeholder Button ── */
+.placeholderBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: clamp(0.4375rem, 0.9vw, 0.5rem) clamp(1rem, 2vw, 1.25rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--secondary);
+  font-family: var(--font-primary);
+  font-size: clamp(0.6875rem, 1vw, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.placeholderBtn:hover {
+  border-color: var(--secondary);
+  background: var(--secondary-ul);
+}
+
+.placeholderNote {
+  margin: clamp(0.5rem, 1vw, 0.75rem) 0 0;
+  font-family: var(--font-primary);
+  font-size: clamp(0.6875rem, 1vw, 0.75rem);
+  font-weight: 400;
+  color: var(--neutral);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .itemCard {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    height: 100%;
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .itemCard {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .labelInput {
+    min-width: 100%;
+    order: 10;
+  }
+}
