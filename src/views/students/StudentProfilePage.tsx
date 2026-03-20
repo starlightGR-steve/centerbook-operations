@@ -30,6 +30,7 @@ import { MOCK_CONTACTS } from '@/lib/mock-data';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Badge from '@/components/ui/Badge';
 import StudentJournal from '@/components/StudentJournal';
+import StudentAttendanceLog from '@/components/students/StudentAttendanceLog';
 import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
 import NoteCard from '@/components/NoteCard';
@@ -766,6 +767,14 @@ export default function StudentProfilePage({ studentId }: Props) {
               </div>
             )}
           </div>
+
+          <hr className={styles.groupDivider} />
+
+          {/* ── Attendance Log ── */}
+          <StudentAttendanceLog
+            studentId={studentId}
+            scheduleDays={scheduleDays}
+          />
 
           <hr className={styles.groupDivider} />
 
