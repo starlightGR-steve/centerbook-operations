@@ -62,31 +62,30 @@ export default function PipelinePage() {
   const [draggedFamily, setDraggedFamily] = useState<Family | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
-  const handleDrop = useCallback(async (targetStatus: FamilyPipelineStatus) => {
-    if (!draggedFamily || draggedFamily.pipeline_status === targetStatus) {
-      setDraggedFamily(null);
+  const handleDrop = useCallback(async (targetStatus: FamilyPipelineStatus, e: React.DragEvent) => {
+    const famId = Number(e.dataTransfer.getData('text/plain'));
+    const fam = families?.find((f) => f.id === famId);
+    if (!fam || fam.pipeline_status === targetStatus) {
       setDragOverCol(null);
       return;
     }
-    const fam = draggedFamily;
     const prev = fam.pipeline_status;
-    // Optimistic: update in local groups immediately
+    // Optimistic update via SWR mutate with modified data
     fam.pipeline_status = targetStatus;
-    mutateFamilies();
+    mutateFamilies(families ? [...families] : undefined, false);
     setDraggedFamily(null);
     setDragOverCol(null);
     try {
       await updateFamilyStatus(fam.id, { pipeline_status: targetStatus });
-      // Open enrollment wizard when moved to Enrolled
+      mutateFamilies();
       if (targetStatus === 'enrolled') {
         setEnrollWizardFamily(fam);
       }
     } catch {
-      // Revert on error
       fam.pipeline_status = prev;
-      mutateFamilies();
+      mutateFamilies(families ? [...families] : undefined, false);
     }
-  }, [draggedFamily, mutateFamilies]);
+  }, [families, mutateFamilies]);
 
   /* Group families by pipeline_status */
   const familyGroups = useMemo(() => {
@@ -147,7 +146,7 @@ export default function PipelinePage() {
                 key={col.status}
                 onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.status); }}
                 onDragLeave={() => setDragOverCol(null)}
-                onDrop={(e) => { e.preventDefault(); handleDrop(col.status); }}
+                onDrop={(e) => { e.preventDefault(); handleDrop(col.status, e); }}
               >
                 <div className={styles.kanbanHeader}>
                   <span className={styles.kanbanLabel}>{col.label}</span>
@@ -169,7 +168,7 @@ export default function PipelinePage() {
                       key={fam.id}
                       style={{ borderLeftColor: col.color }}
                       draggable
-                      onDragStart={() => setDraggedFamily(fam)}
+                      onDragStart={(e) => { e.dataTransfer.setData('text/plain', String(fam.id)); setDraggedFamily(fam); }}
                       onDragEnd={() => { setDraggedFamily(null); setDragOverCol(null); }}
                       onClick={() => setDetailFamily(fam)}
                     >
