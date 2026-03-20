@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { X, BookOpen, Heart, AlertTriangle, Check } from 'lucide-react';
+import Link from 'next/link';
+import { X, BookOpen, Heart, AlertTriangle, Check, ArrowRight } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
+import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance } from '@/lib/types';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
@@ -43,6 +45,8 @@ export default function StudentDetailPanel({
 }: StudentDetailPanelProps) {
   const { data: session } = useSession();
   const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
+  const role = (session?.user as { role?: AppRole } | undefined)?.role;
+  const isAdmin = role === 'admin' || role === 'superuser';
   const [noteText, setNoteText] = useState('');
   const [needsAttention, setNeedsAttention] = useState(false);
   const [noteSaving, setNoteSaving] = useState(false);
@@ -102,6 +106,16 @@ export default function StudentDetailPanel({
           <X size={20} />
         </button>
       </div>
+
+      {isAdmin && (
+        <Link
+          href={`/students/${student.id}`}
+          className={styles.profileLink}
+          onClick={onClose}
+        >
+          View Full Profile <ArrowRight size={14} />
+        </Link>
+      )}
 
       <div className={styles.body}>
         {/* 2. Badge row */}

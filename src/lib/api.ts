@@ -26,6 +26,7 @@ import type {
   CreateTaskRequest,
   JournalEntry,
   CreateJournalEntryRequest,
+  UpdateJournalEntryRequest,
   ClassroomNote,
   CreateClassroomNoteRequest,
   Book,
@@ -393,6 +394,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    update: (id: number, data: UpdateJournalEntryRequest) =>
+      directFetch<JournalEntry>(`/journal/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: number) =>
+      directFetch<void>(`/journal/${id}`, { method: 'DELETE' }),
   },
 
   // ── Library (no API yet — falls back to mock data) ──

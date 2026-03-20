@@ -326,7 +326,7 @@ export type JournalEntryType =
   | 'goal_setting'
   | 'parent_conversation'
   | 'student_checkin'
-  | 'progress_meeting_notes'
+  | 'progress_meeting'
   | 'general';
 
 export type JournalVisibility = 'internal' | 'staff' | 'parent_visible';
@@ -339,6 +339,9 @@ export interface JournalEntry {
   visibility: JournalVisibility;
   title: string | null;
   content: string;
+  metadata: Record<string, unknown> | null;
+  author_id: number;
+  author_name: string;
   goal_status: 'active' | 'met' | 'revised' | null;
   task_id: number | null;
   created_at: string;
@@ -348,9 +351,17 @@ export interface JournalEntry {
 export interface CreateJournalEntryRequest {
   student_id: number;
   entry_type: JournalEntryType;
-  visibility: JournalVisibility;
+  author_id: number;
   title?: string | null;
-  content: string;
+  content?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UpdateJournalEntryRequest {
+  entry_type?: JournalEntryType;
+  title?: string | null;
+  content?: string;
+  metadata?: Record<string, unknown>;
 }
 
 // ── Classroom Notes ───────────────────────

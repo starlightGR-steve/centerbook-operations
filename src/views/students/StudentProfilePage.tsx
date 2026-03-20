@@ -27,6 +27,7 @@ import {
 import { api } from '@/lib/api';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Badge from '@/components/ui/Badge';
+import StudentJournal from '@/components/StudentJournal';
 import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
 import NoteCard from '@/components/NoteCard';
@@ -43,6 +44,13 @@ import type { CbTaskType, NoteVisibility, Contact } from '@/lib/types';
 import styles from './StudentProfilePage.module.css';
 
 const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function deriveBirthMonth(dateStr: string): string {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return '—';
+  return MONTH_NAMES[d.getMonth() + 1] || '—';
+}
 
 const TASK_TYPE_LABELS: Record<CbTaskType, string> = {
   birthday: 'Birthday',
@@ -418,7 +426,7 @@ export default function StudentProfilePage({ studentId }: Props) {
       </div>
 
       <div className={styles.body}>
-        {/* ── Section 2: Details Grid ── */}
+        {/* ── Section 2: Student Details (grouped) ── */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>Student Details</h3>
@@ -446,8 +454,9 @@ export default function StudentProfilePage({ studentId }: Props) {
             <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{editError}</p>
           )}
 
+          {/* ── Personal Information ── */}
+          <h4 className={styles.groupHeading}>Personal Information</h4>
           <div className={styles.detailsGrid}>
-            {/* Date of Birth */}
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('date_of_birth') ? styles.fieldChanged : ''}`}>
                 <span className={styles.detailLabel}>Date of Birth</span>
@@ -457,22 +466,24 @@ export default function StudentProfilePage({ studentId }: Props) {
               <DetailRow label="Date of Birth" value={student.date_of_birth ?? '—'} />
             )}
 
-            <DetailRow label="Birth Month" value={student.birth_month ? MONTH_NAMES[student.birth_month] : '—'} />
+            <DetailRow
+              label="Birth Month"
+              value={
+                isEditing && getField('date_of_birth')
+                  ? deriveBirthMonth(getField('date_of_birth'))
+                  : student.birth_month ? MONTH_NAMES[student.birth_month] : (student.date_of_birth ? deriveBirthMonth(student.date_of_birth) : '—')
+              }
+            />
 
-            {/* Enroll Date */}
             {isEditing ? (
-              <div className={`${styles.detailItem} ${isChanged('enroll_date') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>Enroll Date</span>
-                <input type="date" className={styles.editInput} value={getField('enroll_date')} onChange={(e) => setField('enroll_date', e.target.value || null)} />
+              <div className={`${styles.detailItem} ${isChanged('school') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>School</span>
+                <input className={styles.editInput} value={getField('school')} onChange={(e) => setField('school', e.target.value || null)} />
               </div>
             ) : (
-              <DetailRow label="Enroll Date" value={student.enroll_date ?? '—'} />
+              <DetailRow label="School" value={student.school ?? '—'} />
             )}
 
-            <DetailRow label="Enroll Month" value={student.enroll_month ? MONTH_NAMES[student.enroll_month] : '—'} />
-            <DetailRow label="Starting Grade" value={student.starting_grade_level ?? '—'} />
-
-            {/* Grade Level */}
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('grade_level') ? styles.fieldChanged : ''}`}>
                 <span className={styles.detailLabel}>Current Grade</span>
@@ -485,17 +496,33 @@ export default function StudentProfilePage({ studentId }: Props) {
               <DetailRow label="Current Grade" value={student.grade_level ?? '—'} />
             )}
 
-            {/* School */}
+            {/* TODO: Starting Grade not in cb_students schema yet -- needs db column or ClickUp sync */}
+            <DetailRow label="Starting Grade" value="—" />
+          </div>
+
+          <hr className={styles.groupDivider} />
+
+          {/* ── Enrollment ── */}
+          <h4 className={styles.groupHeading}>Enrollment</h4>
+          <div className={styles.detailsGrid}>
             {isEditing ? (
-              <div className={`${styles.detailItem} ${isChanged('school') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>School</span>
-                <input className={styles.editInput} value={getField('school')} onChange={(e) => setField('school', e.target.value || null)} />
+              <div className={`${styles.detailItem} ${isChanged('enroll_date') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Enroll Date</span>
+                <input type="date" className={styles.editInput} value={getField('enroll_date')} onChange={(e) => setField('enroll_date', e.target.value || null)} />
               </div>
             ) : (
-              <DetailRow label="School" value={student.school ?? '—'} />
+              <DetailRow label="Enroll Date" value={student.enroll_date ?? '—'} />
             )}
 
-            {/* Program Type */}
+            <DetailRow
+              label="Enroll Month"
+              value={
+                isEditing && getField('enroll_date')
+                  ? deriveBirthMonth(getField('enroll_date'))
+                  : student.enroll_month ? MONTH_NAMES[student.enroll_month] : (student.enroll_date ? deriveBirthMonth(student.enroll_date) : '—')
+              }
+            />
+
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('program_type') ? styles.fieldChanged : ''}`}>
                 <span className={styles.detailLabel}>Program Type</span>
@@ -508,89 +535,140 @@ export default function StudentProfilePage({ studentId }: Props) {
               <DetailRow label="Program Type" value={student.program_type ?? '—'} />
             )}
 
-            {/* Subjects */}
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('subjects') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>Subjects</span>
+                <span className={styles.detailLabel}>Subject(s)</span>
                 <select className={styles.editSelect} value={getField('subjects')} onChange={(e) => setField('subjects', e.target.value || null)}>
                   <option value="">Select subjects...</option>
                   {SUBJECT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             ) : (
-              <DetailRow label="Subjects" value={student.subjects ? student.subjects.replace('Math, Reading', 'Math & Reading') : '—'} />
+              <DetailRow label="Subject(s)" value={student.subjects ? student.subjects.replace('Math, Reading', 'Math & Reading') : '—'} />
             )}
 
-            {/* Schedule */}
             {isEditing ? (
-              <div className={`${styles.detailItem} ${styles.detailFull} ${isChanged('class_schedule_days') || isChanged('schedule_detail') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>Schedule</span>
-                <div className={styles.scheduleGrid}>
-                  {SCHEDULE_DAYS.map((d) => {
-                    const active = editScheduleDays.includes(d);
-                    const detail = editScheduleDetail[d];
-                    return (
-                      <div key={d} className={styles.scheduleCol}>
-                        <button
-                          type="button"
-                          className={`${styles.dayToggle} ${active ? styles.dayToggleActive : ''}`}
-                          onClick={() => toggleDay(d)}
-                        >
-                          {d.slice(0, 3)}
-                        </button>
-                        {active && detail && (
-                          <>
-                            <select
-                              className={styles.scheduleSelect}
-                              value={detail.sort_key}
-                              onChange={(e) => updateDayDetail(d, 'sort_key', Number(e.target.value))}
-                            >
-                              {TIME_SLOTS.map((t) => (
-                                <option key={t.sort_key} value={t.sort_key}>{t.label}</option>
-                              ))}
-                            </select>
-                            <select
-                              className={styles.scheduleSelect}
-                              value={detail.duration}
-                              onChange={(e) => updateDayDetail(d, 'duration', Number(e.target.value))}
-                            >
-                              {DURATION_OPTIONS.map((m) => (
-                                <option key={m} value={m}>{m} min</option>
-                              ))}
-                            </select>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className={`${styles.detailItem} ${isChanged('enrollment_status') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Enrollment Status</span>
+                <select className={styles.editSelect} value={getField('enrollment_status')} onChange={(e) => setField('enrollment_status', e.target.value)}>
+                  {ENROLLMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
             ) : (
-              <div className={`${styles.detailItem} ${styles.detailFull}`}>
-                <span className={styles.detailLabel}>Schedule</span>
-                <div className={styles.scheduleGrid}>
-                  {SCHEDULE_DAYS.map((d) => {
-                    const active = scheduleDays.includes(d);
-                    const detail = student.schedule_detail?.[d];
-                    return (
-                      <div key={d} className={styles.scheduleCol}>
-                        <span className={`${styles.dayPill} ${active ? '' : styles.dayPillInactive}`}>
-                          {d.slice(0, 3)}
-                        </span>
-                        {active && detail && (
-                          <>
-                            <span className={styles.scheduleTime}>{detail.start}</span>
-                            <span className={styles.scheduleDuration}>{detail.duration} min</span>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <DetailRow label="Enrollment Status" value={student.enrollment_status} />
             )}
 
-            {/* Current Math Level */}
+            {isEditing ? (
+              <div className={`${styles.detailItem} ${isChanged('student_id') ? styles.fieldChanged : ''}`}>
+                <span className={styles.detailLabel}>Student ID</span>
+                <input className={styles.editInput} value={getField('student_id')} onChange={(e) => setField('student_id', e.target.value || null)} />
+              </div>
+            ) : (
+              <DetailRow label="Student ID" value={student.student_id ?? '—'} />
+            )}
+          </div>
+
+          <hr className={styles.groupDivider} />
+
+          {/* ── Medical ── */}
+          <h4 className={styles.groupHeading}>Medical</h4>
+          {isEditing ? (
+            <div className={`${styles.detailItem} ${isChanged('medical_notes') ? styles.fieldChanged : ''}`}>
+              <span className={styles.detailLabel}>
+                <AlertTriangle size={12} style={{ color: 'var(--red)', marginRight: 4 }} />
+                Medical / Allergies
+              </span>
+              <textarea className={styles.editTextarea} value={getField('medical_notes')} onChange={(e) => setField('medical_notes', e.target.value || null)} rows={4} />
+            </div>
+          ) : (
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>
+                <AlertTriangle size={12} style={{ color: 'var(--red)', marginRight: 4 }} />
+                Medical / Allergies
+              </span>
+              {student.medical_notes ? (
+                <span className={styles.medicalValue}>{student.medical_notes}</span>
+              ) : (
+                <span className={styles.medicalEmpty}>None on file</span>
+              )}
+            </div>
+          )}
+
+          <hr className={styles.groupDivider} />
+
+          {/* ── Schedule (existing section — do not modify) ── */}
+          <h4 className={styles.groupHeading}>Schedule</h4>
+          {isEditing ? (
+            <div className={`${styles.detailItem} ${isChanged('class_schedule_days') || isChanged('schedule_detail') ? styles.fieldChanged : ''}`}>
+              <div className={styles.scheduleGrid}>
+                {SCHEDULE_DAYS.map((d) => {
+                  const active = editScheduleDays.includes(d);
+                  const detail = editScheduleDetail[d];
+                  return (
+                    <div key={d} className={styles.scheduleCol}>
+                      <button
+                        type="button"
+                        className={`${styles.dayToggle} ${active ? styles.dayToggleActive : ''}`}
+                        onClick={() => toggleDay(d)}
+                      >
+                        {d.slice(0, 3)}
+                      </button>
+                      {active && detail && (
+                        <>
+                          <select
+                            className={styles.scheduleSelect}
+                            value={detail.sort_key}
+                            onChange={(e) => updateDayDetail(d, 'sort_key', Number(e.target.value))}
+                          >
+                            {TIME_SLOTS.map((t) => (
+                              <option key={t.sort_key} value={t.sort_key}>{t.label}</option>
+                            ))}
+                          </select>
+                          <select
+                            className={styles.scheduleSelect}
+                            value={detail.duration}
+                            onChange={(e) => updateDayDetail(d, 'duration', Number(e.target.value))}
+                          >
+                            {DURATION_OPTIONS.map((m) => (
+                              <option key={m} value={m}>{m} min</option>
+                            ))}
+                          </select>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className={styles.detailItem}>
+              <div className={styles.scheduleGrid}>
+                {SCHEDULE_DAYS.map((d) => {
+                  const active = scheduleDays.includes(d);
+                  const detail = student.schedule_detail?.[d];
+                  return (
+                    <div key={d} className={styles.scheduleCol}>
+                      <span className={`${styles.dayPill} ${active ? '' : styles.dayPillInactive}`}>
+                        {d.slice(0, 3)}
+                      </span>
+                      {active && detail && (
+                        <>
+                          <span className={styles.scheduleTime}>{detail.start}</span>
+                          <span className={styles.scheduleDuration}>{detail.duration} min</span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <hr className={styles.groupDivider} />
+
+          {/* ── Academic Progress ── */}
+          <h4 className={styles.groupHeading}>Academic Progress</h4>
+          <div className={styles.detailsGrid}>
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('current_level_math') ? styles.fieldChanged : ''}`}>
                 <span className={styles.detailLabel}>Current Math Level</span>
@@ -603,7 +681,6 @@ export default function StudentProfilePage({ studentId }: Props) {
               <DetailRow label="Current Math Level" value={student.current_level_math ?? '—'} />
             )}
 
-            {/* Current Reading Level */}
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('current_level_reading') ? styles.fieldChanged : ''}`}>
                 <span className={styles.detailLabel}>Current Reading Level</span>
@@ -616,68 +693,36 @@ export default function StudentProfilePage({ studentId }: Props) {
               <DetailRow label="Current Reading Level" value={student.current_level_reading ?? '—'} />
             )}
 
-            {/* ASHR Math */}
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('ashr_math_status') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>ASHR Math</span>
+                <span className={styles.detailLabel}>ASHR Math Status</span>
                 <select className={styles.editSelect} value={getField('ashr_math_status')} onChange={(e) => setField('ashr_math_status', e.target.value || null)}>
                   <option value="">—</option>
                   {ASHR_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             ) : (
-              <DetailRow label="ASHR Math" value={student.ashr_math_status ?? '—'} />
+              <DetailRow label="ASHR Math Status" value={student.ashr_math_status ?? '—'} />
             )}
 
-            {/* ASHR Reading */}
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('ashr_reading_status') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>ASHR Reading</span>
+                <span className={styles.detailLabel}>ASHR Reading Status</span>
                 <select className={styles.editSelect} value={getField('ashr_reading_status')} onChange={(e) => setField('ashr_reading_status', e.target.value || null)}>
                   <option value="">—</option>
                   {ASHR_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             ) : (
-              <DetailRow label="ASHR Reading" value={student.ashr_reading_status ?? '—'} />
+              <DetailRow label="ASHR Reading Status" value={student.ashr_reading_status ?? '—'} />
             )}
+          </div>
 
-            {/* Classroom Position */}
-            {isEditing ? (
-              <div className={`${styles.detailItem} ${isChanged('classroom_position') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>Classroom Position</span>
-                <select className={styles.editSelect} value={getField('classroom_position')} onChange={(e) => setField('classroom_position', e.target.value || null)}>
-                  <option value="">—</option>
-                  {CLASSROOM_POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-            ) : (
-              <DetailRow label="Classroom Position" value={student.classroom_position ?? '—'} />
-            )}
+          <hr className={styles.groupDivider} />
 
-            {/* Enrollment Status */}
-            {isEditing ? (
-              <div className={`${styles.detailItem} ${isChanged('enrollment_status') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>Enrollment Status</span>
-                <select className={styles.editSelect} value={getField('enrollment_status')} onChange={(e) => setField('enrollment_status', e.target.value)}>
-                  {ENROLLMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-            ) : (
-              <DetailRow label="Enrollment Status" value={student.enrollment_status} />
-            )}
-
-            {/* Student ID */}
-            {isEditing ? (
-              <div className={`${styles.detailItem} ${isChanged('student_id') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>Student ID</span>
-                <input className={styles.editInput} value={getField('student_id')} onChange={(e) => setField('student_id', e.target.value || null)} />
-              </div>
-            ) : (
-              <DetailRow label="Student ID" value={student.student_id ?? '—'} />
-            )}
-
-            {/* KC Username */}
+          {/* ── Kumon Connect ── */}
+          <h4 className={styles.groupHeading}>Kumon Connect</h4>
+          <div className={styles.detailsGrid}>
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('kc_username') ? styles.fieldChanged : ''}`}>
                 <span className={styles.detailLabel}>KC Username</span>
@@ -687,7 +732,6 @@ export default function StudentProfilePage({ studentId }: Props) {
               <DetailRow label="KC Username" value={student.kc_username ?? '—'} />
             )}
 
-            {/* KC Password */}
             {isEditing ? (
               <div className={`${styles.detailItem} ${isChanged('kc_password') ? styles.fieldChanged : ''}`}>
                 <span className={styles.detailLabel}>KC Password</span>
@@ -706,28 +750,18 @@ export default function StudentProfilePage({ studentId }: Props) {
                 </span>
               </div>
             )}
-
-            {/* Medical Notes */}
-            {isEditing ? (
-              <div className={`${styles.detailItem} ${styles.detailFull} ${isChanged('medical_notes') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>
-                  <AlertTriangle size={12} style={{ color: 'var(--red)', marginRight: 4 }} />
-                  Medical / Allergies
-                </span>
-                <textarea className={styles.editTextarea} value={getField('medical_notes')} onChange={(e) => setField('medical_notes', e.target.value || null)} rows={3} />
-              </div>
-            ) : (
-              student.medical_notes ? (
-                <div className={`${styles.detailItem} ${styles.detailFull}`}>
-                  <span className={styles.detailLabel}>
-                    <AlertTriangle size={12} style={{ color: 'var(--red)', marginRight: 4 }} />
-                    Medical / Allergies
-                  </span>
-                  <span className={styles.medicalValue}>{student.medical_notes}</span>
-                </div>
-              ) : isEditing ? null : null
-            )}
           </div>
+
+          <hr className={styles.groupDivider} />
+
+          {/* ── Student Journal ── */}
+          <StudentJournal
+            studentId={studentId}
+            staffId={staffId}
+            staffName={session?.user?.name || 'Staff'}
+          />
+
+          {/* Future sections: Progress Meetings, Attendance, Absence/Vacation, Classroom Observation Log */}
         </div>
 
         {/* ── Section 2b: Parents / Guardians ── */}
