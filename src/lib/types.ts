@@ -353,6 +353,25 @@ export interface CreateJournalEntryRequest {
   content: string;
 }
 
+// ── Classroom Notes ───────────────────────
+
+export interface ClassroomNote {
+  id: number;
+  student_id: number;
+  note_text: string;
+  author_id: number;
+  author_name: string;
+  needs_management_attention: boolean;
+  created_at: string;
+}
+
+export interface CreateClassroomNoteRequest {
+  student_id: number;
+  note_text: string;
+  author_id: number;
+  needs_management_attention: boolean;
+}
+
 // ── Library ────────────────────────────────
 
 export type BookStatus = 'available' | 'checked-out' | 'lost' | 'retired';

@@ -26,6 +26,8 @@ import type {
   CreateTaskRequest,
   JournalEntry,
   CreateJournalEntryRequest,
+  ClassroomNote,
+  CreateClassroomNoteRequest,
   Book,
   BookLoan,
   CheckoutBookRequest,
@@ -473,6 +475,17 @@ export const api = {
     /** Upsert a teacher-to-row assignment */
     assignTeacher: (data: AssignRowTeacherRequest) =>
       directFetch<RowTeacher>('/classroom/teachers', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  // ── Classroom Notes ──
+  classroomNotes: {
+    forStudent: (studentId: number) =>
+      directFetch<ClassroomNote[]>(`/classroom-notes?student_id=${studentId}`),
+    create: (data: CreateClassroomNoteRequest) =>
+      directFetch<ClassroomNote>('/classroom-notes', {
         method: 'POST',
         body: JSON.stringify(data),
       }),

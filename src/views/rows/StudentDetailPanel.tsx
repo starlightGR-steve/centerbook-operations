@@ -2,53 +2,30 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { X, Send, FileText, BookOpen, Heart, Lock } from 'lucide-react';
+import { X, BookOpen, Heart, AlertTriangle, Check } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
-import type { Student, Attendance, NoteVisibility } from '@/lib/types';
+import type { Student, Attendance } from '@/lib/types';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
-import { useNotes, createNote } from '@/hooks/useNotes';
+import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
 import { useOutstandingLoans } from '@/hooks/useLibrary';
 import styles from './StudentDetailPanel.module.css';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
-const VIS_OPTIONS: { value: NoteVisibility; label: string; icon?: boolean }[] = [
-  { value: 'internal', label: 'Management Only', icon: true },
-  { value: 'staff', label: 'Teacher Visible' },
-  { value: 'parent', label: 'Parent Visible' },
-];
-
-function formatNoteDate(dateStr: string): string {
+function formatRelativeTime(dateStr: string): string {
+  const now = new Date();
   const d = new Date(dateStr);
-  const month = d.toLocaleString('en-US', { month: 'short' });
-  const day = d.getDate();
-  const time = d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  return `${month} ${day}, ${time}`;
-}
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
 
-function visibilityBadgeClass(vis: string): string {
-  if (vis === 'internal') return styles.visBadgeInternal;
-  if (vis === 'parent') return styles.visBadgeParent;
-  return styles.visBadgeStaff;
-}
-
-function visibilityLabel(vis: string): string {
-  if (vis === 'internal') return 'Management Only';
-  if (vis === 'parent') return 'Parent Visible';
-  return 'Teacher Visible';
-}
-
-function roleBadgeClass(vis: string): string {
-  if (vis === 'parent') return styles.roleBadgeParent;
-  if (vis === 'internal') return styles.roleBadgeAdmin;
-  return styles.roleBadgeStaff;
-}
-
-function roleLabel(vis: string): string {
-  if (vis === 'parent') return 'Parent Portal';
-  if (vis === 'internal') return 'Admin';
-  return 'Staff';
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} min ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 interface StudentDetailPanelProps {
@@ -67,43 +44,42 @@ export default function StudentDetailPanel({
   const { data: session } = useSession();
   const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const [noteText, setNoteText] = useState('');
-  const [noteVis, setNoteVis] = useState<NoteVisibility>('staff');
+  const [needsAttention, setNeedsAttention] = useState(false);
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
-  const today = new Date().toISOString().split('T')[0];
-  const { data: notes } = useNotes(student.id, today);
+  const [noteSuccess, setNoteSuccess] = useState(false);
+  const { data: classroomNotes, mutate: mutateNotes } = useClassroomNotes(student.id);
   const { data: allLoans } = useOutstandingLoans();
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
   const subjects = parseSubjects(student.subjects);
 
-  const handleAddNote = async () => {
+  const handleSaveNote = async () => {
     if (!noteText.trim() || noteSaving) return;
     setNoteSaving(true);
     setNoteError(null);
+    setNoteSuccess(false);
     try {
-      await createNote({
+      const newNote = await createClassroomNote({
         student_id: student.id,
-        content: noteText.trim(),
-        author_type: 'staff',
-        author_name: session?.user?.name || 'Staff',
+        note_text: noteText.trim(),
         author_id: staffId,
-        note_date: today,
-        visibility: noteVis,
+        needs_management_attention: needsAttention,
       });
       setNoteText('');
+      setNeedsAttention(false);
+      setNoteSuccess(true);
+      setTimeout(() => setNoteSuccess(false), 3000);
+      // Prepend the new note to the local list
+      mutateNotes(
+        (prev) => (prev ? [newNote, ...prev] : [newNote]),
+        false
+      );
     } catch {
       setNoteError('Failed to save note. Please try again.');
     } finally {
       setNoteSaving(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleAddNote();
     }
   };
 
@@ -188,78 +164,75 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* 5. Add Note */}
+        {/* 5. Classroom Observations */}
         <div>
-          <label className={styles.label}>Add Note</label>
+          <label className={styles.observationHeading}>Classroom Observations</label>
           <div className={styles.noteInputWrap}>
             <textarea
               className={styles.noteInput}
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type observation notes..."
+              placeholder="Add observation note..."
+              rows={3}
             />
-            <div className={styles.noteActions}>
-              <div className={styles.visSelector}>
-                {VIS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    className={`${styles.visBtn} ${noteVis === opt.value ? styles.visBtnActive : ''}`}
-                    onClick={() => setNoteVis(opt.value)}
-                    type="button"
-                  >
-                    {opt.icon && <Lock size={10} />}
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <button className={styles.sendBtn} onClick={handleAddNote} disabled={noteSaving}>
-                {noteSaving ? (
-                  <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }} />
-                ) : (
-                  <Send size={14} />
-                )}
-              </button>
-            </div>
+            <label
+              className={`${styles.attentionRow} ${needsAttention ? styles.attentionRowActive : ''}`}
+            >
+              <input
+                type="checkbox"
+                checked={needsAttention}
+                onChange={(e) => setNeedsAttention(e.target.checked)}
+                className={styles.attentionCheckbox}
+              />
+              <AlertTriangle size={14} className={styles.attentionIcon} />
+              <span className={styles.attentionLabel}>Needs management attention</span>
+            </label>
+            <button
+              className={styles.saveNoteBtn}
+              onClick={handleSaveNote}
+              disabled={!noteText.trim() || noteSaving}
+            >
+              {noteSaving ? 'Saving…' : 'Save Note'}
+            </button>
+            {noteSuccess && (
+              <p className={styles.noteSuccessMsg}>
+                <Check size={14} /> Note saved
+              </p>
+            )}
             {noteError && (
-              <p style={{ color: 'var(--red)', fontSize: 11, margin: '4px 0 0', fontFamily: 'var(--font-primary)' }}>{noteError}</p>
+              <p className={styles.noteErrorMsg}>{noteError}</p>
             )}
           </div>
         </div>
 
-        {/* 6. Notes History */}
+        {/* 6. Observation Log */}
         <div>
           <label className={`${styles.label} ${styles.labelSpaced}`}>
-            Notes History
+            Observation Log
           </label>
-          <div className={styles.notesFeed}>
-            {notes && notes.length > 0 ? (
-              notes.map((n) => (
+          <div className={styles.observationLog}>
+            {classroomNotes && classroomNotes.length > 0 ? (
+              classroomNotes.map((n) => (
                 <div key={n.id} className={styles.noteCard}>
                   <div className={styles.noteCardHeader}>
                     <div className={styles.noteCardLeft}>
-                      <span className={roleBadgeClass(n.visibility)}>
-                        {roleLabel(n.visibility)}
-                      </span>
+                      {n.needs_management_attention && (
+                        <span className={styles.attentionDot} />
+                      )}
                       <span className={styles.noteAuthorName}>
                         {n.author_name || 'Staff'}
                       </span>
-                    </div>
-                    <div className={styles.noteCardRight}>
-                      <span className={visibilityBadgeClass(n.visibility)}>
-                        {n.visibility === 'internal' && <Lock size={9} />}
-                        {visibilityLabel(n.visibility)}
-                      </span>
+                      <span className={styles.noteSep}>—</span>
                       <span className={styles.noteDate}>
-                        {formatNoteDate(n.created_at)}
+                        {formatRelativeTime(n.created_at)}
                       </span>
                     </div>
                   </div>
-                  <p className={styles.noteContent}>{n.content}</p>
+                  <p className={styles.noteContent}>{n.note_text}</p>
                 </div>
               ))
             ) : (
-              <EmptyState icon={FileText} title="No notes yet" description="Add an observation above" />
+              <EmptyState icon={BookOpen} title="No observations recorded yet." />
             )}
           </div>
         </div>
