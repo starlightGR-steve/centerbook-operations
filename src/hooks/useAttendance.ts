@@ -58,8 +58,8 @@ export async function deleteAttendance(id: number): Promise<void> {
   await mutate(`attendance-${d}`);
 }
 
-/** Update an attendance record (undo check-out or adjust times) */
-export async function updateAttendance(id: number, data: { check_in?: string; check_out?: string | null }): Promise<Attendance> {
+/** Update an attendance record (undo check-out, adjust times, or change duration) */
+export async function updateAttendance(id: number, data: { check_in?: string; check_out?: string | null; session_duration_minutes?: number }): Promise<Attendance> {
   const d = new Date().toISOString().split('T')[0];
   if (isDemoModeActive()) {
     const rec = MOCK_ATTENDANCE.find((a) => a.id === id);

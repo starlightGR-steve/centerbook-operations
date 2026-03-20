@@ -7,17 +7,23 @@ import { getSessionDuration } from '@/lib/types';
 
 interface SessionTimeAdjustProps {
   studentId: number;
+  attendanceId: number | null;
   subjects: string | string[] | null;
-  scheduleDetail?: Record<string, { start: string; sort_key: number; duration: number }> | null;
+  scheduleDetail?: Record<string, { start: string; sort_key: number; duration: number; is_zoom?: boolean }> | null;
+  sessionDurationMinutes?: number | null;
 }
 
-export default function SessionTimeAdjust({ studentId, subjects, scheduleDetail }: SessionTimeAdjustProps) {
+export default function SessionTimeAdjust({ studentId, attendanceId, subjects, scheduleDetail, sessionDurationMinutes }: SessionTimeAdjustProps) {
   const [open, setOpen] = useState(false);
-  const { getAdjustment, setAdjustment, adjustBy } = useSessionAdjust();
+  const { getOptimistic, persistAdjustment } = useSessionAdjust();
 
-  const adj = getAdjustment(studentId);
-  const base = getSessionDuration(subjects || '', scheduleDetail ? { scheduleDetail } : undefined);
-  const current = base + adj;
+  const optimistic = getOptimistic(studentId);
+  const current = optimistic ?? sessionDurationMinutes ?? getSessionDuration(subjects || '', scheduleDetail ? { scheduleDetail } : undefined);
+
+  const handleSet = (duration: number) => {
+    if (!attendanceId) return;
+    persistAdjustment(attendanceId, studentId, Math.max(15, duration));
+  };
 
   return (
     <div
@@ -81,7 +87,8 @@ export default function SessionTimeAdjust({ studentId, subjects, scheduleDetail 
             }}
           >
             <button
-              onClick={() => adjustBy(studentId, -15)}
+              onClick={() => handleSet(current - 15)}
+              disabled={!attendanceId}
               style={{
                 width: 32,
                 height: 28,
@@ -92,7 +99,8 @@ export default function SessionTimeAdjust({ studentId, subjects, scheduleDetail 
                 fontSize: 11,
                 fontWeight: 600,
                 color: 'var(--primary)',
-                cursor: 'pointer',
+                cursor: attendanceId ? 'pointer' : 'not-allowed',
+                opacity: attendanceId ? 1 : 0.5,
               }}
             >
               -15
@@ -110,7 +118,8 @@ export default function SessionTimeAdjust({ studentId, subjects, scheduleDetail 
               {current}m
             </span>
             <button
-              onClick={() => adjustBy(studentId, 15)}
+              onClick={() => handleSet(current + 15)}
+              disabled={!attendanceId}
               style={{
                 width: 32,
                 height: 28,
@@ -121,7 +130,8 @@ export default function SessionTimeAdjust({ studentId, subjects, scheduleDetail 
                 fontSize: 11,
                 fontWeight: 600,
                 color: 'var(--primary)',
-                cursor: 'pointer',
+                cursor: attendanceId ? 'pointer' : 'not-allowed',
+                opacity: attendanceId ? 1 : 0.5,
               }}
             >
               +15
@@ -131,7 +141,8 @@ export default function SessionTimeAdjust({ studentId, subjects, scheduleDetail 
             {[30, 45, 60, 75, 90].map((d) => (
               <button
                 key={d}
-                onClick={() => setAdjustment(studentId, d - base)}
+                onClick={() => handleSet(d)}
+                disabled={!attendanceId}
                 style={{
                   padding: '3px 6px',
                   borderRadius: 4,
@@ -141,7 +152,8 @@ export default function SessionTimeAdjust({ studentId, subjects, scheduleDetail 
                   fontSize: 10,
                   fontWeight: 600,
                   color: 'var(--neutral)',
-                  cursor: 'pointer',
+                  cursor: attendanceId ? 'pointer' : 'not-allowed',
+                  opacity: attendanceId ? 1 : 0.5,
                 }}
               >
                 {d}

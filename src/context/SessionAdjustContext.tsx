@@ -1,42 +1,67 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { updateAttendance } from '@/hooks/useAttendance';
 
 interface SessionAdjustContextValue {
-  adjustments: Record<number, number>; // studentId → delta minutes
-  getAdjustment: (studentId: number) => number;
-  setAdjustment: (studentId: number, delta: number) => void;
-  adjustBy: (studentId: number, amount: number) => void;
+  /**
+   * Optimistic overrides for session_duration_minutes.
+   * Key: student_id, Value: absolute duration in minutes.
+   * These are cleared once SWR revalidates with the DB value.
+   */
+  optimistic: Record<number, number>;
+  getOptimistic: (studentId: number) => number | undefined;
+  /**
+   * Adjust a student's session duration. Persists to the attendance record
+   * via PUT /attendance/{id} and sets an optimistic value for instant UI.
+   */
+  persistAdjustment: (attendanceId: number, studentId: number, newDuration: number) => void;
+  /** Clear optimistic value after SWR revalidation */
+  clearOptimistic: (studentId: number) => void;
 }
 
 const SessionAdjustContext = createContext<SessionAdjustContextValue>({
-  adjustments: {},
-  getAdjustment: () => 0,
-  setAdjustment: () => {},
-  adjustBy: () => {},
+  optimistic: {},
+  getOptimistic: () => undefined,
+  persistAdjustment: () => {},
+  clearOptimistic: () => {},
 });
 
 export function SessionAdjustProvider({ children }: { children: ReactNode }) {
-  const [adjustments, setAdjustments] = useState<Record<number, number>>({});
+  const [optimistic, setOptimistic] = useState<Record<number, number>>({});
 
-  const getAdjustment = useCallback(
-    (studentId: number) => adjustments[studentId] || 0,
-    [adjustments]
+  const getOptimistic = useCallback(
+    (studentId: number) => optimistic[studentId],
+    [optimistic]
   );
 
-  const setAdjustment = useCallback((studentId: number, delta: number) => {
-    setAdjustments((prev) => ({ ...prev, [studentId]: delta }));
-  }, []);
+  const persistAdjustment = useCallback(
+    (attendanceId: number, studentId: number, newDuration: number) => {
+      // 1. Optimistic UI update
+      setOptimistic((prev) => ({ ...prev, [studentId]: newDuration }));
+      // 2. Persist to DB (attendance record)
+      updateAttendance(attendanceId, { session_duration_minutes: newDuration } as Parameters<typeof updateAttendance>[1]).then(() => {
+        // Clear optimistic after DB confirms (SWR will have fresh data)
+        setOptimistic((prev) => {
+          const next = { ...prev };
+          delete next[studentId];
+          return next;
+        });
+      });
+    },
+    []
+  );
 
-  const adjustBy = useCallback((studentId: number, amount: number) => {
-    setAdjustments((prev) => ({
-      ...prev,
-      [studentId]: (prev[studentId] || 0) + amount,
-    }));
+  const clearOptimistic = useCallback((studentId: number) => {
+    setOptimistic((prev) => {
+      const next = { ...prev };
+      delete next[studentId];
+      return next;
+    });
   }, []);
 
   return (
-    <SessionAdjustContext.Provider value={{ adjustments, getAdjustment, setAdjustment, adjustBy }}>
+    <SessionAdjustContext.Provider value={{ optimistic, getOptimistic, persistAdjustment, clearOptimistic }}>
       {children}
     </SessionAdjustContext.Provider>
   );

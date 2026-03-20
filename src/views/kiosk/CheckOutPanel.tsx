@@ -21,7 +21,7 @@ interface CheckOutPanelProps {
 }
 
 export default function CheckOutPanel({ attendance, students }: CheckOutPanelProps) {
-  const { getAdjustment } = useSessionAdjust();
+  const { getOptimistic } = useSessionAdjust();
   const [, setTick] = useState(0);
   const [undoToast, setUndoToast] = useState<UndoToastItem | null>(null);
   const toastIdRef = useRef(0);
@@ -77,9 +77,8 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
           const student = a.student || getStudent(a.student_id);
           if (!student) return null;
 
-          const adj = getAdjustment(a.student_id);
-          const baseTimeLeft = getTimeRemaining(student.subjects, a.check_in, { scheduleDetail: student.schedule_detail, sessionDurationMinutes: a.session_duration_minutes });
-          const timeLeft = baseTimeLeft + adj;
+          const optimisticDuration = getOptimistic(a.student_id);
+          const timeLeft = getTimeRemaining(student.subjects, a.check_in, { scheduleDetail: student.schedule_detail, sessionDurationMinutes: optimisticDuration ?? a.session_duration_minutes });
           const isWarn = timeLeft <= 5;
 
           return (
@@ -102,18 +101,6 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
                   <SmsStatusIndicator attendance={a} variant="row" />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {adj !== 0 && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        fontFamily: 'Montserrat, sans-serif',
-                        color: adj > 0 ? '#16a34a' : '#dc2626',
-                      }}
-                    >
-                      {adj > 0 ? `+${adj}` : adj}
-                    </span>
-                  )}
                   <span
                     className={`${styles.timeLeft} ${isWarn ? styles.timeLeftWarn : ''}`}
                   >
@@ -133,7 +120,7 @@ export default function CheckOutPanel({ attendance, students }: CheckOutPanelPro
               >
                 <Pencil size={14} />
               </button>
-              <SessionTimeAdjust studentId={a.student_id} subjects={student.subjects} scheduleDetail={student.schedule_detail} />
+              <SessionTimeAdjust studentId={a.student_id} attendanceId={a.id} subjects={student.subjects} scheduleDetail={student.schedule_detail} sessionDurationMinutes={a.session_duration_minutes} />
             </div>
           );
         })}

@@ -638,22 +638,24 @@ export function formatTimeKey(key: number | null): string {
 }
 
 /** Get session duration in minutes.
- *  Priority: schedule_detail[today] → attendance session_duration_minutes → 60 min default → subject-count fallback */
+ *  Priority: attendance session_duration_minutes (per-session, may be adjusted)
+ *          → schedule_detail[today] (scheduled default)
+ *          → 60 min default → subject-count fallback */
 export function getSessionDuration(
   subjects: string | string[] | null | undefined,
   options?: {
-    scheduleDetail?: Record<string, { start: string; sort_key: number; duration: number }> | null;
+    scheduleDetail?: Record<string, { start: string; sort_key: number; duration: number; is_zoom?: boolean }> | null;
     sessionDurationMinutes?: number | null;
   }
 ): number {
-  // 1. schedule_detail for today
+  // 1. Attendance record's session_duration_minutes (explicitly set or adjusted per-session)
+  if (options?.sessionDurationMinutes) return options.sessionDurationMinutes;
+  // 2. schedule_detail for today (scheduled default for this day)
   if (options?.scheduleDetail) {
     const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     const todayEntry = options.scheduleDetail[todayDay];
     if (todayEntry?.duration) return todayEntry.duration;
   }
-  // 2. Attendance record's session_duration_minutes (walk-ins / unseeded)
-  if (options?.sessionDurationMinutes) return options.sessionDurationMinutes;
   // 3. Default 60 when options were provided but had no data
   if (options) return 60;
   // 4. Legacy subject-count fallback (callers that don't pass options)

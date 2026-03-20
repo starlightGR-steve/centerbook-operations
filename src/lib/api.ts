@@ -287,7 +287,7 @@ export const api = {
       directFetch<{ deleted: boolean; id: number }>(`/attendance/${id}`, {
         method: 'DELETE',
       }),
-    update: (id: number, data: { check_in?: string; check_out?: string | null }) =>
+    update: (id: number, data: { check_in?: string; check_out?: string | null; session_duration_minutes?: number }) =>
       directFetch<Attendance>(`/attendance/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),

@@ -116,7 +116,7 @@ export default function RowsPage() {
   const [taskNoteText, setTaskNoteText] = useState('');
   // Local optimistic flag overrides (cleared on SWR revalidation)
   const [optimisticFlags, setOptimisticFlags] = useState<Record<number, RowAssignmentFlags>>({});
-  const { adjustments: sessionAdjustments, adjustBy: adjustSessionBy, setAdjustment: setSessionAdjustment } = useSessionAdjust();
+  const { optimistic: sessionOptimistic, persistAdjustment } = useSessionAdjust();
   const [sessionPopoverStudent, setSessionPopoverStudent] = useState<number | null>(null);
   const [expandedNoteStudent, setExpandedNoteStudent] = useState<number | null>(null);
 
@@ -254,14 +254,16 @@ export default function RowsPage() {
     setTaskNoteText('');
   }, []);
 
-  // Helper: get adjusted time remaining
+  // Helper: get adjusted time remaining (uses optimistic duration if pending, otherwise DB value)
   const getAdjustedTimeRemaining = useCallback((s: Student, att: Attendance | undefined): number => {
-    const opts = { scheduleDetail: s.schedule_detail, sessionDurationMinutes: att?.session_duration_minutes };
+    const optimisticDuration = sessionOptimistic[s.id];
+    const opts = {
+      scheduleDetail: s.schedule_detail,
+      sessionDurationMinutes: optimisticDuration ?? att?.session_duration_minutes,
+    };
     if (!att) return getSessionDuration(s.subjects, opts);
-    const base = getTimeRemaining(s.subjects, att.check_in, opts);
-    const adj = sessionAdjustments[s.id] || 0;
-    return base + adj;
-  }, [sessionAdjustments]);
+    return getTimeRemaining(s.subjects, att.check_in, opts);
+  }, [sessionOptimistic]);
 
   // Students checked in but not assigned to any row
   const unassignedStudents = useMemo(() => {
@@ -461,7 +463,7 @@ export default function RowsPage() {
               // Only show task items that have been assigned (at least one task is set)
               const hasAnyTask = Object.values(flagTasks).some(Boolean);
               const tasks = hasAnyTask ? taskItems : (s.tasks || []);
-              const adj = sessionAdjustments[s.id] || 0;
+              const currentDuration = sessionOptimistic[s.id] ?? att?.session_duration_minutes ?? getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
               const isSessionOpen = sessionPopoverStudent === s.id;
               const isNoteExpanded = expandedNoteStudent === s.id;
 
@@ -609,18 +611,6 @@ export default function RowsPage() {
                       >
                         {timeStr}
                         <span className={styles.timeUnit}>m</span>
-                        {adj !== 0 && (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 600,
-                              marginLeft: 4,
-                              color: adj > 0 ? '#16a34a' : 'var(--red)',
-                            }}
-                          >
-                            {adj > 0 ? `+${adj}` : adj}
-                          </span>
-                        )}
                       </p>
                       <p
                         className={styles.timeLabel}
@@ -645,16 +635,18 @@ export default function RowsPage() {
                           <div className={styles.sessionBtnRow}>
                             <button
                               className={styles.sessionDelta}
-                              onClick={() => adjustSessionBy(s.id, -15)}
+                              onClick={() => att && persistAdjustment(att.id, s.id, Math.max(15, currentDuration - 15))}
+                              disabled={!att}
                             >
                               -15
                             </button>
                             <span className={styles.sessionCurrent}>
-                              {getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail }) + (sessionAdjustments[s.id] || 0)}m
+                              {currentDuration}m
                             </span>
                             <button
                               className={styles.sessionDelta}
-                              onClick={() => adjustSessionBy(s.id, 15)}
+                              onClick={() => att && persistAdjustment(att.id, s.id, currentDuration + 15)}
+                              disabled={!att}
                             >
                               +15
                             </button>
@@ -664,10 +656,8 @@ export default function RowsPage() {
                               <button
                                 key={d}
                                 className={styles.sessionPreset}
-                                onClick={() => {
-                                  const base = getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
-                                  setSessionAdjustment(s.id, d - base);
-                                }}
+                                onClick={() => att && persistAdjustment(att.id, s.id, d)}
+                                disabled={!att}
                               >
                                 {d}
                               </button>
