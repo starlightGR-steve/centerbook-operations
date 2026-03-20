@@ -20,6 +20,7 @@ import type {
   ScheduleOverride,
   ClassroomSection,
   ClassroomNote,
+  RowAssignmentFlags,
 } from './types';
 import { generateTimeSlots } from './types';
 
@@ -2032,22 +2033,23 @@ interface MockRowAssignment {
   assigned_by: number;
   created_at: string;
   row_label?: string;
+  flags?: RowAssignmentFlags | null;
 }
 
 export const MOCK_ROW_ASSIGNMENTS: MockRowAssignment[] = [
   // EL-1 (row 1): 4 students from Early Learners
-  { id: 1, student_id: 1, row_number: 1, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-1' },
-  { id: 2, student_id: 3, row_number: 1, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-1' },
+  { id: 1, student_id: 1, row_number: 1, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-1', flags: { new_concept: true, tasks: { sound_cards: true, flash_cards: false } } },
+  { id: 2, student_id: 3, row_number: 1, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-1', flags: { needs_help: true } },
   { id: 3, student_id: 5, row_number: 1, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-1' },
-  { id: 4, student_id: 7, row_number: 1, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-1' },
+  { id: 4, student_id: 7, row_number: 1, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-1', flags: { tasks: { sound_cards: true } } },
   // EL-2 (row 2): 4 students from Early Learners
   { id: 5, student_id: 2, row_number: 2, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-2' },
   { id: 6, student_id: 4, row_number: 2, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-2' },
   { id: 7, student_id: 6, row_number: 2, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-2' },
   { id: 8, student_id: 8, row_number: 2, assigned_date: today, assigned_by: 6, created_at: todayAt(14, 0), row_label: 'EL-2' },
   // MC-1 (row 3): ~5 students from 3pm wave still in rows
-  { id: 9, student_id: 9, row_number: 3, assigned_date: today, assigned_by: 7, created_at: todayAt(14, 0), row_label: 'MC-1' },
-  { id: 10, student_id: 10, row_number: 3, assigned_date: today, assigned_by: 7, created_at: todayAt(14, 0), row_label: 'MC-1' },
+  { id: 9, student_id: 9, row_number: 3, assigned_date: today, assigned_by: 7, created_at: todayAt(14, 0), row_label: 'MC-1', flags: { new_concept: true, work_with_amy: true, tasks: { flash_cards: true, spelling: false } } },
+  { id: 10, student_id: 10, row_number: 3, assigned_date: today, assigned_by: 7, created_at: todayAt(14, 0), row_label: 'MC-1', flags: { needs_homework: true } },
   { id: 11, student_id: 11, row_number: 3, assigned_date: today, assigned_by: 7, created_at: todayAt(14, 0), row_label: 'MC-1' },
   { id: 12, student_id: 12, row_number: 3, assigned_date: today, assigned_by: 7, created_at: todayAt(14, 0), row_label: 'MC-1' },
   { id: 13, student_id: 13, row_number: 3, assigned_date: today, assigned_by: 7, created_at: todayAt(14, 0), row_label: 'MC-1' },
@@ -2056,7 +2058,7 @@ export const MOCK_ROW_ASSIGNMENTS: MockRowAssignment[] = [
   { id: 15, student_id: 15, row_number: 4, assigned_date: today, assigned_by: 8, created_at: todayAt(14, 0), row_label: 'MC-2' },
   // Students 16, 17, 18 are checked out — NOT in row assignments
   // MC-3 (row 5): ~5 students from 4pm wave
-  { id: 16, student_id: 19, row_number: 5, assigned_date: today, assigned_by: 9, created_at: todayAt(16, 5), row_label: 'MC-3' },
+  { id: 16, student_id: 19, row_number: 5, assigned_date: today, assigned_by: 9, created_at: todayAt(16, 5), row_label: 'MC-3', flags: { needs_help: true, needs_homework: true, tasks: { handwriting: true, custom: 'Take multiplication test' } } },
   { id: 17, student_id: 20, row_number: 5, assigned_date: today, assigned_by: 9, created_at: todayAt(16, 5), row_label: 'MC-3' },
   { id: 18, student_id: 21, row_number: 5, assigned_date: today, assigned_by: 9, created_at: todayAt(16, 5), row_label: 'MC-3' },
   { id: 19, student_id: 22, row_number: 5, assigned_date: today, assigned_by: 9, created_at: todayAt(16, 5), row_label: 'MC-3' },
@@ -2068,7 +2070,7 @@ export const MOCK_ROW_ASSIGNMENTS: MockRowAssignment[] = [
   { id: 24, student_id: 27, row_number: 6, assigned_date: today, assigned_by: 10, created_at: todayAt(16, 5), row_label: 'MC-4' },
   { id: 25, student_id: 28, row_number: 6, assigned_date: today, assigned_by: 10, created_at: todayAt(16, 5), row_label: 'MC-4' },
   // UC-1 (row 7): Upper 4pm students
-  { id: 26, student_id: 39, row_number: 7, assigned_date: today, assigned_by: 11, created_at: todayAt(16, 5), row_label: 'UC-1' },
+  { id: 26, student_id: 39, row_number: 7, assigned_date: today, assigned_by: 11, created_at: todayAt(16, 5), row_label: 'UC-1', flags: { work_with_amy: true, new_concept: false, tasks: { flash_cards: true, spelling: true } } },
   { id: 27, student_id: 40, row_number: 7, assigned_date: today, assigned_by: 11, created_at: todayAt(16, 5), row_label: 'UC-1' },
   { id: 28, student_id: 41, row_number: 7, assigned_date: today, assigned_by: 11, created_at: todayAt(16, 5), row_label: 'UC-1' },
   { id: 29, student_id: 42, row_number: 7, assigned_date: today, assigned_by: 11, created_at: todayAt(16, 5), row_label: 'UC-1' },

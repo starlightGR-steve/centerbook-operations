@@ -1,12 +1,5 @@
-'use client';
-
-import ErrorBoundary from '@/components/ErrorBoundary';
-import KioskPage from '@/views/kiosk/KioskPage';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return (
-    <ErrorBoundary moduleName="Kiosk">
-      <KioskPage />
-    </ErrorBoundary>
-  );
+  redirect('/attendance');
 }

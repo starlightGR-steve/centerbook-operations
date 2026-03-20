@@ -7,7 +7,6 @@ import Link from 'next/link';
 import {
   Menu,
   X,
-  Scan,
   GraduationCap,
   Users,
   UserPlus,
@@ -32,12 +31,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/kiosk', icon: Scan, label: 'Kiosk' },
+  { href: '/attendance', icon: ClipboardList, label: 'Attendance' },
   { href: '/students', icon: GraduationCap, label: 'Students' },
   { href: '/contacts', icon: Users, label: 'Contacts' },
   { href: '/onboarding', icon: UserPlus, label: 'Onboarding', roles: ['superuser', 'admin'] },
   { href: '/rows', icon: Users, label: 'Live Class' },
-  { href: '/attendance', icon: ClipboardList, label: 'Attendance' },
   { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
   { href: '/staff', icon: Briefcase, label: 'Staff', roles: ['superuser', 'admin'] },
   { href: '/library', icon: BookOpen, label: 'Library' },

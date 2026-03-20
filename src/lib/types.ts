@@ -435,10 +435,12 @@ export interface RowAssignmentFlags {
   new_concept?: boolean;
   needs_help?: boolean;
   work_with_amy?: boolean;
+  needs_homework?: boolean;
   tasks?: {
     sound_cards?: boolean;
     flash_cards?: boolean;
     spelling?: boolean;
+    handwriting?: boolean;
     custom?: string | null;
   };
 }

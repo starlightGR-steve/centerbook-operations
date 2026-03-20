@@ -474,33 +474,34 @@
 /* ── Status Flags ── */
 .flagRow {
   display: flex;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
   flex-wrap: wrap;
 }
 
-.flagNewConcept {
+.flagPill {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 9px;
+  gap: 0.1875rem;
+  font-family: var(--font-primary);
+  font-size: clamp(0.5rem, 0.9vw, 0.5625rem);
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 2px clamp(0.3rem, 0.8vw, 0.375rem);
   border-radius: 4px;
-  background: rgba(74, 154, 194, 0.15);
-  color: #4a9ac2;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: color-mix(in srgb, var(--flag-color) 12%, transparent);
+  color: var(--flag-color);
 }
 
-.flagNeedsHelp {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 9px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(224, 113, 44, 0.15);
-  color: #E0712C;
+.flagPill:hover {
+  background: color-mix(in srgb, var(--flag-color) 20%, transparent);
+}
+
+.flagPillDone {
+  opacity: 0.4;
+  text-decoration: line-through;
 }
 
 /* ── Task Chips ── */
@@ -572,8 +573,8 @@
 /* ── Flag Toggle Buttons ── */
 .flagToggleRow {
   display: flex;
-  gap: 4px;
-  margin-top: 6px;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
 }
 
 .flagToggleBtn {
@@ -591,36 +592,12 @@
 }
 
 .flagToggleBtn:hover {
-  border-color: #4a9ac2;
-  color: #4a9ac2;
+  border-color: var(--secondary);
+  color: var(--secondary);
 }
 
-.flagToggleActive {
-  background: rgba(74, 154, 194, 0.15);
-  border-color: #4a9ac2;
-  color: #4a9ac2;
-}
-
-.flagToggleHelpActive {
-  background: rgba(224, 113, 44, 0.15);
-  border-color: #E0712C;
-  color: #E0712C;
-}
-
-.flagToggleAmyActive {
-  background: rgba(168, 85, 247, 0.15);
-  border-color: #a855f7;
-  color: #a855f7;
-}
-
-.flagWorkWithAmy {
-  font-size: 9px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
-  display: flex;
+.flagToggleBtnOn {
+  /* Color set via inline style from FLAG_CONFIG */
   align-items: center;
   gap: 3px;
 }

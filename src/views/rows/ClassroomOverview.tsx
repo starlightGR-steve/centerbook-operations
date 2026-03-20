@@ -7,7 +7,7 @@ import SeatSlot from './SeatSlot';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { useClassroomTeachers, assignTeacherToRow } from '@/hooks/useRows';
-import type { Student, Attendance, ClassroomSection, ClassroomRow } from '@/lib/types';
+import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
 import styles from './ClassroomOverview.module.css';
 
 interface FlatRow extends ClassroomRow {
@@ -20,6 +20,7 @@ interface ClassroomOverviewProps {
   students: Student[];
   attendanceMap: Map<number, Attendance>;
   checkedInStudents: Student[];
+  flagsMap: Record<number, RowAssignmentFlags>;
   onSelectRow: (rowId: string) => void;
   onSelectStudent: (student: Student) => void;
   onAddToRow: (rowLabel: string) => void;
@@ -107,6 +108,7 @@ export default function ClassroomOverview({
   students,
   attendanceMap,
   checkedInStudents,
+  flagsMap,
   onSelectRow,
   onSelectStudent,
   onAddToRow,
@@ -350,6 +352,7 @@ export default function ClassroomOverview({
                                       ? attendanceMap.get(table.s1.id)
                                       : undefined
                                   }
+                                  flags={table.s1 ? flagsMap[table.s1.id] : undefined}
                                   onDragStart={() =>
                                     table.s1 && onDragStart(table.s1)
                                   }
@@ -373,6 +376,7 @@ export default function ClassroomOverview({
                                       ? attendanceMap.get(table.s2.id)
                                       : undefined
                                   }
+                                  flags={table.s2 ? flagsMap[table.s2.id] : undefined}
                                   onDragStart={() =>
                                     table.s2 && onDragStart(table.s2)
                                   }

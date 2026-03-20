@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Lightbulb, HelpCircle, Circle, CheckCircle2, Clock } from 'lucide-react';
+import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Circle, CheckCircle2, Clock } from 'lucide-react';
 import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClockDisplay from '@/components/ClockDisplay';
 import PosBadge from '@/components/PosBadge';
@@ -15,6 +15,7 @@ import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { useNotes } from '@/hooks/useNotes';
 import { useClassroomAssignments, buildOverridesMap, buildFlagsMap, assignStudentToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
+import { FLAG_CONFIG, FLAG_KEYS, CHECKLIST_CONFIG } from '@/lib/flags';
 import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
@@ -193,14 +194,18 @@ export default function RowsPage() {
     return optimisticFlags[studentId] || flagsMap[studentId] || {};
   }, [optimisticFlags, flagsMap]);
 
-  // Helper: get flag names array for display
+  // Helper: get flag names array for display (active flags only)
   const getFlags = useCallback((s: Student): string[] => {
     const f = getStudentFlags(s.id);
-    const result: string[] = [];
-    if (f.new_concept) result.push('new_concept');
-    if (f.needs_help) result.push('needs_help');
-    if (f.work_with_amy) result.push('work_with_amy');
-    return result;
+    return FLAG_KEYS.filter((k) => f[k]);
+  }, [getStudentFlags]);
+
+  // Helper: get all flag keys present in the flags object (for Row View — show active + done)
+  const getAllFlags = useCallback((s: Student): { key: string; active: boolean }[] => {
+    const f = getStudentFlags(s.id);
+    return FLAG_KEYS
+      .filter((k) => f[k] !== undefined)
+      .map((k) => ({ key: k, active: !!f[k] }));
   }, [getStudentFlags]);
 
   const toggleFlag = useCallback((studentId: number, flag: string) => {
@@ -220,9 +225,20 @@ export default function RowsPage() {
   const toggleTask = useCallback((studentId: number, taskKey: string) => {
     const current = getStudentFlags(studentId);
     const tasks = { ...(current.tasks || {}) };
-    if (taskKey === 'sound_cards' || taskKey === 'flash_cards' || taskKey === 'spelling') {
+    if (taskKey === 'sound_cards' || taskKey === 'flash_cards' || taskKey === 'spelling' || taskKey === 'handwriting') {
       (tasks as Record<string, boolean>)[taskKey] = !(tasks as Record<string, boolean>)[taskKey];
     }
+    const updated: RowAssignmentFlags = { ...current, tasks };
+    setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
+    updateStudentFlags(studentId, updated, today).then(() => {
+      setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
+    });
+  }, [getStudentFlags, today]);
+
+  // Helper: set custom task text
+  const setCustomTask = useCallback((studentId: number, text: string) => {
+    const current = getStudentFlags(studentId);
+    const tasks = { ...(current.tasks || {}), custom: text || null };
     const updated: RowAssignmentFlags = { ...current, tasks };
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     updateStudentFlags(studentId, updated, today).then(() => {
@@ -271,6 +287,7 @@ export default function RowsPage() {
           students={allStudents}
           attendanceMap={attendanceMap}
           checkedInStudents={checkedInStudents}
+          flagsMap={{ ...flagsMap, ...optimisticFlags }}
           onSelectRow={(rowId) => {
             setSelectedRowId(rowId);
             setSelectedStudentId(null);
@@ -434,8 +451,9 @@ export default function RowsPage() {
                 { key: 'sound_cards', label: 'Sound Cards', done: !!flagTasks.sound_cards },
                 { key: 'flash_cards', label: 'Flash Cards', done: !!flagTasks.flash_cards },
                 { key: 'spelling', label: 'Spelling', done: !!flagTasks.spelling },
-                ...(flagTasks.custom ? [{ key: 'custom', label: flagTasks.custom, done: true }] : []),
-              ].filter((t) => t.done || Object.values(flagTasks).some(Boolean));
+                { key: 'handwriting', label: 'Handwriting Practice', done: !!flagTasks.handwriting },
+                ...(flagTasks.custom ? [{ key: 'custom', label: flagTasks.custom, done: false }] : []),
+              ].filter((t) => t.done || t.key === 'custom' || Object.values(flagTasks).some(Boolean));
               // Only show task items that have been assigned (at least one task is set)
               const hasAnyTask = Object.values(flagTasks).some(Boolean);
               const tasks = hasAnyTask ? taskItems : (s.tasks || []);
@@ -531,24 +549,26 @@ export default function RowsPage() {
                       )}
                     </div>
 
-                    {/* 4. Status flags */}
-                    {flags.length > 0 && (
-                      <div className={styles.flagRow}>
-                        {flags.includes('new_concept') && (
-                          <span className={styles.flagNewConcept}>
-                            <Lightbulb size={10} /> New Concept
-                          </span>
-                        )}
-                        {flags.includes('needs_help') && (
-                          <span className={styles.flagNeedsHelp}>
-                            <HelpCircle size={10} /> Needs Help
-                          </span>
-                        )}
-                        {flags.includes('work_with_amy') && (
-                          <span className={styles.flagWorkWithAmy}>
-                            Work with Amy
-                          </span>
-                        )}
+                    {/* 4. Status flags (show all — active + done with strikethrough) */}
+                    {getAllFlags(s).length > 0 && (
+                      <div className={styles.flagRow} onClick={(e) => e.stopPropagation()}>
+                        {getAllFlags(s).map(({ key, active }) => {
+                          const cfg = FLAG_CONFIG[key as keyof typeof FLAG_CONFIG];
+                          if (!cfg) return null;
+                          const IconComp = key === 'new_concept' ? Sparkles : key === 'needs_help' ? HelpCircle : key === 'work_with_amy' ? UserCheck : BookOpen;
+                          return (
+                            <button
+                              key={key}
+                              className={`${styles.flagPill} ${!active ? styles.flagPillDone : ''}`}
+                              style={{ '--flag-color': cfg.color } as React.CSSProperties}
+                              onClick={() => toggleFlag(s.id, key)}
+                              title={active ? `Mark "${cfg.label}" done` : `Re-activate "${cfg.label}"`}
+                            >
+                              <IconComp size={10} />
+                              <span>{cfg.label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -658,27 +678,22 @@ export default function RowsPage() {
 
                   {/* Flag toggle buttons */}
                   <div className={styles.flagToggleRow} onClick={(e) => e.stopPropagation()}>
-                    <button
-                      className={`${styles.flagToggleBtn} ${flags.includes('new_concept') ? styles.flagToggleActive : ''}`}
-                      onClick={() => toggleFlag(s.id, 'new_concept')}
-                      title="Working on New Concept"
-                    >
-                      <Lightbulb size={10} />
-                    </button>
-                    <button
-                      className={`${styles.flagToggleBtn} ${flags.includes('needs_help') ? styles.flagToggleHelpActive : ''}`}
-                      onClick={() => toggleFlag(s.id, 'needs_help')}
-                      title="Needs Teacher Help"
-                    >
-                      <HelpCircle size={10} />
-                    </button>
-                    <button
-                      className={`${styles.flagToggleBtn} ${flags.includes('work_with_amy') ? styles.flagToggleAmyActive : ''}`}
-                      onClick={() => toggleFlag(s.id, 'work_with_amy')}
-                      title="Work with Amy"
-                    >
-                      A
-                    </button>
+                    {FLAG_KEYS.map((k) => {
+                      const cfg = FLAG_CONFIG[k];
+                      const IconComp = k === 'new_concept' ? Sparkles : k === 'needs_help' ? HelpCircle : k === 'work_with_amy' ? UserCheck : BookOpen;
+                      const isActive = flags.includes(k);
+                      return (
+                        <button
+                          key={k}
+                          className={`${styles.flagToggleBtn} ${isActive ? styles.flagToggleBtnOn : ''}`}
+                          style={isActive ? { background: cfg.color + '18', borderColor: cfg.color + '40', color: cfg.color } : undefined}
+                          onClick={() => toggleFlag(s.id, k)}
+                          title={cfg.label}
+                        >
+                          <IconComp size={10} />
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className={styles.cardActions}>

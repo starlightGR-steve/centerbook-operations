@@ -1,13 +1,16 @@
 'use client';
 
 import { useRef } from 'react';
-import type { Student, Attendance } from '@/lib/types';
+import { Heart, ClipboardCheck } from 'lucide-react';
+import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, parseSubjects } from '@/lib/types';
+import { FLAG_CONFIG, FLAG_KEYS } from '@/lib/flags';
 import styles from './SeatSlot.module.css';
 
 interface SeatSlotProps {
   student: Student | null;
   attendance?: Attendance;
+  flags?: RowAssignmentFlags | null;
   onDragStart?: () => void;
   onDragEnd?: () => void;
   onTouchDragStart?: () => void;
@@ -20,6 +23,7 @@ const DRAG_THRESHOLD = 8;
 export default function SeatSlot({
   student,
   attendance,
+  flags,
   onDragStart,
   onDragEnd,
   onTouchDragStart,
@@ -101,6 +105,24 @@ export default function SeatSlot({
           )}
           {isKC && <span className={styles.badgeKC}>KC</span>}
         </div>
+      </div>
+      <div className={styles.indicators}>
+        {student.medical_notes && (
+          <Heart size={8} color="var(--red)" className={styles.medicalDot} />
+        )}
+        {flags && FLAG_KEYS.map((k) =>
+          flags[k] ? (
+            <span
+              key={k}
+              className={styles.flagDot}
+              style={{ background: FLAG_CONFIG[k].color }}
+              title={FLAG_CONFIG[k].label}
+            />
+          ) : null
+        )}
+        {flags?.tasks && Object.entries(flags.tasks).some(([, v]) => v) && (
+          <ClipboardCheck size={10} className={styles.checklistIcon} />
+        )}
       </div>
       {timeStr && <span className={styles.time}>{timeStr}</span>}
     </div>

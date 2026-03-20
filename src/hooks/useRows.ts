@@ -37,6 +37,7 @@ export function useClassroomAssignments(date?: string) {
             row_label: r.row_label || `Row ${r.row_number}`,
             assigned_at: r.created_at,
             assigned_by: null,
+            flags: r.flags || null,
           }));
       }
       return api.classroom.assignments(d);

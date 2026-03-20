@@ -38,7 +38,7 @@ const CHECKLIST_ITEMS = [
   'Multiplication Flash Cards', 'Division Flash Cards',
 ];
 
-const FLAG_OPTIONS = ['New Concept', 'Needs Help', 'Work with Amy'];
+const FLAG_OPTIONS = ['New Concept', 'Needs Help', 'Work with Amy', 'Needs Homework'];
 
 export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPopupProps) {
   const router = useRouter();
