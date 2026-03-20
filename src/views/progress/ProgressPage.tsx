@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   Legend,
@@ -136,6 +136,19 @@ const LOS_BUCKETS = [
 export default function ProgressPage() {
   const { data: rawStudents } = useStudents();
   const students = useMemo(() => rawStudents?.map(mapStudent) ?? [], [rawStudents]);
+
+  // Responsive chart sizing
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  const pieInner = isMobile ? 40 : 60;
+  const pieOuter = isMobile ? 70 : 100;
+  const pieHeight = isMobile ? 200 : 240;
+  const barHeight = isMobile ? 220 : 300;
 
   const [popover, setPopover] = useState<PopoverState>({ visible: false, x: 0, y: 0, content: null });
 
@@ -293,14 +306,14 @@ export default function ProgressPage() {
             <h3 className={styles.cardTitle}>Math ASHR Distribution</h3>
             <p className={styles.cardSub}>{stats.mathEnrolled.length} students enrolled</p>
             <div className={styles.donutWrap}>
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={pieHeight}>
                 <PieChart>
                   <Pie
                     data={mathDonut}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={pieInner}
+                    outerRadius={pieOuter}
                     dataKey="count"
                     nameKey="label"
                     onMouseEnter={(_, idx, e) => {
@@ -331,14 +344,14 @@ export default function ProgressPage() {
             <h3 className={styles.cardTitle}>Reading ASHR Distribution</h3>
             <p className={styles.cardSub}>{stats.readEnrolled.length} students enrolled</p>
             <div className={styles.donutWrap}>
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={pieHeight}>
                 <PieChart>
                   <Pie
                     data={readDonut}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={pieInner}
+                    outerRadius={pieOuter}
                     dataKey="count"
                     nameKey="label"
                     onMouseEnter={(_, idx, e) => {
@@ -371,11 +384,11 @@ export default function ProgressPage() {
           <h3 className={styles.cardTitle}>Tenure vs Performance</h3>
           <p className={styles.cardSub}>Percentage above/below grade level by length of study</p>
           <div className={styles.barWrap}>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={barHeight}>
               <BarChart data={tenureData} barGap={4}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="label" tick={{ fontSize: 12, fontFamily: 'Montserrat' }} />
-                <YAxis tick={{ fontSize: 12, fontFamily: 'Montserrat' }} unit="%" />
+                <XAxis dataKey="label" tick={{ fontSize: isMobile ? 10 : 12, fontFamily: 'Montserrat' }} />
+                <YAxis tick={{ fontSize: isMobile ? 10 : 12, fontFamily: 'Montserrat' }} unit="%" width={isMobile ? 35 : 60} />
                 <RechartsTooltip
                   content={({ active, payload }) => {
                     if (!active || !payload?.[0]) return null;

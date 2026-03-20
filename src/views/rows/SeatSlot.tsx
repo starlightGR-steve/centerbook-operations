@@ -1,10 +1,10 @@
 'use client';
 
 import { useRef } from 'react';
-import { Heart, ClipboardCheck } from 'lucide-react';
+import { Heart, Flag, Lightbulb, CircleHelp, BookOpen } from 'lucide-react';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, parseSubjects } from '@/lib/types';
-import { FLAG_CONFIG, FLAG_KEYS } from '@/lib/flags';
+import { FLAG_KEYS } from '@/lib/flags';
 import styles from './SeatSlot.module.css';
 
 interface SeatSlotProps {
@@ -19,6 +19,22 @@ interface SeatSlotProps {
 }
 
 const DRAG_THRESHOLD = 8;
+
+/** Render the icon inside a dark navy flag circle */
+function FlagCircleIcon({ flagKey }: { flagKey: string }) {
+  switch (flagKey) {
+    case 'new_concept':
+      return <Lightbulb size={8} color="#fff" />;
+    case 'needs_help':
+      return <CircleHelp size={8} color="#fff" />;
+    case 'work_with_amy':
+      return <span className={styles.flagCircleText}>A</span>;
+    case 'needs_homework':
+      return <BookOpen size={8} color="#fff" />;
+    default:
+      return null;
+  }
+}
 
 export default function SeatSlot({
   student,
@@ -53,11 +69,20 @@ export default function SeatSlot({
 
   const subjects = parseSubjects(student.subjects);
   const isKC = student.program_type === 'Kumon Connect';
+  const hasMedical = !!student.medical_notes;
   const variant = isOver ? styles.over : isWarn ? styles.warn : '';
+
+  // Active flags for the second-line navy circles
+  const activeFlags = flags ? FLAG_KEYS.filter((k) => flags[k]) : [];
+
+  // Outstanding tasks indicator (red flag top-right)
+  const hasOutstandingTasks = flags?.tasks
+    ? (!!flags.tasks.sound_cards || !!flags.tasks.flash_cards || !!flags.tasks.spelling || !!flags.tasks.handwriting || (typeof flags.tasks.custom === 'string' && flags.tasks.custom.length > 0))
+    : false;
 
   return (
     <div
-      className={`${styles.slot} ${variant}`}
+      className={`${styles.slot} ${variant} ${isKC ? styles.slotKC : ''}`}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -92,39 +117,43 @@ export default function SeatSlot({
       style={{ opacity: isDragging ? 0.5 : 1 }}
       title={`${student.first_name} ${student.last_name} — ${timeStr || 'not checked in'}`}
     >
-      <div className={styles.left}>
-        <span className={styles.name}>
-          {student.first_name} {student.last_name[0]}.
-        </span>
-        <div className={styles.badges}>
-          {subjects.includes('Math') && (
-            <span className={styles.badgeM}>M</span>
-          )}
-          {subjects.includes('Reading') && (
-            <span className={styles.badgeR}>R</span>
-          )}
-          {isKC && <span className={styles.badgeKC}>KC</span>}
+      {/* Red flag icon for outstanding tasks — top-right corner */}
+      {hasOutstandingTasks && (
+        <Flag size={12} className={styles.taskFlag} />
+      )}
+
+      {/* Line 1: Name + badges + time */}
+      <div className={styles.line1}>
+        <div className={styles.left}>
+          <span className={styles.name}>
+            {student.first_name} {student.last_name[0]}.
+          </span>
+          <div className={styles.badges}>
+            {subjects.includes('Math') && (
+              <span className={styles.badgeM}>M</span>
+            )}
+            {subjects.includes('Reading') && (
+              <span className={styles.badgeR}>R</span>
+            )}
+            {isKC && <span className={styles.badgeKC}>KC</span>}
+            {hasMedical && (
+              <Heart size={12} className={styles.medicalHeart} />
+            )}
+          </div>
         </div>
+        {timeStr && <span className={styles.time}>{timeStr}</span>}
       </div>
-      <div className={styles.indicators}>
-        {student.medical_notes && (
-          <Heart size={8} color="var(--red)" className={styles.medicalDot} />
-        )}
-        {flags && FLAG_KEYS.map((k) =>
-          flags[k] ? (
-            <span
-              key={k}
-              className={styles.flagDot}
-              style={{ background: FLAG_CONFIG[k].color }}
-              title={FLAG_CONFIG[k].label}
-            />
-          ) : null
-        )}
-        {flags?.tasks && Object.entries(flags.tasks).some(([, v]) => v) && (
-          <ClipboardCheck size={10} className={styles.checklistIcon} />
-        )}
-      </div>
-      {timeStr && <span className={styles.time}>{timeStr}</span>}
+
+      {/* Line 2: Classroom flag circles (only when flags exist) */}
+      {activeFlags.length > 0 && (
+        <div className={styles.flagLine}>
+          {activeFlags.map((k) => (
+            <span key={k} className={styles.flagCircle} title={k.replace(/_/g, ' ')}>
+              <FlagCircleIcon flagKey={k} />
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
