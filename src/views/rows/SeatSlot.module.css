@@ -1,5 +1,5 @@
 .empty {
-  min-height: 2.25rem;
+  height: 3.25rem;
   border-radius: var(--radius-sm);
   border: 1px dashed var(--border);
   background: var(--base);
@@ -7,11 +7,12 @@
 
 .slot {
   position: relative;
-  min-height: 2.25rem;
+  height: 3.25rem;
   border-radius: var(--radius-sm);
   padding: 0.25rem 0.625rem;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   background: var(--white);
   border: 1px solid var(--border);
   cursor: grab;
@@ -221,7 +222,13 @@
 @media (max-width: 500px) {
   .slot {
     padding: 0.375rem 0.5rem;
-    min-height: auto;
+    height: auto;
+    min-height: 3.25rem;
+  }
+
+  .empty {
+    height: auto;
+    min-height: 3.25rem;
   }
 
   .left {
