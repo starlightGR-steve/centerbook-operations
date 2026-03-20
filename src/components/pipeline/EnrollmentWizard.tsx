@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Check, ChevronRight, Plus, Search } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { api } from '@/lib/api';
@@ -438,13 +438,15 @@ export default function EnrollmentWizard({ family, onClose, onComplete }: Enroll
         const isComplete = step > num;
         const isCurrent = step === num;
         return (
-          <div key={label} className={styles.stepItem}>
-            <div className={`${styles.stepCircle} ${isComplete ? styles.stepDone : isCurrent ? styles.stepActive : ''}`}>
-              {isComplete ? <Check size={12} /> : num}
+          <React.Fragment key={label}>
+            <div className={styles.stepItem}>
+              <div className={`${styles.stepCircle} ${isComplete ? styles.stepDone : isCurrent ? styles.stepActive : ''}`}>
+                {isComplete ? <Check size={12} /> : num}
+              </div>
+              <span className={`${styles.stepLabel} ${isCurrent ? styles.stepLabelActive : ''}`}>{label}</span>
             </div>
-            <span className={`${styles.stepLabel} ${isCurrent ? styles.stepLabelActive : ''}`}>{label}</span>
             {i < 3 && <div className={`${styles.stepLine} ${isComplete ? styles.stepLineDone : ''}`} />}
-          </div>
+          </React.Fragment>
         );
       })}
     </div>
