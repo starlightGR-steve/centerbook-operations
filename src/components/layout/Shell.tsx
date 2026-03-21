@@ -11,7 +11,8 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isEmbedded = searchParams.get('embedded') === 'true';
   const isLogin = pathname === '/login';
-  const hideSidebar = isEmbedded || isLogin;
+  const isLobbyBoard = pathname === '/lobby-board';
+  const hideSidebar = isEmbedded || isLogin || isLobbyBoard;
 
   return (
     <div className={`${styles.shell} ${hideSidebar ? styles.shellEmbedded : ''}`}>
