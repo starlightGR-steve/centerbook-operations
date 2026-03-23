@@ -258,7 +258,7 @@ export default function StudentJournal({ studentId, staffId, staffName, lastProg
     setFormSaving(true);
     setFormError(null);
     try {
-      await createJournalEntry({
+      const newEntry = await createJournalEntry({
         student_id: studentId,
         entry_type: formType,
         author_id: staffId,
@@ -267,7 +267,9 @@ export default function StudentJournal({ studentId, staffId, staffName, lastProg
         metadata: Object.keys(formMeta).length > 0 ? formMeta : undefined,
       });
       resetForm();
-      mutateEntries();
+      // Add new entry to top of list immediately; background revalidation is
+      // handled by createJournalEntry's global mutate call.
+      mutateEntries((prev) => (prev ? [newEntry, ...prev] : [newEntry]), { revalidate: false });
     } catch {
       setFormError('Failed to save entry. Please try again.');
     } finally {
@@ -294,14 +296,18 @@ export default function StudentJournal({ studentId, staffId, staffName, lastProg
     setEditSaving(true);
     setEditError(null);
     try {
-      await updateJournalEntry(id, studentId, {
+      const updatedEntry = await updateJournalEntry(id, studentId, {
         entry_type: editType,
         title: editTitle.trim() || undefined,
         content: editContent.trim() || undefined,
         metadata: Object.keys(editMeta).length > 0 ? editMeta : undefined,
       });
       setEditingId(null);
-      mutateEntries();
+      // Update the entry in-place immediately.
+      mutateEntries(
+        (prev) => (prev ? prev.map((e) => (e.id === id ? updatedEntry : e)) : prev),
+        { revalidate: false }
+      );
     } catch {
       setEditError('Failed to update entry. Please try again.');
     } finally {
@@ -310,12 +316,15 @@ export default function StudentJournal({ studentId, staffId, staffName, lastProg
   };
 
   const handleDelete = async (id: number) => {
+    setDeleteConfirm(null);
+    // Optimistically remove entry immediately.
+    mutateEntries((prev) => (prev ? prev.filter((e) => e.id !== id) : prev), { revalidate: false });
     try {
       await deleteJournalEntry(id, studentId);
-      setDeleteConfirm(null);
-      mutateEntries();
+      // deleteJournalEntry triggers a background revalidation via global mutate.
     } catch {
-      // silent — entry will remain in list
+      // Revert: revalidate to restore the deleted entry.
+      mutateEntries();
     }
   };
 
@@ -475,7 +484,7 @@ export default function StudentJournal({ studentId, staffId, staffName, lastProg
                   </span>
                   <div className={styles.entryActions}>
                     <button className={styles.iconBtn} onClick={() => startEdit(entry)} title="Edit">
-                      <Pencil size={13} />
+                      <Pencil size={14} />
                     </button>
                     {deleteConfirm === entry.id ? (
                       <span className={styles.deleteConfirm}>
@@ -484,8 +493,8 @@ export default function StudentJournal({ studentId, staffId, staffName, lastProg
                         <button className={styles.deleteNo} onClick={() => setDeleteConfirm(null)}>No</button>
                       </span>
                     ) : (
-                      <button className={styles.iconBtn} onClick={() => setDeleteConfirm(entry.id)} title="Delete">
-                        <Trash2 size={13} />
+                      <button className={`${styles.iconBtn} ${styles.iconBtnDelete}`} onClick={() => setDeleteConfirm(entry.id)} title="Delete">
+                        <Trash2 size={14} />
                       </button>
                     )}
                   </div>

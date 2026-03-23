@@ -53,6 +53,9 @@ export default function SeatSlot({
 }: SeatSlotProps) {
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const dragFiredRef = useRef(false);
+  // Must be called before any conditional returns (Rules of Hooks)
+  const { flags: flagConfig } = useFlagConfig();
+
   if (!student) {
     return <div className={styles.empty} />;
   }
@@ -78,7 +81,6 @@ export default function SeatSlot({
   const variant = isOver ? styles.over : isWarn ? styles.warn : '';
 
   // Active flags for the second-line navy circles (from dynamic config)
-  const { flags: flagConfig } = useFlagConfig();
   const activeFlags = flags
     ? flagConfig.filter((fc) => (flags as Record<string, unknown>)[fc.key])
     : [];

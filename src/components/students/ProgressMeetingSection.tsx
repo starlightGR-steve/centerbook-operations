@@ -6,8 +6,6 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { useLevelHistory } from '@/hooks/useLevelHistory';
-import { createJournalEntry } from '@/hooks/useStudentJournal';
-import type { LevelHistoryEntry } from '@/lib/types';
 import styles from './ProgressMeetingSection.module.css';
 
 /* ── Constants ─────────────────────────────── */
@@ -81,9 +79,6 @@ export default function ProgressMeetingSection({
 }: ProgressMeetingSectionProps) {
   const { data: history } = useLevelHistory(studentId);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [noteText, setNoteText] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -136,31 +131,6 @@ export default function ProgressMeetingSection({
   }, [history]);
 
   const hasData = cadence || nextDue || lastDate;
-
-  /* Save meeting notes as journal entry */
-  async function handleSaveNote() {
-    if (!noteText.trim()) return;
-    setSaving(true);
-    try {
-      const today = new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-      await createJournalEntry({
-        student_id: studentId,
-        entry_type: 'progress_meeting',
-        author_id: staffId,
-        title: `Progress Meeting - ${today}`,
-        content: noteText.trim(),
-      });
-      setNoteText('');
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } finally {
-      setSaving(false);
-    }
-  }
 
   /* Custom tooltip for the chart */
   function ChartTooltipContent({ active, payload, label }: any) {
@@ -333,33 +303,6 @@ export default function ProgressMeetingSection({
         </>
       )}
 
-      {/* Part 3: Fireflies Paste Area */}
-      <hr className={styles.divider} />
-      <h3 className={styles.groupHeading}>Meeting Notes</h3>
-      <p className={styles.pasteDescription}>
-        Paste your Fireflies or meeting summary below to save as a journal entry.
-      </p>
-
-      <div className={styles.pasteArea}>
-        <textarea
-          className={styles.pasteTextarea}
-          rows={3}
-          placeholder="Paste meeting summary here..."
-          value={noteText}
-          onChange={(e) => setNoteText(e.target.value)}
-        />
-        <div className={styles.pasteActions}>
-          <button
-            type="button"
-            className={styles.saveJournalBtn}
-            disabled={!noteText.trim() || saving}
-            onClick={handleSaveNote}
-          >
-            {saving ? 'Saving...' : 'Save as Journal Entry'}
-          </button>
-          {saved && <span className={styles.savedMsg}>Saved successfully</span>}
-        </div>
-      </div>
     </section>
   );
 }

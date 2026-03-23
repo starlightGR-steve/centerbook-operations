@@ -171,7 +171,7 @@ export default function RowsPage() {
     return allStudents.filter((s) => ids.has(s.id) && !rowCompleteIds.has(s.id));
   }, [allStudents, checkedIn, rowCompleteIds]);
 
-  const moveStudentToRow = async (studentId: number, rowId: string) => {
+  const moveStudentToRow = useCallback(async (studentId: number, rowId: string) => {
     const label = rowIdToLabel[rowId];
     if (!label) return;
     await assignStudentToRow({
@@ -180,16 +180,30 @@ export default function RowsPage() {
       session_date: today,
       assigned_by: 'Staff',
     });
-  };
+  }, [rowIdToLabel, today]);
 
-  const handleRowCheckout = async (studentId: number) => {
+  const handleRowCheckout = useCallback(async (studentId: number) => {
     setRowCompleteIds((prev) => new Set(prev).add(studentId));
     await removeStudentFromRow(studentId, today);
-  };
+  }, [today]);
+
+  const handleDragEnd = useCallback(() => setDragStudent(null), []);
+
+  const handleSelectRow = useCallback((rowId: string) => {
+    setSelectedRowId(rowId);
+    setSelectedStudentId(null);
+  }, []);
+
+  const handleSetup = useCallback(() => setShowSetup(true), []);
 
   const assignments = useMemo(
     () => distributeStudents(checkedInStudents, rows, rowOverrides),
     [checkedInStudents, rows, rowOverrides]
+  );
+
+  const mergedFlagsMap = useMemo(
+    () => ({ ...flagsMap, ...optimisticFlags }),
+    [flagsMap, optimisticFlags]
   );
 
   // Helper: get effective flags for a student from persisted + optimistic
@@ -292,19 +306,16 @@ export default function RowsPage() {
           students={allStudents}
           attendanceMap={attendanceMap}
           checkedInStudents={checkedInStudents}
-          flagsMap={{ ...flagsMap, ...optimisticFlags }}
-          onSelectRow={(rowId) => {
-            setSelectedRowId(rowId);
-            setSelectedStudentId(null);
-          }}
+          flagsMap={mergedFlagsMap}
+          onSelectRow={handleSelectRow}
           onSelectStudent={setOverviewStudent}
           onAddToRow={setAddToRowLabel}
-          onSetup={() => setShowSetup(true)}
+          onSetup={handleSetup}
           onMoveStudent={moveStudentToRow}
           rowOverrides={rowOverrides}
           dragStudent={dragStudent}
           onDragStart={setDragStudent}
-          onDragEnd={() => setDragStudent(null)}
+          onDragEnd={handleDragEnd}
         />
 
         {overviewStudent && (
