@@ -12,8 +12,6 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
-  Send,
-  FileText,
   Phone,
   Mail,
   Users,
@@ -34,17 +32,14 @@ import StudentAttendanceLog from '@/components/students/StudentAttendanceLog';
 import ProgressMeetingSection from '@/components/students/ProgressMeetingSection';
 import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
-import NoteCard from '@/components/NoteCard';
-import VisibilityLabel from '@/components/VisibilityLabel';
 import EmptyState from '@/components/ui/EmptyState';
 import { useStudent, useStudentContacts, useAllStudents } from '@/hooks/useStudents';
 import useSWR from 'swr';
 import LinkPickerModal from '@/components/LinkPickerModal';
 import { useStudentTasks, completeTask, createTask } from '@/hooks/useStudentTasks';
-import { useNotes, createNote } from '@/hooks/useNotes';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
-import type { CbTaskType, NoteVisibility, Contact } from '@/lib/types';
+import type { CbTaskType, Contact } from '@/lib/types';
 import styles from './StudentProfilePage.module.css';
 
 const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -151,7 +146,7 @@ export default function StudentProfilePage({ studentId }: Props) {
   const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const { data: student, isLoading, mutate: mutateStudent } = useStudent(studentId);
   const { data: tasks, mutate: mutateTasks } = useStudentTasks(studentId);
-  const { data: notes } = useNotes(studentId);
+
   const { data: contacts, error: contactsError, isLoading: contactsLoading, mutate: mutateContacts } = useStudentContacts(studentId);
   const { data: staffList } = useActiveStaff();
 
@@ -170,12 +165,6 @@ export default function StudentProfilePage({ studentId }: Props) {
 
   // Status change confirmation
   const [statusConfirm, setStatusConfirm] = useState<string | null>(null);
-
-  // Notes / Daily Observation
-  const [noteText, setNoteText] = useState('');
-  const [noteVis, setNoteVis] = useState<NoteVisibility>('staff');
-  const [noteSaving, setNoteSaving] = useState(false);
-  const [noteError, setNoteError] = useState<string | null>(null);
 
   // Link contact
   const [showLinkContact, setShowLinkContact] = useState(false);
@@ -227,35 +216,6 @@ export default function StudentProfilePage({ studentId }: Props) {
   const completedTasks = tasks?.filter((t) => t.status === 'complete') ?? [];
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
   const today = new Date().toISOString().split('T')[0];
-
-  const handleAddNote = async () => {
-    if (!noteText.trim() || noteSaving) return;
-    setNoteSaving(true);
-    setNoteError(null);
-    try {
-      await createNote({
-        student_id: studentId,
-        content: noteText.trim(),
-        author_type: 'staff',
-        author_name: session?.user?.name || 'Staff',
-        author_id: staffId,
-        note_date: today,
-        visibility: noteVis,
-      });
-      setNoteText('');
-    } catch {
-      setNoteError('Failed to save note. Please try again.');
-    } finally {
-      setNoteSaving(false);
-    }
-  };
-
-  const handleNoteKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleAddNote();
-    }
-  };
 
   const handleCompleteTask = async (taskId: number) => {
     try {
@@ -1142,61 +1102,6 @@ export default function StudentProfilePage({ studentId }: Props) {
           )}
         </div>
 
-        {/* ── Section 4: Daily Observation + Notes History ── */}
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Daily Observation</h3>
-          <div className={styles.noteInputWrap}>
-            <textarea
-              className={styles.noteInput}
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-              onKeyDown={handleNoteKeyDown}
-              placeholder="Type observation notes..."
-            />
-            <div className={styles.noteActions}>
-              <div className={styles.visSelector}>
-                {(['staff', 'parent', 'internal'] as NoteVisibility[]).map((v) => (
-                  <button
-                    key={v}
-                    className={`${styles.visBtn} ${noteVis === v ? styles.visBtnActive : ''}`}
-                    onClick={() => setNoteVis(v)}
-                    type="button"
-                  >
-                    <VisibilityLabel visibility={v} />
-                  </button>
-                ))}
-              </div>
-              <button className={styles.sendBtn} onClick={handleAddNote} disabled={noteSaving}>
-                {noteSaving ? (
-                  <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }} />
-                ) : (
-                  <Send size={14} />
-                )}
-              </button>
-            </div>
-            {noteError && (
-              <p style={{ color: 'var(--red)', fontSize: 11, margin: '4px 0 0', fontFamily: 'var(--font-primary)' }}>{noteError}</p>
-            )}
-          </div>
-
-          <h3 className={`${styles.sectionTitle} ${styles.notesHistoryTitle}`}>
-            Notes History <span className={styles.count}>{notes?.length ?? 0}</span>
-          </h3>
-          <div className={styles.notesFeed}>
-            {notes && notes.length > 0 ? (
-              notes.map((n) => (
-                <div key={n.id}>
-                  <div className={styles.noteVisRow}>
-                    <VisibilityLabel visibility={n.visibility} />
-                  </div>
-                  <NoteCard note={n} />
-                </div>
-              ))
-            ) : (
-              <EmptyState icon={FileText} title="No notes yet" description="Add an observation above" />
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
