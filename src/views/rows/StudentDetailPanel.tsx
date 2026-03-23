@@ -1,16 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { X, BookOpen, Heart, AlertTriangle, Check, ArrowRight } from 'lucide-react';
+import {
+  X, BookOpen, Heart, AlertTriangle, Check, ArrowRight, Pencil, Plus,
+  Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
+} from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
 import type { AppRole } from '@/lib/auth';
-import type { Student, Attendance } from '@/lib/types';
+import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
 import { useOutstandingLoans } from '@/hooks/useLibrary';
+import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
 import styles from './StudentDetailPanel.module.css';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
@@ -30,10 +34,34 @@ function formatRelativeTime(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function FlagIcon({ icon, size = 12 }: { icon: string; size?: number }) {
+  if (icon.startsWith('text:')) {
+    return <span className={styles.flagIconText}>{icon.slice(5)}</span>;
+  }
+  const props = { size, color: '#fff' };
+  switch (icon) {
+    case 'Lightbulb': return <Lightbulb {...props} />;
+    case 'CircleHelp': return <CircleHelp {...props} />;
+    case 'BookOpen': return <BookOpen {...props} />;
+    case 'Star': return <Star {...props} />;
+    case 'AlertCircle': return <AlertCircle {...props} />;
+    case 'Zap': return <Zap {...props} />;
+    case 'Flag': return <Flag {...props} />;
+    case 'Heart': return <Heart {...props} />;
+    case 'UserCheck': return <UserCheck {...props} />;
+    case 'Sparkles': return <Sparkles {...props} />;
+    default: return <Flag {...props} />;
+  }
+}
+
 interface StudentDetailPanelProps {
   student: Student;
   attendance: Attendance | undefined;
   rowLabel?: string;
+  flags?: RowAssignmentFlags | null;
+  onToggleFlag?: (key: string) => void;
+  onToggleTask?: (key: string) => void;
+  onSetTeacherNote?: (note: string | null) => void;
   onClose: () => void;
 }
 
@@ -41,6 +69,10 @@ export default function StudentDetailPanel({
   student,
   attendance,
   rowLabel,
+  flags,
+  onToggleFlag,
+  onToggleTask,
+  onSetTeacherNote,
   onClose,
 }: StudentDetailPanelProps) {
   const { data: session } = useSession();
@@ -52,8 +84,19 @@ export default function StudentDetailPanel({
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteSuccess, setNoteSuccess] = useState(false);
+  const [teacherNoteInput, setTeacherNoteInput] = useState(flags?.teacher_note ?? '');
+  const [editingNote, setEditingNote] = useState(false);
   const { data: classroomNotes, mutate: mutateNotes } = useClassroomNotes(student.id);
   const { data: allLoans } = useOutstandingLoans();
+  const { flags: flagConfig } = useFlagConfig();
+  const { items: checklistConfig } = useChecklistConfig();
+
+  // Reset teacher note input when switching to a different student
+  useEffect(() => {
+    setTeacherNoteInput(flags?.teacher_note ?? '');
+    setEditingNote(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [student.id]);
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
@@ -75,7 +118,6 @@ export default function StudentDetailPanel({
       setNeedsAttention(false);
       setNoteSuccess(true);
       setTimeout(() => setNoteSuccess(false), 3000);
-      // Prepend the new note to the local list
       mutateNotes(
         (prev) => (prev ? [newNote, ...prev] : [newNote]),
         false
@@ -156,7 +198,6 @@ export default function StudentDetailPanel({
         )}
 
         {/* 4. Schedule */}
-
         <div>
           <label className={styles.label}>Schedule</label>
           <div className={styles.scheduleDays}>
@@ -178,7 +219,128 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* 5. Classroom Observations */}
+        {/* 5. During Class */}
+        <div className={styles.duringClassSection}>
+          <label className={styles.duringClassHeading}>During Class</label>
+
+          {/* Flag toggles */}
+          <div className={styles.flagGrid}>
+            {flagConfig.map((fc) => {
+              const isActive = !!(flags && (flags as Record<string, unknown>)[fc.key]);
+              return (
+                <button
+                  key={fc.key}
+                  className={`${styles.flagToggleRow} ${isActive ? styles.flagToggleRowActive : ''}`}
+                  onClick={() => onToggleFlag?.(fc.key)}
+                  disabled={!onToggleFlag}
+                >
+                  <span
+                    className={styles.flagCircleLg}
+                    style={isActive ? { background: fc.color } : undefined}
+                  >
+                    <FlagIcon icon={fc.icon} size={12} />
+                  </span>
+                  <span className={styles.flagToggleLabel}>{fc.label}</span>
+                  {isActive && <Check size={14} style={{ color: fc.color, flexShrink: 0 }} />}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Checklist */}
+          {checklistConfig.length > 0 && (
+            <div className={styles.checklistGrid}>
+              {checklistConfig.map((ci) => {
+                const done = !!(flags?.tasks && (flags.tasks as Record<string, unknown>)[ci.key]);
+                return (
+                  <button
+                    key={ci.key}
+                    className={`${styles.checklistRow} ${done ? styles.checklistRowDone : ''}`}
+                    onClick={() => onToggleTask?.(ci.key)}
+                    disabled={!onToggleTask}
+                  >
+                    <span className={`${styles.checkBox} ${done ? styles.checkBoxChecked : ''}`}>
+                      {done && <Check size={9} color="var(--white)" />}
+                    </span>
+                    <span className={`${styles.checklistLabel} ${done ? styles.checklistLabelDone : ''}`}>
+                      {ci.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Teacher Note */}
+          <div className={styles.teacherNoteWrap}>
+            <p className={styles.teacherNoteLabel}>Teacher Note</p>
+            {editingNote ? (
+              <div className={styles.teacherNoteForm}>
+                <textarea
+                  className={styles.teacherNoteInput}
+                  value={teacherNoteInput}
+                  onChange={(e) => setTeacherNoteInput(e.target.value)}
+                  rows={3}
+                  placeholder="Instruction note for this student..."
+                  autoFocus
+                />
+                <div className={styles.teacherNoteFormActions}>
+                  <button
+                    className={styles.teacherNoteSaveBtn}
+                    onClick={() => {
+                      onSetTeacherNote?.(teacherNoteInput.trim() || null);
+                      setEditingNote(false);
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className={styles.teacherNoteCancelBtn}
+                    onClick={() => {
+                      setTeacherNoteInput(flags?.teacher_note ?? '');
+                      setEditingNote(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : flags?.teacher_note ? (
+              <div className={styles.teacherNoteCard}>
+                <p className={styles.teacherNoteText}>{flags.teacher_note}</p>
+                <div className={styles.teacherNoteCardActions}>
+                  <button
+                    className={styles.teacherNoteIconBtn}
+                    onClick={() => { setTeacherNoteInput(flags.teacher_note ?? ''); setEditingNote(true); }}
+                    aria-label="Edit note"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                  <button
+                    className={styles.teacherNoteIconBtn}
+                    onClick={() => { setTeacherNoteInput(''); onSetTeacherNote?.(null); }}
+                    aria-label="Remove note"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className={styles.teacherNoteAddBtn}
+                onClick={() => setEditingNote(true)}
+                disabled={!onSetTeacherNote}
+              >
+                <Plus size={13} /> Add note
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <hr className={styles.sectionDivider} />
+
+        {/* 6. Classroom Observations */}
         <div>
           <label className={styles.observationHeading}>Classroom Observations</label>
           <div className={styles.noteInputWrap}>
@@ -219,7 +381,7 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* 6. Observation Log */}
+        {/* 7. Observation Log */}
         <div>
           <label className={`${styles.label} ${styles.labelSpaced}`}>
             Observation Log
@@ -251,7 +413,7 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* 7. Library Books */}
+        {/* 8. Library Books */}
         <div>
           <label className={styles.label}>Library Books</label>
           {studentLoans && studentLoans.length > 0 ? (

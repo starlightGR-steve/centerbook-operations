@@ -263,6 +263,15 @@ export default function RowsPage() {
     });
   }, [getStudentFlags, today]);
 
+  const setTeacherNote = useCallback((studentId: number, note: string | null) => {
+    const current = getStudentFlags(studentId);
+    const updated: RowAssignmentFlags = { ...current, teacher_note: note };
+    setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
+    updateStudentFlags(studentId, updated, today).then(() => {
+      setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
+    });
+  }, [getStudentFlags, today]);
+
   const dismissTaskNote = useCallback(() => {
     setTaskNoteInput(null);
     setTaskNoteText('');
@@ -322,6 +331,10 @@ export default function RowsPage() {
           <StudentDetailPanel
             student={overviewStudent}
             attendance={attendanceMap.get(overviewStudent.id)}
+            flags={mergedFlagsMap[overviewStudent.id]}
+            onToggleFlag={(k) => toggleFlag(overviewStudent.id, k)}
+            onToggleTask={(k) => toggleTask(overviewStudent.id, k)}
+            onSetTeacherNote={(n) => setTeacherNote(overviewStudent.id, n)}
             onClose={() => setOverviewStudent(null)}
           />
         )}
@@ -759,6 +772,10 @@ export default function RowsPage() {
             student={selectedStudent}
             attendance={attendanceMap.get(selectedStudent.id)}
             rowLabel={currentRow?.label}
+            flags={mergedFlagsMap[selectedStudent.id]}
+            onToggleFlag={(k) => toggleFlag(selectedStudent.id, k)}
+            onToggleTask={(k) => toggleTask(selectedStudent.id, k)}
+            onSetTeacherNote={(n) => setTeacherNote(selectedStudent.id, n)}
             onClose={() => setSelectedStudentId(null)}
           />
         )}

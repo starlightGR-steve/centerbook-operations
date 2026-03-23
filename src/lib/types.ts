@@ -492,6 +492,7 @@ export interface RowAssignmentFlags {
   needs_help?: boolean;
   work_with_amy?: boolean;
   needs_homework?: boolean;
+  teacher_note?: string | null;
   tasks?: {
     sound_cards?: boolean;
     flash_cards?: boolean;
