@@ -631,7 +631,6 @@ export default function AttendancePage() {
                     >
                       <div className={styles.cardTop}>
                         <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                        <SubjectBadges subjects={parseSubjects(s.subjects)} />
                       </div>
                       <p className={styles.cardTime}>
                         Scheduled {formatTimeKey(s.class_time_sort_key)}
@@ -662,7 +661,6 @@ export default function AttendancePage() {
                         <div className={styles.cardTop}>
                           <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
                           <div className={styles.cardActions}>
-                            <SubjectBadges subjects={parseSubjects(s.subjects)} />
                             <button
                               className={styles.editBtn}
                               onClick={() => setEditAttendance({ attendance: att, studentName: `${s.first_name} ${s.last_name}` })}

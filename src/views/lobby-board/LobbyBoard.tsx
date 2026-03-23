@@ -251,13 +251,6 @@ export default function LobbyBoard() {
                 style={{ animationDelay: `${i * 0.04}s` }}
               >
                 <div className={styles.depColName}>{s.displayName}</div>
-                <div className={styles.depColSubjects}>
-                  {s.subjects.map(sub => (
-                    <span key={sub} className={`${styles.depBadge} ${styles[`depBadge_${sub.toLowerCase()}`]}`}>
-                      {sub}
-                    </span>
-                  ))}
-                </div>
                 <div className={styles.depColIn}>{s.checkInTime}</div>
                 <div className={styles.depColTime}>
                   {s.status === 'ready' ? 'DONE' : `${s.timeRemaining} min`}
@@ -325,13 +318,6 @@ export default function LobbyBoard() {
             >
               <div className={styles.gradCardTop}>
                 <div className={styles.gradCardName}>{s.displayName}</div>
-                <div className={styles.gradCardSubjects}>
-                  {s.subjects.map(sub => (
-                    <span key={sub} className={`${styles.gradBadge} ${styles[`gradBadge_${sub.toLowerCase()}`]}`}>
-                      {sub}
-                    </span>
-                  ))}
-                </div>
               </div>
               <div className={styles.gradCardBottom}>
                 <span className={styles.gradCardIn}>In: {s.checkInTime}</span>
@@ -396,13 +382,6 @@ export default function LobbyBoard() {
             >
               <div className={styles.photoCardLeft}>
                 <div className={styles.photoCardName}>{s.displayName}</div>
-                <div className={styles.photoCardSubjects}>
-                  {s.subjects.map(sub => (
-                    <span key={sub} className={`${styles.photoBadge} ${styles[`photoBadge_${sub.toLowerCase()}`]}`}>
-                      {sub}
-                    </span>
-                  ))}
-                </div>
               </div>
               <div className={styles.photoCardRight}>
                 <span className={styles.photoCardIn}>{s.checkInTime}</span>
@@ -457,13 +436,6 @@ export default function LobbyBoard() {
               style={{ animationDelay: `${i * 0.04}s` }}
             >
               <div className={styles.zenRowName}>{s.displayName}</div>
-              <div className={styles.zenRowSubjects}>
-                {s.subjects.map(sub => (
-                  <span key={sub} className={`${styles.zenBadge} ${styles[`zenBadge_${sub.toLowerCase()}`]}`}>
-                    {sub}
-                  </span>
-                ))}
-              </div>
               <div className={styles.zenRowTime}>
                 {s.status === 'ready' ? 'Ready' : `${s.timeRemaining} min`}
               </div>
