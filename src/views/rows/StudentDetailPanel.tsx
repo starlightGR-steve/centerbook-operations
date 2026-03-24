@@ -91,6 +91,24 @@ export default function StudentDetailPanel({
   const { flags: flagConfig } = useFlagConfig();
   const { items: checklistConfig } = useChecklistConfig();
 
+  // Mobile: intercept device back button to close this panel instead of navigating away
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!window.matchMedia('(max-width: 768px)').matches) return;
+    // Push a history entry so the back gesture lands here first
+    window.history.pushState({ detailPanel: true }, '');
+    const handlePopState = () => onClose();
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // If panel closed via X (not back gesture), consume the extra history entry
+      if (window.history.state?.detailPanel) {
+        window.history.back();
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Reset teacher note input when switching to a different student
   useEffect(() => {
     setTeacherNoteInput(flags?.teacher_note ?? '');
