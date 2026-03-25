@@ -1,5 +1,5 @@
 import useSWR, { mutate as globalMutate } from 'swr';
-import { api, ApiClientError } from '@/lib/api';
+import { api } from '@/lib/api';
 import type { RowAssignment, RowAssignmentFlags, AssignRowRequest, RowTeacher, AssignRowTeacherRequest } from '@/lib/types';
 
 function todayStr(): string {
@@ -91,7 +91,7 @@ export async function removeStudentFromRow(
     await api.classroom.unassign(studentId, d);
   } catch (err) {
     // 404 means no assignment exists (stale cache) — just revalidate
-    if (!(err instanceof ApiClientError && err.status === 404)) throw err;
+    if ((err as { status?: number })?.status !== 404) throw err;
   }
   globalMutate(key);
 }
