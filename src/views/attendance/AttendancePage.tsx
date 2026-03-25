@@ -87,14 +87,14 @@ export default function AttendancePage() {
   const [showTimeclock, setShowTimeclock] = useState(false);
   const [time, setTime] = useState('');
   const [announcement, setAnnouncement] = useState('');
+  const [scanError, setScanError] = useState('');
   const [mobileTab, setMobileTab] = useState<MobileTab>('expected');
 
   // Check-in popup
   const [checkInPopupStudent, setCheckInPopupStudent] = useState<Student | null>(null);
 
-  // Walk-in
-  const [showWalkIn, setShowWalkIn] = useState(false);
-  const [walkInSearch, setWalkInSearch] = useState('');
+  // Search dropdown (all active students)
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
   // Undo toast
   const [undoToast, setUndoToast] = useState<UndoToastItem | null>(null);
@@ -250,10 +250,10 @@ export default function AttendancePage() {
     return map;
   }, [timeEntries]);
 
-  // Walk-in search results (all active students not already checked in or expected)
-  const walkInResults = useMemo(() => {
-    if (!walkInSearch.trim() || !allStudents) return [];
-    const q = walkInSearch.toLowerCase();
+  // Search dropdown results — all active students not already checked in
+  const searchDropdownResults = useMemo(() => {
+    if (!searchQuery.trim() || !allStudents) return [];
+    const q = searchQuery.toLowerCase();
     return allStudents
       .filter((s) => {
         if (s.enrollment_status !== 'Active') return false;
@@ -262,7 +262,7 @@ export default function AttendancePage() {
         return full.includes(q) || s.first_name.toLowerCase().includes(q) || s.last_name.toLowerCase().includes(q);
       })
       .slice(0, 8);
-  }, [allStudents, walkInSearch, checkedInIds]);
+  }, [allStudents, searchQuery, checkedInIds]);
 
   /* ── Search filter ── */
   const matchesSearch = useCallback((name: string) => {
@@ -306,7 +306,10 @@ export default function AttendancePage() {
 
     if (!student) {
       setAnnouncement('Student not found');
+      setScanError('Student not found');
       setScan('');
+      setTimeout(() => setScanError(''), 3000);
+      setTimeout(() => inputRef.current?.focus(), 0);
       return;
     }
 
@@ -314,6 +317,7 @@ export default function AttendancePage() {
     if (isIn) {
       const existing = checkedIn?.find((a) => a.student_id === student.id);
       await checkOutStudent({ student_id: student.id });
+      try { await removeStudentFromRow(student.id); } catch { /* noop */ }
       setAnnouncement(`${student.first_name} ${student.last_name} checked out`);
       if (existing) {
         setUndoToast({
@@ -328,6 +332,7 @@ export default function AttendancePage() {
       setCheckInPopupStudent(student);
     }
     setScan('');
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   /* ── Check-in confirm from popup ── */
@@ -380,6 +385,7 @@ export default function AttendancePage() {
     const student = allStudents?.find((s) => s.id === studentId);
     const existing = checkedIn?.find((a) => a.student_id === studentId);
     await checkOutStudent({ student_id: studentId });
+    try { await removeStudentFromRow(studentId); } catch { /* noop */ }
     if (student && existing) {
       setAnnouncement(`${student.first_name} ${student.last_name} checked out`);
       setUndoToast({
@@ -463,6 +469,7 @@ export default function AttendancePage() {
               placeholder="Scan folder barcode..."
               className={styles.scanInput}
             />
+            {scanError && <span className={styles.scanError}>{scanError}</span>}
           </div>
         </form>
 
@@ -512,7 +519,7 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* ── Zone C: Search Bar + Walk-in ── */}
+      {/* ── Zone C: Search Bar ── */}
       <div className={styles.searchBar}>
         <div className={styles.searchInputWrap}>
           <Search size={18} className={styles.searchIcon} />
@@ -520,50 +527,36 @@ export default function AttendancePage() {
             ref={searchRef}
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search student name..."
+            onChange={(e) => { setSearchQuery(e.target.value); setShowSearchDropdown(true); }}
+            onFocus={() => setShowSearchDropdown(true)}
+            placeholder="Search students to filter or check in..."
             className={styles.searchInput}
           />
           {searchQuery && (
-            <button className={styles.searchClear} onClick={() => setSearchQuery('')}>
+            <button className={styles.searchClear} onClick={() => { setSearchQuery(''); setShowSearchDropdown(false); }}>
               <X size={16} />
             </button>
           )}
         </div>
-        <div className={styles.walkInWrap}>
-          <button className={styles.walkInBtn} onClick={() => setShowWalkIn((v) => !v)}>
-            <Plus size={14} /> Walk-in
-          </button>
-          {showWalkIn && (
-            <div className={styles.walkInDropdown}>
-              <input
-                type="text"
-                value={walkInSearch}
-                onChange={(e) => setWalkInSearch(e.target.value)}
-                placeholder="Search student..."
-                className={styles.walkInInput}
-                autoFocus
-              />
-              {walkInResults.map((s) => (
-                <button
-                  key={s.id}
-                  className={styles.walkInResult}
-                  onClick={() => {
-                    setCheckInPopupStudent(s);
-                    setShowWalkIn(false);
-                    setWalkInSearch('');
-                  }}
-                >
-                  {s.first_name} {s.last_name}
-                  <SubjectBadges subjects={parseSubjects(s.subjects)} />
-                </button>
-              ))}
-              {walkInSearch.trim() && walkInResults.length === 0 && (
-                <p className={styles.walkInEmpty}>No students found</p>
-              )}
-            </div>
-          )}
-        </div>
+        {showSearchDropdown && searchDropdownResults.length > 0 && (
+          <div className={styles.searchDropdown}>
+            {searchDropdownResults.map((s) => (
+              <button
+                key={s.id}
+                className={styles.searchDropdownItem}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setCheckInPopupStudent(s);
+                  setSearchQuery('');
+                  setShowSearchDropdown(false);
+                }}
+              >
+                {s.first_name} {s.last_name}
+                <SubjectBadges subjects={parseSubjects(s.subjects)} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Mobile Tab Bar ── */}
@@ -628,6 +621,7 @@ export default function AttendancePage() {
                     >
                       <div className={styles.cardTop}>
                         <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
+                        <Plus size={14} className={styles.checkInIcon} />
                       </div>
                       <p className={styles.cardTime}>
                         Scheduled {formatTimeKey(s.class_time_sort_key)}
@@ -715,21 +709,9 @@ export default function AttendancePage() {
                         </div>
                         <p className={styles.cardTime}>
                           In {formatTime(att.check_in)}
-                          <button
-                            className={styles.editBtnInline}
-                            onClick={() => setEditAttendance({ attendance: att, studentName: `${s.first_name} ${s.last_name}` })}
-                          >
-                            <Pencil size={10} />
-                          </button>
                         </p>
                         <p className={styles.cardTime}>
                           Out {formatTime(att.check_out!)}
-                          <button
-                            className={styles.editBtnInline}
-                            onClick={() => setEditAttendance({ attendance: att, studentName: `${s.first_name} ${s.last_name}` })}
-                          >
-                            <Pencil size={10} />
-                          </button>
                         </p>
                       </div>
                     );
@@ -869,9 +851,9 @@ export default function AttendancePage() {
       {/* ── Undo Toast ── */}
       <UndoToast item={undoToast} onDismiss={() => setUndoToast(null)} />
 
-      {/* Close walk-in dropdown on outside click */}
-      {showWalkIn && (
-        <div className={styles.walkInBackdrop} onClick={() => { setShowWalkIn(false); setWalkInSearch(''); }} />
+      {/* Close search dropdown on outside click */}
+      {showSearchDropdown && (
+        <div className={styles.walkInBackdrop} onClick={() => setShowSearchDropdown(false)} />
       )}
     </div>
   );

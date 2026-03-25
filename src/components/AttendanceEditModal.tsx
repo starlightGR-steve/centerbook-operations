@@ -49,23 +49,17 @@ export default function AttendanceEditModal({ attendance, studentName, onClose }
     setSaving(true);
     setErrorMsg(null);
     try {
-      const updates: { check_in?: string; check_out?: string | null } = {};
+      const updates: { check_in: string; check_out?: string | null } = {
+        check_in: fromTimeValue(checkIn, attendance.check_in),
+      };
 
-      if (checkIn !== toTimeValue(attendance.check_in)) {
-        updates.check_in = fromTimeValue(checkIn, attendance.check_in);
+      if (checkOut) {
+        updates.check_out = fromTimeValue(checkOut, attendance.check_out || attendance.check_in);
+      } else if (attendance.check_out) {
+        updates.check_out = null;
       }
 
-      if (attendance.check_out) {
-        if (checkOut && checkOut !== toTimeValue(attendance.check_out)) {
-          updates.check_out = fromTimeValue(checkOut, attendance.check_out);
-        }
-      } else if (checkOut) {
-        updates.check_out = fromTimeValue(checkOut, attendance.check_in);
-      }
-
-      if (Object.keys(updates).length > 0) {
-        await updateAttendance(attendance.id, updates);
-      }
+      await updateAttendance(attendance.id, updates);
       onClose();
     } catch (err) {
       setErrorMsg('Failed to save. Please try again.');

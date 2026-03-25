@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import {
-  X, Heart, Minus, Plus, Check, Send, AlertTriangle, ExternalLink,
+  X, Heart, Minus, Plus, Check, Send, AlertTriangle, ExternalLink, Clock,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { isDemoModeActive } from '@/context/MockDataContext';
@@ -79,7 +79,7 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
   // Detect if scheduled today
   const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
   const todayDetail = student.schedule_detail?.[todayDay];
-  const isScheduledToday = !!todayDetail;
+  const isScheduledToday = scheduleDays.includes(todayDay) || !!todayDetail;
 
   // State — use schedule_detail duration if available, else default 60
   const defaultMinutes = todayDetail?.duration ?? (subjects.length > 1 ? 60 : 60);
@@ -92,6 +92,8 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
   const [noteSending, setNoteSending] = useState(false);
   const [noteSent, setNoteSent] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [showEndTime, setShowEndTime] = useState(false);
+  const [endTime, setEndTime] = useState('');
 
   // Default pickup contact to primary
   useEffect(() => {
@@ -105,7 +107,20 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
   const selectedContact = contacts?.find((c) => c.id === pickupContactId);
 
   const adjustTime = (delta: number) => {
-    setSessionMinutes((prev) => Math.max(15, Math.min(120, prev + delta)));
+    setSessionMinutes((prev) => Math.max(15, Math.min(180, prev + delta)));
+  };
+
+  const handleEndTimeChange = (value: string) => {
+    setEndTime(value);
+    if (!value) return;
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const [h, m] = value.split(':').map(Number);
+    const endMinutes = h * 60 + m;
+    const duration = endMinutes - nowMinutes;
+    if (duration > 0 && duration <= 180) {
+      setSessionMinutes(duration);
+    }
   };
 
   const toggleChecklist = (item: string) => {
@@ -254,6 +269,23 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
                   </button>
                 ))}
               </div>
+              <button
+                className={`${styles.endTimeToggle} ${showEndTime ? styles.endTimeToggleActive : ''}`}
+                onClick={() => setShowEndTime((v) => !v)}
+              >
+                <Clock size={12} /> Set end time
+              </button>
+              {showEndTime && (
+                <div className={styles.endTimeRow}>
+                  <input
+                    type="time"
+                    className={styles.endTimeInput}
+                    value={endTime}
+                    onChange={(e) => handleEndTimeChange(e.target.value)}
+                  />
+                  {endTime && <span className={styles.endTimeDuration}>{sessionMinutes}m from now</span>}
+                </div>
+              )}
             </div>
 
             {/* Schedule */}
@@ -297,6 +329,29 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
 
           {/* ── Class Prep ── */}
           <h3 className={styles.sectionHeading}>Class Prep</h3>
+
+          {/* Note for Teacher — first */}
+          <div className={styles.sectionBlock}>
+            <span className={styles.colLabel}>Note for Teacher</span>
+            <div className={styles.noteInputRow}>
+              <input
+                className={styles.noteInput}
+                placeholder="Add a note..."
+                value={teacherNote}
+                onChange={(e) => setTeacherNote(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendNote()}
+              />
+              <button
+                className={styles.sendBtn}
+                onClick={handleSendNote}
+                disabled={noteSending || !teacherNote.trim()}
+              >
+                {noteSent ? <Check size={14} /> : <Send size={14} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Teacher Checklist */}
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Teacher Checklist</span>
             <div className={styles.pillGrid}>
@@ -334,7 +389,7 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
             </div>
           </div>
 
-          {/* STUDENT FLAGS */}
+          {/* Student Flags */}
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Student Flags</span>
             <div className={styles.pillGrid}>
@@ -348,27 +403,6 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
                   {fi.label}
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Note for Teacher (part of Class Prep) */}
-          <div className={styles.sectionBlock}>
-            <span className={styles.colLabel}>Note for Teacher</span>
-            <div className={styles.noteInputRow}>
-              <input
-                className={styles.noteInput}
-                placeholder="Add a note..."
-                value={teacherNote}
-                onChange={(e) => setTeacherNote(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendNote()}
-              />
-              <button
-                className={styles.sendBtn}
-                onClick={handleSendNote}
-                disabled={noteSending || !teacherNote.trim()}
-              >
-                {noteSent ? <Check size={14} /> : <Send size={14} />}
-              </button>
             </div>
           </div>
 

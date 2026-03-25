@@ -492,10 +492,71 @@
   margin: 0;
 }
 
+/* ── End Time Toggle ── */
+.endTimeToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--white);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.endTimeToggle:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.endTimeToggleActive {
+  background: var(--secondary-ul);
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.endTimeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: center;
+}
+
+.endTimeInput {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}
+
+.endTimeInput:focus {
+  border-color: var(--secondary);
+}
+
+.endTimeDuration {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
 /* ── Footer ── */
 .footer {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
   padding: 16px 32px;
   border-top: 1px solid var(--border);
@@ -503,6 +564,7 @@
 
 .cancelBtn {
   padding: 10px 24px;
+  min-height: 44px;
   border: 1px solid var(--border);
   border-radius: var(--radius-btn);
   background: var(--white);
@@ -511,6 +573,7 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  margin-right: auto;
 }
 
 .cancelBtn:hover {
@@ -522,6 +585,7 @@
   align-items: center;
   gap: 6px;
   padding: 10px 20px;
+  min-height: 44px;
   border: 1.5px solid var(--green);
   border-radius: var(--radius-btn);
   background: var(--white);
@@ -547,6 +611,7 @@
   align-items: center;
   gap: 6px;
   padding: 12px 28px;
+  min-height: 44px;
   border: none;
   border-radius: var(--radius-btn);
   background: var(--green);
