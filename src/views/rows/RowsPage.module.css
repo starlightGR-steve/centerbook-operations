@@ -500,6 +500,25 @@
   flex-wrap: wrap;
 }
 
+.flagCircleBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: none;
+  color: var(--white);
+  cursor: pointer;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.flagCircleBtn:hover {
+  opacity: 0.8;
+}
+
 .flagPill {
   display: inline-flex;
   align-items: center;

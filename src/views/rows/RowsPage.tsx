@@ -271,6 +271,13 @@ export default function RowsPage() {
     });
   }, [getStudentFlags, today]);
 
+  const bulkUpdateFlags = useCallback((studentId: number, updated: RowAssignmentFlags) => {
+    setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
+    updateStudentFlags(studentId, updated, today).then(() => {
+      setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
+    });
+  }, [today]);
+
   const dismissTaskNote = useCallback(() => {
     setTaskNoteInput(null);
     setTaskNoteText('');
@@ -374,6 +381,7 @@ export default function RowsPage() {
             flags={mergedFlagsMap[overviewStudent.id]}
             onToggleFlag={(k) => toggleFlag(overviewStudent.id, k)}
             onToggleTask={(k) => toggleTask(overviewStudent.id, k)}
+            onBulkUpdate={(updated) => bulkUpdateFlags(overviewStudent.id, updated)}
             onSetTeacherNote={(n) => setTeacherNote(overviewStudent.id, n)}
             onClose={() => setOverviewStudent(null)}
           />
@@ -624,55 +632,58 @@ export default function RowsPage() {
                       )}
                     </div>
 
-                    {/* 4. Status flags — always show all, highlight active ones */}
-                    {flagConfig.length > 0 && (
+                    {/* 4. Assigned flags only — icon-only colored circles */}
+                    {getFlags(s).length > 0 && (
                       <div className={styles.flagRow} onClick={(e) => e.stopPropagation()}>
-                        {flagConfig.map((fc) => {
-                          const isActive = !!(studentFlagsObj as Record<string, unknown>)[fc.key];
+                        {getFlags(s).map((key) => {
+                          const fc = flagConfig.find((f) => f.key === key);
+                          if (!fc) return null;
                           return (
                             <button
-                              key={fc.key}
-                              className={`${styles.flagPill} ${!isActive ? styles.flagPillInactive : ''}`}
-                              style={{ '--flag-color': fc.color } as React.CSSProperties}
-                              onClick={() => toggleFlag(s.id, fc.key)}
-                              title={isActive ? `Deactivate "${fc.label}"` : `Activate "${fc.label}"`}
+                              key={key}
+                              className={styles.flagCircleBtn}
+                              style={{ background: fc.color }}
+                              onClick={() => toggleFlag(s.id, key)}
+                              title={fc.label}
                             >
-                              <span className={styles.flagPillIcon}>
-                                <FlagPillIcon icon={fc.icon} />
-                              </span>
-                              <span>{fc.label}</span>
+                              <FlagPillIcon icon={fc.icon} />
                             </button>
                           );
                         })}
                       </div>
                     )}
 
-                    {/* 5. Task checklist — show all; 3 states: unset (dim), assigned (unchecked), done (checked) */}
-                    {checklistConfig.length > 0 && (
-                      <div className={styles.taskList} onClick={(e) => e.stopPropagation()}>
-                        {checklistConfig.map((ci) => {
-                          const val = (flagTasks as Record<string, unknown>)[ci.key];
-                          const isAssigned = val !== undefined && val !== null;
-                          const isDone = val === true;
-                          return (
-                            <button
-                              key={ci.key}
-                              className={`${styles.taskChip} ${isDone ? styles.taskDone : isAssigned ? styles.taskAssigned : styles.taskUnset}`}
-                              onClick={() => toggleTask(s.id, ci.key)}
-                            >
-                              {isDone ? <CheckSquare size={10} color="#16a34a" /> : <Square size={10} color={isAssigned ? undefined : 'var(--neutral)'} />}
-                              <span>{ci.label}</span>
+                    {/* 5. Assigned checklist items only */}
+                    {(() => {
+                      const assignedTasks = checklistConfig.filter(
+                        (ci) => (flagTasks as Record<string, unknown>)[ci.key] !== undefined &&
+                                (flagTasks as Record<string, unknown>)[ci.key] !== null
+                      );
+                      if (assignedTasks.length === 0 && !flagTasks.custom) return null;
+                      return (
+                        <div className={styles.taskList} onClick={(e) => e.stopPropagation()}>
+                          {assignedTasks.map((ci) => {
+                            const isDone = (flagTasks as Record<string, unknown>)[ci.key] === true;
+                            return (
+                              <button
+                                key={ci.key}
+                                className={`${styles.taskChip} ${isDone ? styles.taskDone : styles.taskAssigned}`}
+                                onClick={() => toggleTask(s.id, ci.key)}
+                              >
+                                {isDone ? <CheckSquare size={10} color="#16a34a" /> : <Square size={10} />}
+                                <span>{ci.label}</span>
+                              </button>
+                            );
+                          })}
+                          {flagTasks.custom && (
+                            <button key="custom" className={styles.taskChip} onClick={(e) => e.stopPropagation()}>
+                              <Square size={10} />
+                              <span>{flagTasks.custom}</span>
                             </button>
-                          );
-                        })}
-                        {flagTasks.custom && (
-                          <button key="custom" className={styles.taskChip} onClick={(e) => e.stopPropagation()}>
-                            <Square size={10} />
-                            <span>{flagTasks.custom}</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* 6. Time info + session adjust */}
@@ -830,6 +841,7 @@ export default function RowsPage() {
             flags={mergedFlagsMap[selectedStudent.id]}
             onToggleFlag={(k) => toggleFlag(selectedStudent.id, k)}
             onToggleTask={(k) => toggleTask(selectedStudent.id, k)}
+            onBulkUpdate={(updated) => bulkUpdateFlags(selectedStudent.id, updated)}
             onSetTeacherNote={(n) => setTeacherNote(selectedStudent.id, n)}
             onClose={() => setSelectedStudentId(null)}
           />

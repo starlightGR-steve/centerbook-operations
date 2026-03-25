@@ -62,6 +62,7 @@ interface StudentDetailPanelProps {
   flags?: RowAssignmentFlags | null;
   onToggleFlag?: (key: string) => void;
   onToggleTask?: (key: string) => void;
+  onBulkUpdate?: (updated: RowAssignmentFlags) => void;
   onSetTeacherNote?: (note: string | null) => void;
   onClose: () => void;
 }
@@ -73,6 +74,7 @@ export default function StudentDetailPanel({
   flags,
   onToggleFlag,
   onToggleTask,
+  onBulkUpdate,
   onSetTeacherNote,
   onClose,
 }: StudentDetailPanelProps) {
@@ -88,6 +90,7 @@ export default function StudentDetailPanel({
   const [noteSuccess, setNoteSuccess] = useState(false);
   const [teacherNoteInput, setTeacherNoteInput] = useState(flags?.teacher_note ?? '');
   const [editingNote, setEditingNote] = useState(false);
+  const [showAddItems, setShowAddItems] = useState(false);
   const { data: classroomNotes, mutate: mutateNotes } = useClassroomNotes(student.id);
   const { data: allLoans } = useOutstandingLoans();
   const { flags: flagConfig } = useFlagConfig();
@@ -239,57 +242,159 @@ export default function StudentDetailPanel({
           </div>
         </div>
 
-        {/* 5. During Class */}
+        {/* 5. During Class — only assigned items */}
         <div className={styles.duringClassSection}>
-          <label className={styles.duringClassHeading}>During Class</label>
-
-          {/* Flag toggles */}
-          <div className={styles.flagGrid}>
-            {flagConfig.map((fc) => {
-              const isActive = !!(flags && (flags as Record<string, unknown>)[fc.key]);
-              return (
-                <button
-                  key={fc.key}
-                  className={`${styles.flagToggleRow} ${isActive ? styles.flagToggleRowActive : ''}`}
-                  onClick={() => onToggleFlag?.(fc.key)}
-                  disabled={!onToggleFlag}
-                >
-                  <span
-                    className={styles.flagCircleLg}
-                    style={isActive ? { background: fc.color } : undefined}
-                  >
-                    <FlagIcon icon={fc.icon} size={12} />
-                  </span>
-                  <span className={styles.flagToggleLabel}>{fc.label}</span>
-                  {isActive && <Check size={14} style={{ color: fc.color, flexShrink: 0 }} />}
-                </button>
-              );
-            })}
+          <div className={styles.duringClassHeader}>
+            <label className={styles.duringClassHeading}>During Class</label>
+            {isAdmin && onBulkUpdate && (
+              <button className={styles.addItemsBtn} onClick={() => setShowAddItems(true)}>
+                + Add Items
+              </button>
+            )}
           </div>
 
-          {/* Checklist */}
-          {checklistConfig.length > 0 && (
-            <div className={styles.checklistGrid}>
-              {checklistConfig.map((ci) => {
-                const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
-                const isAssigned = val !== undefined && val !== null;
-                const isDone = val === true;
-                return (
+          {/* Assigned flags only */}
+          {(() => {
+            const activeFlags = flagConfig.filter(
+              (fc) => !!(flags && (flags as Record<string, unknown>)[fc.key])
+            );
+            if (activeFlags.length === 0) return null;
+            return (
+              <div className={styles.flagGrid}>
+                {activeFlags.map((fc) => (
                   <button
-                    key={ci.key}
-                    className={`${styles.checklistRow} ${isDone ? styles.checklistRowDone : isAssigned ? styles.checklistRowAssigned : ''}`}
-                    onClick={() => onToggleTask?.(ci.key)}
-                    disabled={!onToggleTask}
+                    key={fc.key}
+                    className={`${styles.flagToggleRow} ${styles.flagToggleRowActive}`}
+                    onClick={() => onToggleFlag?.(fc.key)}
+                    disabled={!onToggleFlag}
                   >
-                    <span className={`${styles.checkBox} ${isDone ? styles.checkBoxChecked : isAssigned ? styles.checkBoxAssigned : ''}`}>
-                      {isDone && <Check size={9} color="var(--white)" />}
+                    <span className={styles.flagCircleLg} style={{ background: fc.color }}>
+                      <FlagIcon icon={fc.icon} size={12} />
                     </span>
-                    <span className={`${styles.checklistLabel} ${isDone ? styles.checklistLabelDone : ''}`}>
-                      {ci.label}
-                    </span>
+                    <span className={styles.flagToggleLabel}>{fc.label}</span>
+                    <Check size={14} style={{ color: fc.color, flexShrink: 0 }} />
                   </button>
-                );
-              })}
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* Assigned checklist items only */}
+          {(() => {
+            const assignedChecklist = checklistConfig.filter((ci) => {
+              const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
+              return val !== undefined && val !== null;
+            });
+            if (assignedChecklist.length === 0) return null;
+            return (
+              <div className={styles.checklistGrid}>
+                {assignedChecklist.map((ci) => {
+                  const isDone = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] === true : false;
+                  return (
+                    <button
+                      key={ci.key}
+                      className={`${styles.checklistRow} ${isDone ? styles.checklistRowDone : styles.checklistRowAssigned}`}
+                      onClick={() => onToggleTask?.(ci.key)}
+                      disabled={!onToggleTask}
+                    >
+                      <span className={`${styles.checkBox} ${isDone ? styles.checkBoxChecked : styles.checkBoxAssigned}`}>
+                        {isDone && <Check size={9} color="var(--white)" />}
+                      </span>
+                      <span className={`${styles.checklistLabel} ${isDone ? styles.checklistLabelDone : ''}`}>
+                        {ci.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Empty state */}
+          {(() => {
+            const hasFlags = flagConfig.some((fc) => !!(flags && (flags as Record<string, unknown>)[fc.key]));
+            const hasTasks = checklistConfig.some((ci) => {
+              const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
+              return val !== undefined && val !== null;
+            });
+            if (!hasFlags && !hasTasks) {
+              return <p className={styles.emptyItems}>No items assigned</p>;
+            }
+            return null;
+          })()}
+
+          {/* Add Items modal */}
+          {showAddItems && (
+            <div className={styles.addItemsOverlay}>
+              <div className={styles.addItemsPanel}>
+                <div className={styles.addItemsPanelHeader}>
+                  <span className={styles.addItemsPanelTitle}>Add Items</span>
+                  <button className={styles.addItemsClose} onClick={() => setShowAddItems(false)}>
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <label className={styles.addItemsSectionLabel}>Flags</label>
+                <div className={styles.addItemsGrid}>
+                  {flagConfig.map((fc) => {
+                    const isOn = !!(flags && (flags as Record<string, unknown>)[fc.key]);
+                    return (
+                      <button
+                        key={fc.key}
+                        className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
+                        onClick={() => {
+                          if (!onBulkUpdate) return;
+                          const updated = { ...flags } as RowAssignmentFlags;
+                          if (isOn) {
+                            delete (updated as Record<string, unknown>)[fc.key];
+                          } else {
+                            (updated as Record<string, unknown>)[fc.key] = true;
+                          }
+                          onBulkUpdate(updated);
+                        }}
+                      >
+                        <span className={styles.addItemCircle} style={isOn ? { background: fc.color } : undefined}>
+                          <FlagIcon icon={fc.icon} size={10} />
+                        </span>
+                        <span>{fc.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <label className={styles.addItemsSectionLabel}>Checklist</label>
+                <div className={styles.addItemsGrid}>
+                  {checklistConfig.map((ci) => {
+                    const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
+                    const isOn = val !== undefined && val !== null;
+                    return (
+                      <button
+                        key={ci.key}
+                        className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
+                        onClick={() => {
+                          if (!onBulkUpdate) return;
+                          const tasks = { ...(flags?.tasks || {}) } as Record<string, boolean | string | null | undefined>;
+                          if (isOn) {
+                            delete tasks[ci.key];
+                          } else {
+                            tasks[ci.key] = false; // assigned but not done
+                          }
+                          onBulkUpdate({ ...flags, tasks } as RowAssignmentFlags);
+                        }}
+                      >
+                        <span className={`${styles.addItemCheck} ${isOn ? styles.addItemCheckOn : ''}`}>
+                          {isOn && <Check size={9} color="var(--white)" />}
+                        </span>
+                        <span>{ci.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button className={styles.addItemsDone} onClick={() => setShowAddItems(false)}>
+                  Done
+                </button>
+              </div>
             </div>
           )}
 
