@@ -466,9 +466,24 @@ export default function AttendancePage() {
   /* ── Move between columns ── */
   const handleMoveImmediate = async (studentId: number, attendanceId?: number) => {
     setMoveMenuOpen(null);
-    if (attendanceId) {
+    if (!attendanceId) return;
+    const student = allStudents?.find((s) => s.id === studentId);
+    const studentName = student ? `${student.first_name} ${student.last_name}` : 'Student';
+    try {
       await deleteAttendance(attendanceId);
       try { await removeStudentFromRow(studentId); } catch { /* noop */ }
+      setUndoToast({
+        id: ++toastIdRef.current,
+        message: `${studentName} moved to Expected`,
+        onUndo: async () => {
+          const duration = student
+            ? getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail })
+            : 30;
+          await checkInStudent({ student_id: studentId, source: 'manual', checked_in_by: 'staff', session_duration_minutes: duration });
+        },
+      });
+    } catch {
+      setAnnouncement('Failed to move student. Please try again.');
     }
   };
 
@@ -728,9 +743,6 @@ export default function AttendancePage() {
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`)}>
                                   Checked Out
                                 </button>
-                                <button className={styles.moveMenuItem} onClick={() => { setMoveMenuOpen(null); }}>
-                                  No-Show
-                                </button>
                               </div>
                             )}
                           </div>
@@ -855,17 +867,11 @@ export default function AttendancePage() {
                             </button>
                             {moveMenuOpen === menuKey && (
                               <div className={styles.moveMenu}>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveImmediate(att.student_id, att.id)}>
-                                  Expected
-                                </button>
                                 <button className={styles.moveMenuItem} onClick={() => {
                                   setMoveMenuOpen(null);
                                   updateAttendance(att.id, { check_out: null });
                                 }}>
                                   Checked In
-                                </button>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveImmediate(att.student_id, att.id)}>
-                                  No-Show
                                 </button>
                               </div>
                             )}
@@ -965,9 +971,6 @@ export default function AttendancePage() {
                           </button>
                           {moveMenuOpen === menuKey && (
                             <div className={styles.moveMenu}>
-                              <button className={styles.moveMenuItem} onClick={() => { setMoveMenuOpen(null); }}>
-                                Expected
-                              </button>
                               <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
                                 Checked In
                               </button>
