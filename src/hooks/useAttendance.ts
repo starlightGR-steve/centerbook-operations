@@ -34,11 +34,13 @@ export function useCheckedInStudents(date?: string, refreshInterval?: number) {
 
 /** Check in a student */
 export async function checkInStudent(data: CheckInRequest): Promise<Attendance> {
+  console.log('checkInStudent called', data.student_id, 'demo:', isDemoModeActive());
   if (isDemoModeActive()) {
     const d = new Date().toISOString().split('T')[0];
-    mutate(`demo-attendance-${d}`);
+    await mutate(`demo-attendance-${d}`);
     return { id: Date.now(), ...data, check_in: new Date().toISOString(), check_out: null, scheduled_time: null, duration_minutes: null, checked_in_by: data.checked_in_by || null, checked_out_by: null, notes: null, session_end_time: null, sms_10min_sent: false, sms_10min_sent_at: null, sms_recipient_phone: null, sms_recipient_name: null, created_at: new Date().toISOString() } as Attendance;
   }
+  console.log('checkInStudent: calling API');
   const result = await api.attendance.checkIn(data);
   const d = new Date().toISOString().split('T')[0];
   await mutate(`attendance-${d}`);

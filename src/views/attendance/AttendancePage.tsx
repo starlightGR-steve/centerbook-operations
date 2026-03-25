@@ -337,16 +337,26 @@ export default function AttendancePage() {
 
   /* ── Check-in confirm from popup ── */
   const handleCheckInConfirm = async (options: CheckInOptions) => {
+    console.log('handleCheckInConfirm called', options.studentId);
     const studentName = checkInPopupStudent
       ? `${checkInPopupStudent.first_name} ${checkInPopupStudent.last_name}`
       : 'Student';
 
-    const result = await checkInStudent({
-      student_id: options.studentId,
-      source: 'kiosk',
-      checked_in_by: 'kiosk',
-      session_duration_minutes: options.sessionMinutes,
-    });
+    let result: Awaited<ReturnType<typeof checkInStudent>>;
+    try {
+      console.log('handleCheckInConfirm: calling checkInStudent');
+      result = await checkInStudent({
+        student_id: options.studentId,
+        source: 'kiosk',
+        checked_in_by: 'kiosk',
+        session_duration_minutes: options.sessionMinutes,
+      });
+      console.log('handleCheckInConfirm: checkInStudent returned', result?.id);
+    } catch (err) {
+      console.error('handleCheckInConfirm: checkInStudent failed', err);
+      setCheckInPopupStudent(null);
+      return;
+    }
 
     // Persist flags from check-in prep
     const hasData = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0 || !!options.noteForTeacher;
