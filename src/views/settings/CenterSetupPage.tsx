@@ -40,7 +40,8 @@ const ICON_OPTIONS = [
 ];
 
 /* ── Render icon from config string ── */
-function renderIcon(icon: string, size: number = 8, color: string = '#fff') {
+function renderIcon(icon: string | undefined, size: number = 8, color: string = '#fff') {
+  if (!icon) return <Flag size={size} color={color} />;
   if (icon.startsWith('text:')) {
     return (
       <span style={{ fontSize: size, fontWeight: 700, color, lineHeight: 1 }}>
@@ -75,6 +76,33 @@ function renderIcon(icon: string, size: number = 8, color: string = '#fff') {
   }
 }
 
+/** Normalize API flag items ({id,label}) into full FlagConfigItem shape */
+const FLAG_DEFAULTS_MAP = new Map(DEFAULT_FLAGS.map((f) => [f.key, f]));
+
+function normalizeFlags(raw: Partial<FlagConfigItem>[]): FlagConfigItem[] {
+  return raw.map((f, i) => {
+    const key = f.key || (f as { id?: string }).id || `flag_${i}`;
+    const defaults = FLAG_DEFAULTS_MAP.get(key);
+    return {
+      key,
+      label: f.label || defaults?.label || key,
+      icon: f.icon || defaults?.icon || 'Flag',
+      color: f.color || defaults?.color || '#6b7280',
+      enabled: f.enabled ?? true,
+      sort_order: f.sort_order ?? i,
+    };
+  });
+}
+
+function normalizeChecklist(raw: Partial<ChecklistConfigItem>[]): ChecklistConfigItem[] {
+  return raw.map((c, i) => ({
+    key: c.key || (c as { id?: string }).id || `checklist_${i}`,
+    label: c.label || c.key || `Item ${i + 1}`,
+    enabled: c.enabled ?? true,
+    sort_order: c.sort_order ?? i,
+  }));
+}
+
 /* ── Helpers ── */
 function slugify(label: string): string {
   return label
@@ -101,9 +129,15 @@ export default function CenterSetupPage() {
   // ── Initialize from settings ──
   useEffect(() => {
     if (settings) {
-      setFlagsList(settings.flags?.length ? settings.flags : [...DEFAULT_FLAGS]);
+      setFlagsList(
+        settings.flags?.length && settings._source !== 'default'
+          ? normalizeFlags(settings.flags)
+          : [...DEFAULT_FLAGS]
+      );
       setChecklistList(
-        settings.checklist_items?.length ? settings.checklist_items : [...DEFAULT_CHECKLIST]
+        settings.checklist_items?.length && settings._source !== 'default'
+          ? normalizeChecklist(settings.checklist_items)
+          : [...DEFAULT_CHECKLIST]
       );
     }
   }, [settings]);

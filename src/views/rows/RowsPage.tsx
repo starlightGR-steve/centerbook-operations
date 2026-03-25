@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Circle, CheckCircle2, Clock } from 'lucide-react';
+import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Circle, CheckCircle2, Clock, Lightbulb, CircleHelp, Star, Zap, ClipboardList } from 'lucide-react';
 import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClockDisplay from '@/components/ClockDisplay';
 import PosBadge from '@/components/PosBadge';
@@ -26,6 +26,29 @@ import RowsSkeleton from './RowsSkeleton';
 import ClassroomSetup from './ClassroomSetup';
 import AddStudentPicker from './AddStudentPicker';
 import styles from './RowsPage.module.css';
+
+/** Render a flag icon from config string */
+function FlagPillIcon({ icon }: { icon: string | undefined }) {
+  if (!icon) return <Flag size={10} />;
+  if (icon.startsWith('text:')) {
+    return <span style={{ fontSize: 9, fontWeight: 700, lineHeight: 1 }}>{icon.slice(5)}</span>;
+  }
+  const p = { size: 10 };
+  switch (icon) {
+    case 'Lightbulb': return <Lightbulb {...p} />;
+    case 'CircleHelp': return <CircleHelp {...p} />;
+    case 'BookOpen': return <BookOpen {...p} />;
+    case 'Star': return <Star {...p} />;
+    case 'AlertCircle': return <AlertCircle {...p} />;
+    case 'Zap': return <Zap {...p} />;
+    case 'Flag': return <Flag {...p} />;
+    case 'Heart': return <Heart {...p} />;
+    case 'UserCheck': return <UserCheck {...p} />;
+    case 'Sparkles': return <Sparkles {...p} />;
+    case 'ClipboardList': return <ClipboardList {...p} />;
+    default: return <Flag {...p} />;
+  }
+}
 
 interface FlatRow extends ClassroomRow {
   section: string;
@@ -615,6 +638,9 @@ export default function RowsPage() {
                               onClick={() => toggleFlag(s.id, key)}
                               title={active ? `Mark "${fc.label}" done` : `Re-activate "${fc.label}"`}
                             >
+                              <span className={styles.flagPillIcon}>
+                                <FlagPillIcon icon={fc.icon} />
+                              </span>
                               <span>{fc.label}</span>
                             </button>
                           );

@@ -520,6 +520,18 @@
   background: color-mix(in srgb, var(--flag-color) 20%, transparent);
 }
 
+.flagPillIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--flag-color);
+  color: var(--white);
+  flex-shrink: 0;
+}
+
 .flagPillDone {
   opacity: 0.4;
   text-decoration: line-through;

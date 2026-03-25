@@ -21,7 +21,8 @@ interface SeatSlotProps {
 const DRAG_THRESHOLD = 8;
 
 /** Render an icon from a config string inside a dark navy flag circle */
-function FlagCircleIcon({ icon }: { icon: string }) {
+function FlagCircleIcon({ icon }: { icon: string | undefined }) {
+  if (!icon) return <Flag size={8} color="#fff" />;
   if (icon.startsWith('text:')) {
     return <span className={styles.flagCircleText}>{icon.slice(5)}</span>;
   }

@@ -34,7 +34,8 @@ function formatRelativeTime(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function FlagIcon({ icon, size = 12 }: { icon: string; size?: number }) {
+function FlagIcon({ icon, size = 12 }: { icon: string | undefined; size?: number }) {
+  if (!icon) return <Flag size={size} color="#fff" />;
   if (icon.startsWith('text:')) {
     return <span className={styles.flagIconText}>{icon.slice(5)}</span>;
   }
