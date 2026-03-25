@@ -35,17 +35,10 @@ export async function deleteAttendance(id: number): Promise<void> {
   try {
     await api.attendance.delete(id);
   } catch (err: unknown) {
-    // Log full error shape for debugging
+    // 404 means the record is already gone (stale SWR cache) — just revalidate
     const e = err as Record<string, unknown>;
-    console.info('[deleteAttendance] caught error — keys:', Object.keys(e), 'status:', e.status, 'name:', e.name, 'message:', e.message);
-    // 404 means the record is already gone (stale SWR cache) — just revalidate.
-    // Check multiple shapes: .status (ApiClientError), or message containing '404'
-    const status = e?.status;
-    const msg = typeof e?.message === 'string' ? e.message : '';
-    const is404 = status === 404 || msg.includes('404') || msg.includes('Not Found');
-    if (!is404) {
-      throw err;
-    }
+    const is404 = e?.status === 404 || (typeof e?.message === 'string' && e.message.includes('404'));
+    if (!is404) throw err;
   }
   const d = new Date().toISOString().split('T')[0];
   await mutate(`attendance-${d}`);
