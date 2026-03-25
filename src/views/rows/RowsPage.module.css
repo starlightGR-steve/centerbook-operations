@@ -532,9 +532,12 @@
   flex-shrink: 0;
 }
 
-.flagPillDone {
-  opacity: 0.4;
-  text-decoration: line-through;
+.flagPillInactive {
+  opacity: 0.35;
+}
+
+.flagPillInactive:hover {
+  opacity: 0.6;
 }
 
 /* ── Task Chips ── */

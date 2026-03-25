@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Circle, CheckCircle2, Clock, Lightbulb, CircleHelp, Star, Zap, ClipboardList } from 'lucide-react';
+import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Square, CheckSquare, Circle, CheckCircle2, Clock, Lightbulb, CircleHelp, Star, Zap, ClipboardList } from 'lucide-react';
 import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClockDisplay from '@/components/ClockDisplay';
 import PosBadge from '@/components/PosBadge';
@@ -624,19 +624,18 @@ export default function RowsPage() {
                       )}
                     </div>
 
-                    {/* 4. Status flags (show all — active + done with strikethrough) */}
-                    {getAllFlags(s).length > 0 && (
+                    {/* 4. Status flags — always show all, highlight active ones */}
+                    {flagConfig.length > 0 && (
                       <div className={styles.flagRow} onClick={(e) => e.stopPropagation()}>
-                        {getAllFlags(s).map(({ key, active }) => {
-                          const fc = flagConfig.find((f) => f.key === key);
-                          if (!fc) return null;
+                        {flagConfig.map((fc) => {
+                          const isActive = !!(studentFlagsObj as Record<string, unknown>)[fc.key];
                           return (
                             <button
-                              key={key}
-                              className={`${styles.flagPill} ${!active ? styles.flagPillDone : ''}`}
+                              key={fc.key}
+                              className={`${styles.flagPill} ${!isActive ? styles.flagPillInactive : ''}`}
                               style={{ '--flag-color': fc.color } as React.CSSProperties}
-                              onClick={() => toggleFlag(s.id, key)}
-                              title={active ? `Mark "${fc.label}" done` : `Re-activate "${fc.label}"`}
+                              onClick={() => toggleFlag(s.id, fc.key)}
+                              title={isActive ? `Deactivate "${fc.label}"` : `Activate "${fc.label}"`}
                             >
                               <span className={styles.flagPillIcon}>
                                 <FlagPillIcon icon={fc.icon} />
@@ -661,14 +660,14 @@ export default function RowsPage() {
                               className={`${styles.taskChip} ${isDone ? styles.taskDone : isAssigned ? styles.taskAssigned : styles.taskUnset}`}
                               onClick={() => toggleTask(s.id, ci.key)}
                             >
-                              {isDone ? <CheckCircle2 size={10} color="#16a34a" /> : <Circle size={10} color={isAssigned ? undefined : 'var(--neutral)'} />}
+                              {isDone ? <CheckSquare size={10} color="#16a34a" /> : <Square size={10} color={isAssigned ? undefined : 'var(--neutral)'} />}
                               <span>{ci.label}</span>
                             </button>
                           );
                         })}
                         {flagTasks.custom && (
                           <button key="custom" className={styles.taskChip} onClick={(e) => e.stopPropagation()}>
-                            <Circle size={10} />
+                            <Square size={10} />
                             <span>{flagTasks.custom}</span>
                           </button>
                         )}
