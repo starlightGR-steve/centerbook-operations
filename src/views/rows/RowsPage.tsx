@@ -16,6 +16,7 @@ import { useNotes } from '@/hooks/useNotes';
 import { useClassroomAssignments, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
+import { useClassroomConfig } from '@/hooks/useClassroomConfig';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
 import { FLAG_CONFIG, CHECKLIST_CONFIG } from '@/lib/flags';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
@@ -94,13 +95,15 @@ export default function RowsPage() {
   const { data: timeclockEntries } = useTimeclock(today);
   const { flags: flagConfig } = useFlagConfig();
   const { items: checklistConfig } = useChecklistConfig();
+  const { data: apiSections } = useClassroomConfig();
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 15000);
     return () => clearInterval(id);
   }, []);
 
-  const sections = CLASSROOM_CONFIG;
+  // Use API classroom config when available, fall back to static defaults
+  const sections = apiSections || CLASSROOM_CONFIG;
   const rows = useMemo(() => buildRows(sections), [sections]);
 
   const rowIdToLabel = useMemo(() => {

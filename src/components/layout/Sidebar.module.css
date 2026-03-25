@@ -1,6 +1,7 @@
 .sidebar {
   width: var(--sidebar-width);
   height: 100vh;
+  height: 100dvh;
   background: var(--primary);
   display: flex;
   flex-direction: column;

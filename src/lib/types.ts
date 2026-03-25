@@ -234,7 +234,7 @@ export interface ClockOutRequest {
 
 // ── Classroom Layout ─────────────────────────
 
-export type ClassroomPositionName = 'Early Learners' | 'Main Classroom' | 'Upper Classroom';
+export type ClassroomPositionName = 'Early Learners' | 'Main Classroom' | 'Upper Classroom' | (string & {});
 
 export interface ClassroomRow {
   id: string;               // "el1", "m1", "upper"

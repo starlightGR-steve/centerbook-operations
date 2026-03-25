@@ -1,6 +1,7 @@
 .shell {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
   max-width: 100vw;
   overflow-x: hidden;
 }
@@ -8,6 +9,7 @@
 .mainColumn {
   flex: 1;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -27,11 +29,13 @@
 @media (max-width: 767px) {
   .shell {
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
 
   .mainColumn {
     height: 100vh;
+    height: 100dvh;
     min-height: 0;
   }
 
