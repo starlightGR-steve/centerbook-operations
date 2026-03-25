@@ -1,5 +1,5 @@
 import useSWR, { mutate } from 'swr';
-import { api } from '@/lib/api';
+import { api, ApiClientError } from '@/lib/api';
 import type { Attendance, CheckInRequest, CheckOutRequest } from '@/lib/types';
 
 /** Fetch today's attendance records */
@@ -30,9 +30,18 @@ export async function checkInStudent(data: CheckInRequest): Promise<Attendance> 
   return result;
 }
 
-/** Delete an attendance record (undo check-in) */
+/** Delete an attendance record (undo check-in). Treats 404 as already deleted. */
 export async function deleteAttendance(id: number): Promise<void> {
-  await api.attendance.delete(id);
+  try {
+    await api.attendance.delete(id);
+  } catch (err) {
+    // 404 means the record is already gone (stale SWR cache) — just revalidate
+    if (err instanceof ApiClientError && err.status === 404) {
+      /* already deleted — fall through to revalidate */
+    } else {
+      throw err;
+    }
+  }
   const d = new Date().toISOString().split('T')[0];
   await mutate(`attendance-${d}`);
 }
