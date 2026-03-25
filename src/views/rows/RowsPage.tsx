@@ -758,24 +758,6 @@ export default function RowsPage() {
                     </div>
                   </div>
 
-                  {/* Flag toggle buttons */}
-                  <div className={styles.flagToggleRow} onClick={(e) => e.stopPropagation()}>
-                    {flagConfig.map((fc) => {
-                      const isActive = flags.includes(fc.key);
-                      return (
-                        <button
-                          key={fc.key}
-                          className={`${styles.flagToggleBtn} ${isActive ? styles.flagToggleBtnOn : ''}`}
-                          style={isActive ? { background: fc.color + '18', borderColor: fc.color + '40', color: fc.color } : undefined}
-                          onClick={() => toggleFlag(s.id, fc.key)}
-                          title={fc.label}
-                        >
-                          <span style={{ fontSize: 10, fontWeight: 700 }}>{fc.label[0]}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
                   <div className={styles.cardActions}>
                     <button
                       className={styles.rowCheckoutBtn}
