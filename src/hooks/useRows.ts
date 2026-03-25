@@ -89,9 +89,13 @@ export async function removeStudentFromRow(
   );
   try {
     await api.classroom.unassign(studentId, d);
-  } catch (err) {
+  } catch (err: unknown) {
     // 404 means no assignment exists (stale cache) — just revalidate
-    if ((err as { status?: number })?.status !== 404) throw err;
+    const e = err as Record<string, unknown>;
+    const status = e?.status;
+    const msg = typeof e?.message === 'string' ? e.message : '';
+    const is404 = status === 404 || msg.includes('404') || msg.includes('Not Found');
+    if (!is404) throw err;
   }
   globalMutate(key);
 }
