@@ -13,7 +13,9 @@ import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents } from '@/hooks/useAttendance';
 import { useNotes } from '@/hooks/useNotes';
-import { useClassroomAssignments, buildOverridesMap, buildFlagsMap, assignStudentToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
+import { useClassroomAssignments, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
+import { useActiveStaff } from '@/hooks/useStaff';
+import { useTimeclock } from '@/hooks/useTimeclock';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
 import { FLAG_CONFIG, CHECKLIST_CONFIG } from '@/lib/flags';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
@@ -125,6 +127,9 @@ export default function RowsPage() {
 
   const today = new Date().toISOString().split('T')[0];
   const { data: persistedAssignments } = useClassroomAssignments(today);
+  const { data: teacherAssignments } = useClassroomTeachers(today);
+  const { data: allStaff } = useActiveStaff();
+  const { data: timeclockEntries } = useTimeclock(today);
   const { flags: flagConfig } = useFlagConfig();
   const { items: checklistConfig } = useChecklistConfig();
 
@@ -297,6 +302,39 @@ export default function RowsPage() {
       .sort((a, b) => a.last_name.localeCompare(b.last_name));
   }, [checkedInStudents, persistedAssignments]);
 
+  // Teacher assignment helpers
+  const clockedInIds = useMemo(() => {
+    if (!timeclockEntries) return new Set<number>();
+    return new Set(timeclockEntries.filter((e) => !e.clock_out).map((e) => e.staff_id));
+  }, [timeclockEntries]);
+
+  const staffOptions = useMemo(() => {
+    if (!allStaff) return [];
+    return [...allStaff].sort((a, b) => {
+      const aIn = clockedInIds.has(a.id) ? 0 : 1;
+      const bIn = clockedInIds.has(b.id) ? 0 : 1;
+      if (aIn !== bIn) return aIn - bIn;
+      return `${a.first_name || ''} ${a.last_name || ''}`.localeCompare(`${b.first_name || ''} ${b.last_name || ''}`);
+    });
+  }, [allStaff, clockedInIds]);
+
+  // currentRow is needed both for teacher dropdown and for the row detail view
+  const currentRow = rows.find((r) => r.id === selectedRowId);
+
+  const teacherForRow = useMemo(() => {
+    if (!teacherAssignments || !currentRow) return 0;
+    return teacherAssignments.find((t) => t.row_label === currentRow.label)?.staff_id ?? 0;
+  }, [teacherAssignments, currentRow]);
+
+  const handleTeacherChange = useCallback(async (staffId: number) => {
+    if (!staffId || !currentRow) return;
+    await assignTeacherToRow({
+      staff_id: staffId,
+      row_label: currentRow.label,
+      session_date: today,
+    });
+  }, [currentRow, today]);
+
   if (!allStudents || !checkedIn) {
     return <RowsSkeleton />;
   }
@@ -359,7 +397,6 @@ export default function RowsPage() {
   }
 
   // ROW DETAIL (drill-down)
-  const currentRow = rows.find((r) => r.id === selectedRowId);
   const rowStudents = (assignments[selectedRowId] || []).sort((a, b) => {
     const aAtt = attendanceMap.get(a.id);
     const bAtt = attendanceMap.get(b.id);
@@ -394,6 +431,20 @@ export default function RowsPage() {
           )}
           {currentRow?.ratio && (
             <span className={styles.ratioBadge}>{currentRow.ratio}</span>
+          )}
+          {staffOptions.length > 0 && (
+            <select
+              className={styles.teacherSelect}
+              value={teacherForRow}
+              onChange={(e) => handleTeacherChange(Number(e.target.value))}
+            >
+              <option value={0}>Assign teacher...</option>
+              {staffOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.first_name || ''} {s.last_name || ''}{clockedInIds.has(s.id) ? ' ●' : ''}
+                </option>
+              ))}
+            </select>
           )}
         </div>
         <ClockDisplay size="sm" />
@@ -476,17 +527,6 @@ export default function RowsPage() {
               const studentFlagsObj = getStudentFlags(s.id);
               const hasPertinentNote = !!s.pertinent_note;
               const flagTasks = studentFlagsObj.tasks || {};
-              const taskItems = [
-                ...checklistConfig.map((ci) => ({
-                  key: ci.key,
-                  label: ci.label,
-                  done: !!(flagTasks as Record<string, unknown>)[ci.key],
-                })),
-                ...(flagTasks.custom ? [{ key: 'custom', label: flagTasks.custom, done: false }] : []),
-              ].filter((t) => t.done || t.key === 'custom' || Object.values(flagTasks).some(Boolean));
-              // Only show task items that have been assigned (at least one task is set)
-              const hasAnyTask = Object.values(flagTasks).some(Boolean);
-              const tasks = hasAnyTask ? taskItems : (s.tasks || []);
               const currentDuration = sessionOptimistic[s.id] ?? att?.session_duration_minutes ?? getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
               const isSessionOpen = sessionPopoverStudent === s.id;
               const isNoteExpanded = expandedNoteStudent === s.id;
@@ -600,22 +640,28 @@ export default function RowsPage() {
                       </div>
                     )}
 
-                    {/* 5. Task assignments */}
-                    {hasAnyTask && (
+                    {/* 5. Task checklist — always show all configured items */}
+                    {checklistConfig.length > 0 && (
                       <div className={styles.taskList} onClick={(e) => e.stopPropagation()}>
-                        {taskItems.map((task) => (
-                          <button
-                            key={task.key}
-                            className={`${styles.taskChip} ${task.done ? styles.taskDone : ''}`}
-                            onClick={() => task.key !== 'custom' && toggleTask(s.id, task.key)}
-                          >
-                            {task.done
-                              ? <CheckCircle2 size={10} color="#16a34a" />
-                              : <Circle size={10} />
-                            }
-                            <span>{task.label}</span>
+                        {checklistConfig.map((ci) => {
+                          const done = !!(flagTasks as Record<string, unknown>)[ci.key];
+                          return (
+                            <button
+                              key={ci.key}
+                              className={`${styles.taskChip} ${done ? styles.taskDone : ''}`}
+                              onClick={() => toggleTask(s.id, ci.key)}
+                            >
+                              {done ? <CheckCircle2 size={10} color="#16a34a" /> : <Circle size={10} />}
+                              <span>{ci.label}</span>
+                            </button>
+                          );
+                        })}
+                        {flagTasks.custom && (
+                          <button key="custom" className={styles.taskChip} onClick={(e) => e.stopPropagation()}>
+                            <Circle size={10} />
+                            <span>{flagTasks.custom}</span>
                           </button>
-                        ))}
+                        )}
                       </div>
                     )}
                   </div>

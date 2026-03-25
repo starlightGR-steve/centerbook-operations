@@ -69,6 +69,24 @@
   color: var(--white);
 }
 
+.teacherSelect {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+  min-height: 30px;
+}
+
+.teacherSelect:focus {
+  border-color: var(--secondary);
+}
+
 .content {
   flex: 1;
   overflow: hidden;

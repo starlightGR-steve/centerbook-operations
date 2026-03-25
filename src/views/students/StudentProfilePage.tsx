@@ -21,6 +21,7 @@ import {
   Unlink,
   Crown,
   CreditCard,
+  BookOpen,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { isDemoModeActive } from '@/context/MockDataContext';
@@ -34,6 +35,7 @@ import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import { useStudent, useStudentContacts, useAllStudents } from '@/hooks/useStudents';
+import { useClassroomNotes } from '@/hooks/useClassroomNotes';
 import useSWR from 'swr';
 import LinkPickerModal from '@/components/LinkPickerModal';
 import { useStudentTasks, completeTask, createTask } from '@/hooks/useStudentTasks';
@@ -43,6 +45,20 @@ import type { CbTaskType, Contact } from '@/lib/types';
 import styles from './StudentProfilePage.module.css';
 
 const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function formatRelativeTime(dateStr: string): string {
+  const now = new Date();
+  const d = new Date(dateStr);
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} min ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 function deriveBirthMonth(dateStr: string): string {
   if (!dateStr) return '—';
@@ -149,6 +165,7 @@ export default function StudentProfilePage({ studentId }: Props) {
 
   const { data: contacts, error: contactsError, isLoading: contactsLoading, mutate: mutateContacts } = useStudentContacts(studentId);
   const { data: staffList } = useActiveStaff();
+  const { data: classroomNotes } = useClassroomNotes(studentId);
 
   // Password visibility
   const [showKcPw, setShowKcPw] = useState(false);
@@ -862,7 +879,35 @@ export default function StudentProfilePage({ studentId }: Props) {
             lastProgressMeetingDate={student.last_progress_meeting_date}
           />
 
-          {/* Future sections: Progress Meetings, Attendance, Absence/Vacation, Classroom Observation Log */}
+          <hr className={styles.groupDivider} />
+
+          {/* ── Classroom Observation Log ── */}
+          <h4 className={styles.groupHeading}>Classroom Observation Log</h4>
+          <div className={styles.observationLog}>
+            {classroomNotes && classroomNotes.length > 0 ? (
+              classroomNotes.map((n) => (
+                <div key={n.id} className={styles.noteCard}>
+                  <div className={styles.noteCardHeader}>
+                    <div className={styles.noteCardLeft}>
+                      {n.needs_management_attention && (
+                        <span className={styles.attentionDot} />
+                      )}
+                      <span className={styles.noteAuthorName}>
+                        {n.author_name || 'Staff'}
+                      </span>
+                      <span className={styles.noteSep}>—</span>
+                      <span className={styles.noteDate}>
+                        {formatRelativeTime(n.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                  <p className={styles.noteContent}>{n.note_text}</p>
+                </div>
+              ))
+            ) : (
+              <EmptyState icon={BookOpen} title="No observations recorded yet." />
+            )}
+          </div>
         </div>
 
         {/* ── Section 2b: Parents / Guardians ── */}

@@ -34,6 +34,7 @@ export default function AttendanceEditModal({ attendance, studentName, onClose }
     attendance.check_out ? toTimeValue(attendance.check_out) : ''
   );
   const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const calcDuration = (): number | null => {
     if (!checkOut) return null;
@@ -46,6 +47,7 @@ export default function AttendanceEditModal({ attendance, studentName, onClose }
 
   const handleSave = async () => {
     setSaving(true);
+    setErrorMsg(null);
     try {
       const updates: { check_in?: string; check_out?: string | null } = {};
 
@@ -65,7 +67,8 @@ export default function AttendanceEditModal({ attendance, studentName, onClose }
         await updateAttendance(attendance.id, updates);
       }
       onClose();
-    } catch {
+    } catch (err) {
+      setErrorMsg('Failed to save. Please try again.');
       setSaving(false);
     }
   };
@@ -98,6 +101,10 @@ export default function AttendanceEditModal({ attendance, studentName, onClose }
           <div className={styles.duration}>
             Duration: {duration} minutes
           </div>
+        )}
+
+        {errorMsg && (
+          <p className={styles.errorMsg}>{errorMsg}</p>
         )}
 
         <div className={styles.actions}>
