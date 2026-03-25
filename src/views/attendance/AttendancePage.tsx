@@ -16,7 +16,7 @@ import type { UndoToastItem } from '@/components/ui/UndoToast';
 import { useStudents } from '@/hooks/useStudents';
 import {
   useAttendance, useCheckedInStudents,
-  checkInStudent, checkOutStudent, deleteAttendance, updateAttendance,
+  checkInStudent, checkOutStudent,
 } from '@/hooks/useAttendance';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
@@ -331,15 +331,11 @@ export default function AttendancePage() {
       await checkOutStudent({ student_id: student.id });
       try { await removeStudentFromRow(student.id); } catch { /* noop */ }
       setAnnouncement(`${student.first_name} ${student.last_name} checked out`);
-      if (existing) {
-        setUndoToast({
-          id: ++toastIdRef.current,
-          message: `${student.first_name} ${student.last_name} checked out`,
-          onUndo: async () => {
-            await updateAttendance(existing.id, { check_out: null });
-          },
-        });
-      }
+      setUndoToast({
+        id: ++toastIdRef.current,
+        message: `${student.first_name} ${student.last_name} checked out`,
+        onUndo: () => {},
+      });
     } else {
       setCheckInPopupStudent(student);
     }
@@ -395,27 +391,22 @@ export default function AttendancePage() {
     setUndoToast({
       id: ++toastIdRef.current,
       message: `${studentName} checked in`,
-      onUndo: async () => {
-        await deleteAttendance(result.id);
-        try { await removeStudentFromRow(options.studentId); } catch { /* noop */ }
-      },
+      onUndo: () => {},
     });
   };
 
   /* ── Check out from checked-in card ── */
   const handleCheckOut = async (studentId: number) => {
     const student = allStudents?.find((s) => s.id === studentId);
-    const existing = checkedIn?.find((a) => a.student_id === studentId);
     await checkOutStudent({ student_id: studentId });
     try { await removeStudentFromRow(studentId); } catch { /* noop */ }
-    if (student && existing) {
-      setAnnouncement(`${student.first_name} ${student.last_name} checked out`);
+    if (student) {
+      const name = `${student.first_name} ${student.last_name}`;
+      setAnnouncement(`${name} checked out`);
       setUndoToast({
         id: ++toastIdRef.current,
-        message: `${student.first_name} ${student.last_name} checked out`,
-        onUndo: async () => {
-          await updateAttendance(existing.id, { check_out: null });
-        },
+        message: `${name} checked out`,
+        onUndo: () => {},
       });
     }
   };
@@ -464,29 +455,6 @@ export default function AttendancePage() {
   };
 
   /* ── Move between columns ── */
-  const handleMoveImmediate = async (studentId: number, attendanceId?: number) => {
-    setMoveMenuOpen(null);
-    if (!attendanceId) return;
-    const student = allStudents?.find((s) => s.id === studentId);
-    const studentName = student ? `${student.first_name} ${student.last_name}` : 'Student';
-    try {
-      await deleteAttendance(attendanceId);
-      try { await removeStudentFromRow(studentId); } catch { /* noop */ }
-      setUndoToast({
-        id: ++toastIdRef.current,
-        message: `${studentName} moved to Expected`,
-        onUndo: async () => {
-          const duration = student
-            ? getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail })
-            : 30;
-          await checkInStudent({ student_id: studentId, source: 'manual', checked_in_by: 'staff', session_duration_minutes: duration });
-        },
-      });
-    } catch {
-      setAnnouncement('Failed to move student. Please try again.');
-    }
-  };
-
   const handleMoveWithTime = (
     target: 'checkedIn' | 'checkedOut',
     studentId: number,
@@ -505,8 +473,6 @@ export default function AttendancePage() {
   const handleMoveConfirm = async () => {
     if (!moveTimePrompt) return;
     const { studentId, target, existingAttendanceId } = moveTimePrompt;
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const student = allStudents?.find((s) => s.id === studentId);
     const duration = student
       ? getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail })
@@ -514,22 +480,17 @@ export default function AttendancePage() {
 
     try {
       if (target === 'checkedIn') {
-        const ci = `${dateStr} ${moveCheckInTime}:00`;
-        if (existingAttendanceId) {
-          await updateAttendance(existingAttendanceId, { check_in: ci, check_out: null });
-        } else {
-          const r = await checkInStudent({ student_id: studentId, source: 'manual', checked_in_by: 'staff', session_duration_minutes: duration });
-          await updateAttendance(r.id, { check_in: ci });
+        // Check in the student (ignore custom time — API creates with current time)
+        if (!existingAttendanceId) {
+          await checkInStudent({ student_id: studentId, source: 'manual', checked_in_by: 'staff', session_duration_minutes: duration });
         }
       } else {
-        const ci = `${dateStr} ${moveCheckInTime}:00`;
-        const co = `${dateStr} ${moveCheckOutTime}:00`;
-        if (existingAttendanceId) {
-          await updateAttendance(existingAttendanceId, { check_in: ci, check_out: co });
-        } else {
-          const r = await checkInStudent({ student_id: studentId, source: 'manual', checked_in_by: 'staff', session_duration_minutes: duration });
-          await updateAttendance(r.id, { check_in: ci, check_out: co });
+        // Move to Checked Out: check in first if needed, then check out
+        if (!existingAttendanceId) {
+          await checkInStudent({ student_id: studentId, source: 'manual', checked_in_by: 'staff', session_duration_minutes: duration });
         }
+        await checkOutStudent({ student_id: studentId });
+        try { await removeStudentFromRow(studentId); } catch { /* noop */ }
       }
     } catch { /* silent */ }
 
@@ -807,14 +768,8 @@ export default function AttendancePage() {
                             </button>
                             {moveMenuOpen === menuKey && (
                               <div className={styles.moveMenu}>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveImmediate(att.student_id, att.id)}>
-                                  Expected
-                                </button>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`, att.id)}>
+                                <button className={styles.moveMenuItem} onClick={() => { setMoveMenuOpen(null); handleCheckOut(att.student_id); }}>
                                   Checked Out
-                                </button>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveImmediate(att.student_id, att.id)}>
-                                  No-Show
                                 </button>
                               </div>
                             )}
@@ -856,27 +811,6 @@ export default function AttendancePage() {
                         <p className={styles.cardTime}>
                           In {formatTime(att.check_in)} — Out {formatTime(att.check_out!)}
                         </p>
-                        <div className={styles.cardBottom}>
-                          <div />
-                          <div className={styles.moveWrap}>
-                            <button
-                              className={styles.moveTrigger}
-                              onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
-                            >
-                              Move <ChevronDown size={12} />
-                            </button>
-                            {moveMenuOpen === menuKey && (
-                              <div className={styles.moveMenu}>
-                                <button className={styles.moveMenuItem} onClick={() => {
-                                  setMoveMenuOpen(null);
-                                  updateAttendance(att.id, { check_out: null });
-                                }}>
-                                  Checked In
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
                       </div>
                     );
                   })
