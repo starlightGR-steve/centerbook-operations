@@ -73,6 +73,7 @@ export async function assignStudentToRow(data: AssignRowRequest): Promise<RowAss
     const idx = MOCK_ROW_ASSIGNMENTS.findIndex(
       (r) => r.student_id === data.student_id && r.assigned_date === data.session_date
     );
+    const existingFlags = idx >= 0 ? MOCK_ROW_ASSIGNMENTS[idx].flags : undefined;
     const entry = {
       id: idx >= 0 ? MOCK_ROW_ASSIGNMENTS[idx].id : Date.now(),
       student_id: data.student_id,
@@ -81,6 +82,7 @@ export async function assignStudentToRow(data: AssignRowRequest): Promise<RowAss
       assigned_by: 0,
       created_at: new Date().toISOString(),
       row_label: data.row_label,
+      flags: existingFlags,
     };
     if (idx >= 0) {
       MOCK_ROW_ASSIGNMENTS[idx] = entry;
@@ -129,6 +131,12 @@ export async function updateStudentFlags(
 ): Promise<void> {
   const d = date || todayStr();
   if (isDemoModeActive()) {
+    const idx = MOCK_ROW_ASSIGNMENTS.findIndex(
+      (r) => r.student_id === studentId && r.assigned_date === d
+    );
+    if (idx >= 0) {
+      MOCK_ROW_ASSIGNMENTS[idx] = { ...MOCK_ROW_ASSIGNMENTS[idx], flags };
+    }
     globalMutate(assignmentsKey(d, true));
     return;
   }

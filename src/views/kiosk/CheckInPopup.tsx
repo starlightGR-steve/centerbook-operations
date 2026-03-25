@@ -40,8 +40,6 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
   const { data: session } = useSession();
   const { flags: flagConfigItems } = useFlagConfig();
   const { items: checklistConfigItems } = useChecklistConfig();
-  const FLAG_OPTIONS = flagConfigItems.map((f) => f.label);
-  const CHECKLIST_ITEMS = checklistConfigItems.map((c) => c.label);
   const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const subjects = parseSubjects(student.subjects);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
@@ -118,7 +116,7 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
 
   const addCustomTask = () => {
     if (!customTask.trim()) return;
-    setSelectedChecklist((prev) => [...prev, customTask.trim()]);
+    setSelectedChecklist((prev) => [...prev, `__custom__:${customTask.trim()}`]);
     setCustomTask('');
   };
 
@@ -302,23 +300,23 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Teacher Checklist</span>
             <div className={styles.pillGrid}>
-              {CHECKLIST_ITEMS.map((item) => (
+              {checklistConfigItems.map((ci) => (
                 <button
-                  key={item}
-                  className={`${styles.pill} ${selectedChecklist.includes(item) ? styles.pillSelected : ''}`}
-                  onClick={() => toggleChecklist(item)}
+                  key={ci.key}
+                  className={`${styles.pill} ${selectedChecklist.includes(ci.key) ? styles.pillSelected : ''}`}
+                  onClick={() => toggleChecklist(ci.key)}
                 >
-                  {selectedChecklist.includes(item) && <Check size={12} />}
-                  {item}
+                  {selectedChecklist.includes(ci.key) && <Check size={12} />}
+                  {ci.label}
                 </button>
               ))}
-              {selectedChecklist.filter((i) => !CHECKLIST_ITEMS.includes(i)).map((item) => (
+              {selectedChecklist.filter((k) => k.startsWith('__custom__:')).map((k) => (
                 <button
-                  key={item}
+                  key={k}
                   className={`${styles.pill} ${styles.pillSelected}`}
-                  onClick={() => toggleChecklist(item)}
+                  onClick={() => toggleChecklist(k)}
                 >
-                  <Check size={12} /> {item}
+                  <Check size={12} /> {k.slice(11)}
                 </button>
               ))}
             </div>
@@ -340,14 +338,14 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Student Flags</span>
             <div className={styles.pillGrid}>
-              {FLAG_OPTIONS.map((flag) => (
+              {flagConfigItems.map((fi) => (
                 <button
-                  key={flag}
-                  className={`${styles.pill} ${selectedFlags.includes(flag) ? styles.pillSelected : ''}`}
-                  onClick={() => toggleFlag(flag)}
+                  key={fi.key}
+                  className={`${styles.pill} ${selectedFlags.includes(fi.key) ? styles.pillSelected : ''}`}
+                  onClick={() => toggleFlag(fi.key)}
                 >
-                  {selectedFlags.includes(flag) && <Check size={12} />}
-                  {flag}
+                  {selectedFlags.includes(fi.key) && <Check size={12} />}
+                  {fi.label}
                 </button>
               ))}
             </div>

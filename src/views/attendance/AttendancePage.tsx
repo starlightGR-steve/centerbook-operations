@@ -343,21 +343,18 @@ export default function AttendancePage() {
       session_duration_minutes: options.sessionMinutes,
     });
 
-    // Persist flags
-    const hasFlags = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0;
-    if (hasFlags) {
+    // Persist flags from check-in prep
+    const hasData = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0 || !!options.noteForTeacher;
+    if (hasData) {
       const flags: Record<string, unknown> = {};
-      if (options.selectedFlags.includes('New Concept')) flags.new_concept = true;
-      if (options.selectedFlags.includes('Needs Help')) flags.needs_help = true;
-      if (options.selectedFlags.includes('Work with Amy')) flags.work_with_amy = true;
+      options.selectedFlags.forEach((key) => { flags[key] = true; });
       const tasks: Record<string, unknown> = {};
-      options.selectedChecklist.forEach((item) => {
-        if (item.includes('Sound Cards')) tasks.sound_cards = true;
-        else if (item.includes('Flash Cards')) tasks.flash_cards = true;
-        else if (item.includes('Spelling')) tasks.spelling = true;
-        else tasks.custom = item;
+      options.selectedChecklist.forEach((key) => {
+        if (key.startsWith('__custom__:')) tasks.custom = key.slice(11);
+        else tasks[key] = true;
       });
       if (Object.keys(tasks).length > 0) flags.tasks = tasks;
+      if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
       try {
         const todayDate = new Date().toISOString().split('T')[0];
         await updateStudentFlags(options.studentId, flags, todayDate);
