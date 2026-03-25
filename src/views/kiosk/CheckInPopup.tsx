@@ -82,7 +82,7 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
   const isScheduledToday = scheduleDays.includes(todayDay) || !!todayDetail;
 
   // State — use schedule_detail duration if available, else default 60
-  const defaultMinutes = todayDetail?.duration ?? (subjects.length > 1 ? 60 : 60);
+  const defaultMinutes = todayDetail?.duration ?? (subjects.length > 1 ? 60 : 30);
   const [sessionMinutes, setSessionMinutes] = useState(defaultMinutes);
   const [pickupContactId, setPickupContactId] = useState<number | null>(null);
   const [selectedChecklist, setSelectedChecklist] = useState<string[]>([]);

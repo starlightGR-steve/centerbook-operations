@@ -79,6 +79,7 @@ export default function StudentDetailPanel({
   const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const role = (session?.user as { role?: AppRole } | undefined)?.role;
   const isAdmin = role === 'admin' || role === 'superuser';
+  const canWriteNote = role === 'admin' || role === 'superuser';
   const [noteText, setNoteText] = useState('');
   const [needsAttention, setNeedsAttention] = useState(false);
   const [noteSaving, setNoteSaving] = useState(false);
@@ -109,12 +110,12 @@ export default function StudentDetailPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reset teacher note input when switching to a different student
+  // Sync teacher note input with flags prop (student switch or flag update)
   useEffect(() => {
-    setTeacherNoteInput(flags?.teacher_note ?? '');
-    setEditingNote(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [student.id]);
+    if (!editingNote) {
+      setTeacherNoteInput(flags?.teacher_note ?? '');
+    }
+  }, [student.id, flags?.teacher_note, editingNote]);
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
@@ -269,18 +270,20 @@ export default function StudentDetailPanel({
           {checklistConfig.length > 0 && (
             <div className={styles.checklistGrid}>
               {checklistConfig.map((ci) => {
-                const done = !!(flags?.tasks && (flags.tasks as Record<string, unknown>)[ci.key]);
+                const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
+                const isAssigned = val !== undefined && val !== null;
+                const isDone = val === true;
                 return (
                   <button
                     key={ci.key}
-                    className={`${styles.checklistRow} ${done ? styles.checklistRowDone : ''}`}
+                    className={`${styles.checklistRow} ${isDone ? styles.checklistRowDone : isAssigned ? styles.checklistRowAssigned : ''}`}
                     onClick={() => onToggleTask?.(ci.key)}
                     disabled={!onToggleTask}
                   >
-                    <span className={`${styles.checkBox} ${done ? styles.checkBoxChecked : ''}`}>
-                      {done && <Check size={9} color="var(--white)" />}
+                    <span className={`${styles.checkBox} ${isDone ? styles.checkBoxChecked : isAssigned ? styles.checkBoxAssigned : ''}`}>
+                      {isDone && <Check size={9} color="var(--white)" />}
                     </span>
-                    <span className={`${styles.checklistLabel} ${done ? styles.checklistLabelDone : ''}`}>
+                    <span className={`${styles.checklistLabel} ${isDone ? styles.checklistLabelDone : ''}`}>
                       {ci.label}
                     </span>
                   </button>
@@ -292,7 +295,7 @@ export default function StudentDetailPanel({
           {/* Teacher Note */}
           <div className={styles.teacherNoteWrap}>
             <p className={styles.teacherNoteLabel}>Teacher Note</p>
-            {editingNote ? (
+            {editingNote && canWriteNote ? (
               <div className={styles.teacherNoteForm}>
                 <textarea
                   className={styles.teacherNoteInput}
@@ -326,24 +329,26 @@ export default function StudentDetailPanel({
             ) : flags?.teacher_note ? (
               <div className={styles.teacherNoteCard}>
                 <p className={styles.teacherNoteText}>{flags.teacher_note}</p>
-                <div className={styles.teacherNoteCardActions}>
-                  <button
-                    className={styles.teacherNoteIconBtn}
-                    onClick={() => { setTeacherNoteInput(flags.teacher_note ?? ''); setEditingNote(true); }}
-                    aria-label="Edit note"
-                  >
-                    <Pencil size={12} />
-                  </button>
-                  <button
-                    className={styles.teacherNoteIconBtn}
-                    onClick={() => { setTeacherNoteInput(''); onSetTeacherNote?.(null); }}
-                    aria-label="Remove note"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
+                {canWriteNote && (
+                  <div className={styles.teacherNoteCardActions}>
+                    <button
+                      className={styles.teacherNoteIconBtn}
+                      onClick={() => { setTeacherNoteInput(flags.teacher_note ?? ''); setEditingNote(true); }}
+                      aria-label="Edit note"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      className={styles.teacherNoteIconBtn}
+                      onClick={() => { setTeacherNoteInput(''); onSetTeacherNote?.(null); }}
+                      aria-label="Remove note"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
               </div>
-            ) : (
+            ) : canWriteNote ? (
               <button
                 className={styles.teacherNoteAddBtn}
                 onClick={() => setEditingNote(true)}
@@ -351,6 +356,8 @@ export default function StudentDetailPanel({
               >
                 <Plus size={13} /> Add note
               </button>
+            ) : (
+              <p className={styles.teacherNotePlaceholder}>No note</p>
             )}
           </div>
         </div>

@@ -42,64 +42,20 @@ function buildRows(sections: ClassroomSection[]): FlatRow[] {
   );
 }
 
-function distributeStudents(
+function buildAssignments(
   checkedIn: Student[],
   rows: FlatRow[],
   rowOverrides: Record<string, string>
 ): Record<string, Student[]> {
   const assignments: Record<string, Student[]> = {};
   rows.forEach((r) => (assignments[r.id] = []));
-
-  // Place overridden students first
-  const overridden = new Set<number>();
+  // Only place students with explicit row assignments — NEVER auto-distribute
   checkedIn.forEach((s) => {
-    const targetRow = rowOverrides[String(s.id)];
-    if (targetRow && assignments[targetRow]) {
-      assignments[targetRow].push(s);
-      overridden.add(s.id);
+    const rowId = rowOverrides[String(s.id)];
+    if (rowId && assignments[rowId] !== undefined) {
+      assignments[rowId].push(s);
     }
   });
-
-  // Distribute remaining by classroom position
-  const remaining = checkedIn.filter((s) => !overridden.has(s.id));
-
-  const distribute = (studs: Student[], sectionRows: FlatRow[]) => {
-    studs.forEach((s, i) => {
-      if (sectionRows.length === 0) return;
-      const row = sectionRows[i % sectionRows.length];
-      if (assignments[row.id].length < row.seats) {
-        assignments[row.id].push(s);
-      } else {
-        const available = sectionRows.filter(
-          (r) => assignments[r.id].length < r.seats
-        );
-        if (available.length > 0) {
-          available.sort(
-            (x, y) => assignments[x.id].length - assignments[y.id].length
-          );
-          assignments[available[0].id].push(s);
-        }
-      }
-    });
-  };
-
-  const elRows = rows.filter((r) => r.section === 'Early Learners');
-  const mcRows = rows.filter((r) => r.section === 'Main Classroom');
-  const ucRows = rows.filter((r) => r.section === 'Upper Classroom');
-
-  distribute(
-    remaining.filter((s) => s.classroom_position === 'Early Learners'),
-    elRows
-  );
-  distribute(
-    remaining.filter((s) => s.classroom_position === 'Main Classroom'),
-    mcRows
-  );
-  distribute(
-    remaining.filter((s) => s.classroom_position === 'Upper Classroom'),
-    ucRows
-  );
-
   return assignments;
 }
 
@@ -122,7 +78,7 @@ export default function ClassroomOverview({
   const rows = useMemo(() => buildRows(sections), [sections]);
 
   const assignments = useMemo(
-    () => distributeStudents(checkedInStudents, rows, rowOverrides),
+    () => buildAssignments(checkedInStudents, rows, rowOverrides),
     [checkedInStudents, rows, rowOverrides]
   );
 

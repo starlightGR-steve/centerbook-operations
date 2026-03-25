@@ -723,6 +723,23 @@
   margin: 0;
 }
 
+.teacherNotePlaceholder {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--neutral);
+  font-style: italic;
+  margin: 0;
+}
+
+.checklistRowAssigned {
+  background: rgba(0, 154, 171, 0.04);
+  border-color: var(--secondary);
+}
+
+.checkBoxAssigned {
+  border-color: var(--secondary);
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .panel {

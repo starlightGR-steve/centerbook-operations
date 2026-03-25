@@ -493,13 +493,7 @@ export interface RowAssignmentFlags {
   work_with_amy?: boolean;
   needs_homework?: boolean;
   teacher_note?: string | null;
-  tasks?: {
-    sound_cards?: boolean;
-    flash_cards?: boolean;
-    spelling?: boolean;
-    handwriting?: boolean;
-    custom?: string | null;
-  };
+  tasks?: Record<string, boolean | string | null | undefined>;
 }
 
 export interface RowAssignment {

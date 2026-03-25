@@ -41,68 +41,30 @@ function buildRows(sections: ClassroomSection[]): FlatRow[] {
   );
 }
 
-function distributeStudents(
+function buildAssignments(
   checkedIn: Student[],
   rows: FlatRow[],
-  overrides: Record<string, string> = {}
+  rowOverrides: Record<string, string>
 ): Record<string, Student[]> {
   const assignments: Record<string, Student[]> = {};
   rows.forEach((r) => (assignments[r.id] = []));
-
-  // Place overridden students first
-  const overridden = new Set<number>();
+  // Only place students with explicit row assignments — NEVER auto-distribute
   checkedIn.forEach((s) => {
-    const targetRow = overrides[String(s.id)];
-    if (targetRow && assignments[targetRow]) {
-      assignments[targetRow].push(s);
-      overridden.add(s.id);
+    const rowId = rowOverrides[String(s.id)];
+    if (rowId && assignments[rowId] !== undefined) {
+      assignments[rowId].push(s);
     }
   });
-
-  const remaining = checkedIn.filter((s) => !overridden.has(s.id));
-
-  const distribute = (studs: Student[], sectionRows: FlatRow[]) => {
-    studs.forEach((s, i) => {
-      if (sectionRows.length === 0) return;
-      const row = sectionRows[i % sectionRows.length];
-      if (assignments[row.id].length < row.seats) {
-        assignments[row.id].push(s);
-      } else {
-        const available = sectionRows.filter(
-          (r) => assignments[r.id].length < r.seats
-        );
-        if (available.length > 0) {
-          available.sort(
-            (x, y) => assignments[x.id].length - assignments[y.id].length
-          );
-          assignments[available[0].id].push(s);
-        }
-      }
-    });
-  };
-
-  const elRows = rows.filter((r) => r.section === 'Early Learners');
-  const mcRows = rows.filter((r) => r.section === 'Main Classroom');
-  const ucRows = rows.filter((r) => r.section === 'Upper Classroom');
-
-  distribute(
-    remaining.filter((s) => s.classroom_position === 'Early Learners'),
-    elRows
-  );
-  distribute(
-    remaining.filter((s) => s.classroom_position === 'Main Classroom'),
-    mcRows
-  );
-  distribute(
-    remaining.filter((s) => s.classroom_position === 'Upper Classroom'),
-    ucRows
-  );
-
   return assignments;
 }
 
 export default function RowsPage() {
-  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('rows_selectedRowId') || null;
+    }
+    return null;
+  });
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [showSetup, setShowSetup] = useState(false);
   const [dragStudent, setDragStudent] = useState<Student | null>(null);
@@ -197,12 +159,13 @@ export default function RowsPage() {
   const handleSelectRow = useCallback((rowId: string) => {
     setSelectedRowId(rowId);
     setSelectedStudentId(null);
+    sessionStorage.setItem('rows_selectedRowId', rowId);
   }, []);
 
   const handleSetup = useCallback(() => setShowSetup(true), []);
 
   const assignments = useMemo(
-    () => distributeStudents(checkedInStudents, rows, rowOverrides),
+    () => buildAssignments(checkedInStudents, rows, rowOverrides),
     [checkedInStudents, rows, rowOverrides]
   );
 
@@ -243,12 +206,17 @@ export default function RowsPage() {
     });
   }, [getStudentFlags, today]);
 
-  // Helper: toggle task completion (persists to flags.tasks)
+  // Helper: toggle task — 3-state: missing → assigned(false) → done(true) → missing
   const toggleTask = useCallback((studentId: number, taskKey: string) => {
     const current = getStudentFlags(studentId);
-    const tasks = { ...(current.tasks || {}) };
-    if (taskKey === 'sound_cards' || taskKey === 'flash_cards' || taskKey === 'spelling' || taskKey === 'handwriting') {
-      (tasks as Record<string, boolean>)[taskKey] = !(tasks as Record<string, boolean>)[taskKey];
+    const tasks = { ...(current.tasks || {}) } as Record<string, boolean | string | null | undefined>;
+    const val = tasks[taskKey];
+    if (val === undefined || val === null) {
+      tasks[taskKey] = false; // first click: assign (not yet done)
+    } else if (val === false) {
+      tasks[taskKey] = true; // second click: mark done
+    } else {
+      delete tasks[taskKey]; // third click: remove
     }
     const updated: RowAssignmentFlags = { ...current, tasks };
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
@@ -355,7 +323,15 @@ export default function RowsPage() {
           checkedInStudents={checkedInStudents}
           flagsMap={mergedFlagsMap}
           onSelectRow={handleSelectRow}
-          onSelectStudent={setOverviewStudent}
+          onSelectStudent={(student) => {
+            const rowId = rowOverrides[String(student.id)];
+            if (rowId) {
+              handleSelectRow(rowId);
+              setSelectedStudentId(student.id);
+            } else {
+              setOverviewStudent(student);
+            }
+          }}
           onAddToRow={setAddToRowLabel}
           onSetup={handleSetup}
           onMoveStudent={moveStudentToRow}
@@ -418,6 +394,7 @@ export default function RowsPage() {
             onClick={() => {
               setSelectedRowId(null);
               setSelectedStudentId(null);
+              sessionStorage.removeItem('rows_selectedRowId');
             }}
           >
             <ChevronRight size={16} style={{ transform: 'rotate(180deg)' }} />
@@ -456,7 +433,8 @@ export default function RowsPage() {
             className={styles.cardGrid}
             data-compact={selectedStudent ? '' : undefined}
           >
-            {/* Assign Student card */}
+            {/* Assign Student card — hidden at capacity */}
+            {currentRow && rowStudents.length < currentRow.seats && (
             <div
               className={styles.assignCard}
               onClick={() => setAssigningToRow(!assigningToRow)}
@@ -504,6 +482,7 @@ export default function RowsPage() {
                 </div>
               )}
             </div>
+            )}
 
             {rowStudents.map((s) => {
               const att = attendanceMap.get(s.id);
@@ -640,18 +619,20 @@ export default function RowsPage() {
                       </div>
                     )}
 
-                    {/* 5. Task checklist — always show all configured items */}
+                    {/* 5. Task checklist — show all; 3 states: unset (dim), assigned (unchecked), done (checked) */}
                     {checklistConfig.length > 0 && (
                       <div className={styles.taskList} onClick={(e) => e.stopPropagation()}>
                         {checklistConfig.map((ci) => {
-                          const done = !!(flagTasks as Record<string, unknown>)[ci.key];
+                          const val = (flagTasks as Record<string, unknown>)[ci.key];
+                          const isAssigned = val !== undefined && val !== null;
+                          const isDone = val === true;
                           return (
                             <button
                               key={ci.key}
-                              className={`${styles.taskChip} ${done ? styles.taskDone : ''}`}
+                              className={`${styles.taskChip} ${isDone ? styles.taskDone : isAssigned ? styles.taskAssigned : styles.taskUnset}`}
                               onClick={() => toggleTask(s.id, ci.key)}
                             >
-                              {done ? <CheckCircle2 size={10} color="#16a34a" /> : <Circle size={10} />}
+                              {isDone ? <CheckCircle2 size={10} color="#16a34a" /> : <Circle size={10} color={isAssigned ? undefined : 'var(--neutral)'} />}
                               <span>{ci.label}</span>
                             </button>
                           );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { Heart, Flag, Lightbulb, CircleHelp, BookOpen, Star, AlertCircle, Zap, UserCheck, Sparkles } from 'lucide-react';
+import { Heart, Flag, Lightbulb, CircleHelp, BookOpen, Star, AlertCircle, Zap, UserCheck, Sparkles, ClipboardList } from 'lucide-react';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, parseSubjects } from '@/lib/types';
 import { useFlagConfig } from '@/hooks/useFlagConfig';
@@ -37,6 +37,7 @@ function FlagCircleIcon({ icon }: { icon: string }) {
     case 'Heart': return <Heart {...props} />;
     case 'UserCheck': return <UserCheck {...props} />;
     case 'Sparkles': return <Sparkles {...props} />;
+    case 'ClipboardList': return <ClipboardList {...props} />;
     default: return <Flag {...props} />;
   }
 }
@@ -85,10 +86,11 @@ export default function SeatSlot({
     ? flagConfig.filter((fc) => (flags as Record<string, unknown>)[fc.key])
     : [];
 
-  // Outstanding tasks indicator (red flag top-right)
-  const hasOutstandingTasks = flags?.tasks
-    ? (!!flags.tasks.sound_cards || !!flags.tasks.flash_cards || !!flags.tasks.spelling || !!flags.tasks.handwriting || (typeof flags.tasks.custom === 'string' && flags.tasks.custom.length > 0))
-    : false;
+  // Outstanding tasks indicator: shows when any task is assigned-not-done (false) OR teacher note exists
+  const hasOutstandingTasks = !!(
+    (flags?.tasks && Object.values(flags.tasks).some((v) => v === false || (typeof v === 'string' && v.length > 0)))
+    || flags?.teacher_note
+  );
 
   return (
     <div

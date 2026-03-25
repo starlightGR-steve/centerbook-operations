@@ -31,7 +31,9 @@
   font-family: var(--font-primary);
   font-size: 13px;
   font-weight: 600;
-  padding: 0;
+  padding: 10px 12px;
+  min-height: 44px;
+  margin: -10px -12px;
 }
 
 .backBtn:hover {
@@ -554,6 +556,16 @@
 .taskDone {
   opacity: 0.5;
   text-decoration: line-through;
+}
+
+.taskAssigned {
+  background: rgba(0, 154, 171, 0.06);
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.taskUnset {
+  opacity: 0.45;
 }
 
 .taskNoteWrap {

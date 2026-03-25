@@ -99,8 +99,26 @@ export async function assignStudentToRow(data: AssignRowRequest): Promise<RowAss
       assigned_by: data.assigned_by || null,
     };
   }
+  const key = assignmentsKey(data.session_date, false);
+  // Optimistically add to cache immediately
+  const optimistic: RowAssignment = {
+    id: -Date.now(),
+    session_date: data.session_date,
+    student_id: data.student_id,
+    row_label: data.row_label,
+    assigned_at: new Date().toISOString(),
+    assigned_by: data.assigned_by || null,
+  };
+  globalMutate(
+    key,
+    (current: RowAssignment[] | undefined) => {
+      const filtered = (current || []).filter((r) => r.student_id !== data.student_id);
+      return [...filtered, optimistic];
+    },
+    { revalidate: false }
+  );
   const result = await api.classroom.assign(data);
-  globalMutate(assignmentsKey(data.session_date, false));
+  globalMutate(key);
   return result;
 }
 
@@ -119,8 +137,15 @@ export async function removeStudentFromRow(
     globalMutate(assignmentsKey(d, true));
     return;
   }
+  const key = assignmentsKey(d, false);
+  // Optimistically remove from cache immediately
+  globalMutate(
+    key,
+    (current: RowAssignment[] | undefined) => (current || []).filter((r) => r.student_id !== studentId),
+    { revalidate: false }
+  );
   await api.classroom.unassign(studentId, d);
-  globalMutate(assignmentsKey(d, false));
+  globalMutate(key);
 }
 
 /** Update flags on a student's row assignment */
@@ -140,8 +165,18 @@ export async function updateStudentFlags(
     globalMutate(assignmentsKey(d, true));
     return;
   }
+  const key = assignmentsKey(d, false);
+  // Optimistically update flags in cache
+  globalMutate(
+    key,
+    (current: RowAssignment[] | undefined) => {
+      if (!current) return current;
+      return current.map((a) => a.student_id === studentId ? { ...a, flags } : a);
+    },
+    { revalidate: false }
+  );
   await api.classroom.updateFlags(studentId, flags, d);
-  globalMutate(assignmentsKey(d, false));
+  globalMutate(key);
 }
 
 /** Build a flags lookup: studentId -> RowAssignmentFlags from assignments */
