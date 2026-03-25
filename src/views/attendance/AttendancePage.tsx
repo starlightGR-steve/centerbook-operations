@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   Scan, Search, X, UserCheck, Clock, Pencil, Send, CheckCircle2,
-  AlertTriangle, CalendarPlus, Plus, Check,
+  AlertTriangle, CalendarPlus, Plus, Check, ArrowRight, ChevronDown,
 } from 'lucide-react';
+import Modal from '@/components/ui/Modal';
 import AttendanceEditModal from '@/components/AttendanceEditModal';
 import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
 import SubjectBadges from '@/components/SubjectBadges';
@@ -112,6 +113,17 @@ export default function AttendancePage() {
 
   // Excused absence modal
   const [excuseModalStudent, setExcuseModalStudent] = useState<Student | null>(null);
+
+  // Move dropdown + time prompt
+  const [moveMenuOpen, setMoveMenuOpen] = useState<string | null>(null);
+  const [moveTimePrompt, setMoveTimePrompt] = useState<{
+    studentId: number;
+    studentName: string;
+    target: 'checkedIn' | 'checkedOut';
+    existingAttendanceId?: number;
+  } | null>(null);
+  const [moveCheckInTime, setMoveCheckInTime] = useState('');
+  const [moveCheckOutTime, setMoveCheckOutTime] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -451,6 +463,66 @@ export default function AttendancePage() {
     return '';
   };
 
+  /* ── Move between columns ── */
+  const handleMoveImmediate = async (studentId: number, attendanceId?: number) => {
+    setMoveMenuOpen(null);
+    if (attendanceId) {
+      await deleteAttendance(attendanceId);
+      try { await removeStudentFromRow(studentId); } catch { /* noop */ }
+    }
+  };
+
+  const handleMoveWithTime = (
+    target: 'checkedIn' | 'checkedOut',
+    studentId: number,
+    studentName: string,
+    attendanceId?: number,
+  ) => {
+    setMoveMenuOpen(null);
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    setMoveCheckInTime(`${hh}:${mm}`);
+    setMoveCheckOutTime(`${hh}:${mm}`);
+    setMoveTimePrompt({ studentId, studentName, target, existingAttendanceId: attendanceId });
+  };
+
+  const handleMoveConfirm = async () => {
+    if (!moveTimePrompt) return;
+    const { studentId, target, existingAttendanceId } = moveTimePrompt;
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const student = allStudents?.find((s) => s.id === studentId);
+    const duration = student
+      ? getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail })
+      : 30;
+
+    try {
+      if (target === 'checkedIn') {
+        const ci = `${dateStr} ${moveCheckInTime}:00`;
+        if (existingAttendanceId) {
+          await updateAttendance(existingAttendanceId, { check_in: ci, check_out: null });
+        } else {
+          const r = await checkInStudent({ student_id: studentId, source: 'manual', checked_in_by: 'staff', session_duration_minutes: duration });
+          await updateAttendance(r.id, { check_in: ci });
+        }
+      } else {
+        const ci = `${dateStr} ${moveCheckInTime}:00`;
+        const co = `${dateStr} ${moveCheckOutTime}:00`;
+        if (existingAttendanceId) {
+          await updateAttendance(existingAttendanceId, { check_in: ci, check_out: co });
+        } else {
+          const r = await checkInStudent({ student_id: studentId, source: 'manual', checked_in_by: 'staff', session_duration_minutes: duration });
+          await updateAttendance(r.id, { check_in: ci, check_out: co });
+        }
+      }
+    } catch { /* silent */ }
+
+    setMoveTimePrompt(null);
+    setMoveCheckInTime('');
+    setMoveCheckOutTime('');
+  };
+
   const isLoading = !allStudents || !allAttendance;
 
   /* ═══════════════════════════════════════════
@@ -622,32 +694,50 @@ export default function AttendancePage() {
                 {filteredExpected.length === 0 ? (
                   <p className={styles.emptyCol}>All students accounted for.</p>
                 ) : (
-                  filteredExpected.map((s) => (
-                    <div key={s.id} className={styles.attendanceCard}>
-                      <button
-                        className={styles.cardClickableInner}
-                        onClick={() => setCheckInPopupStudent(s)}
-                        aria-label={`Check in ${s.first_name} ${s.last_name}`}
-                      >
-                        <div className={styles.cardTop}>
-                          <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                          <Plus size={14} className={styles.checkInIcon} />
+                  filteredExpected.map((s) => {
+                    const menuKey = `expected-${s.id}`;
+                    return (
+                      <div key={s.id} className={styles.attendanceCard}>
+                        <button
+                          className={styles.cardClickableInner}
+                          onClick={() => setCheckInPopupStudent(s)}
+                          aria-label={`Check in ${s.first_name} ${s.last_name}`}
+                        >
+                          <div className={styles.cardTop}>
+                            <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
+                            <Plus size={14} className={styles.checkInIcon} />
+                          </div>
+                          <p className={styles.cardTime}>
+                            Scheduled {formatTimeKey(s.class_time_sort_key)}
+                          </p>
+                        </button>
+                        <div className={styles.cardBottom}>
+                          <div />
+                          <div className={styles.moveWrap}>
+                            <button
+                              className={styles.moveTrigger}
+                              onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
+                            >
+                              Move <ChevronDown size={12} />
+                            </button>
+                            {moveMenuOpen === menuKey && (
+                              <div className={styles.moveMenu}>
+                                <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
+                                  Checked In
+                                </button>
+                                <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`)}>
+                                  Checked Out
+                                </button>
+                                <button className={styles.moveMenuItem} onClick={() => { setMoveMenuOpen(null); }}>
+                                  No-Show
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p className={styles.cardTime}>
-                          Scheduled {formatTimeKey(s.class_time_sort_key)}
-                        </p>
-                      </button>
-                      <button
-                        className={styles.moveBtn}
-                        onClick={async () => {
-                          const duration = getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
-                          await checkInStudent({ student_id: s.id, source: 'kiosk', checked_in_by: 'staff', session_duration_minutes: duration });
-                        }}
-                      >
-                        Move to Checked In
-                      </button>
-                    </div>
-                  ))
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -667,6 +757,7 @@ export default function AttendancePage() {
                     if (!s) return null;
                     const remaining = getRemaining(s, att.check_in);
                     const remClass = remainingClass(remaining);
+                    const menuKey = `checkedin-${att.id}`;
                     return (
                       <div key={att.id} className={`${styles.attendanceCard} ${remClass}`}>
                         <div className={styles.cardTop}>
@@ -679,6 +770,13 @@ export default function AttendancePage() {
                             >
                               <Pencil size={12} />
                             </button>
+                            <button
+                              className={styles.checkOutArrowBtn}
+                              onClick={() => handleCheckOut(att.student_id)}
+                              aria-label={`Check out ${s.first_name} ${s.last_name}`}
+                            >
+                              <ArrowRight size={16} />
+                            </button>
                           </div>
                         </div>
                         <p className={styles.cardTime}>
@@ -688,22 +786,28 @@ export default function AttendancePage() {
                           <span className={`${styles.remainingBadge} ${remClass}`}>
                             {remaining <= 0 ? `${Math.abs(remaining)}min over` : `${remaining}min left`}
                           </span>
-                          <button
-                            className={styles.checkOutBtn}
-                            onClick={() => handleCheckOut(att.student_id)}
-                          >
-                            Check Out
-                          </button>
+                          <div className={styles.moveWrap}>
+                            <button
+                              className={styles.moveTrigger}
+                              onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
+                            >
+                              Move <ChevronDown size={12} />
+                            </button>
+                            {moveMenuOpen === menuKey && (
+                              <div className={styles.moveMenu}>
+                                <button className={styles.moveMenuItem} onClick={() => handleMoveImmediate(att.student_id, att.id)}>
+                                  Expected
+                                </button>
+                                <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`, att.id)}>
+                                  Checked Out
+                                </button>
+                                <button className={styles.moveMenuItem} onClick={() => handleMoveImmediate(att.student_id, att.id)}>
+                                  No-Show
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <button
-                          className={styles.moveBtn}
-                          onClick={async () => {
-                            await deleteAttendance(att.id);
-                            try { await removeStudentFromRow(att.student_id); } catch { /* noop */ }
-                          }}
-                        >
-                          Move to Expected
-                        </button>
                       </div>
                     );
                   })
@@ -724,6 +828,7 @@ export default function AttendancePage() {
                 ) : (
                   filteredCheckedOut.map(({ attendance: att, student: s }) => {
                     if (!s) return null;
+                    const menuKey = `checkedout-${att.id}`;
                     return (
                       <div key={att.id} className={styles.attendanceCard}>
                         <div className={styles.cardTop}>
@@ -737,11 +842,35 @@ export default function AttendancePage() {
                           </button>
                         </div>
                         <p className={styles.cardTime}>
-                          In {formatTime(att.check_in)}
+                          In {formatTime(att.check_in)} — Out {formatTime(att.check_out!)}
                         </p>
-                        <p className={styles.cardTime}>
-                          Out {formatTime(att.check_out!)}
-                        </p>
+                        <div className={styles.cardBottom}>
+                          <div />
+                          <div className={styles.moveWrap}>
+                            <button
+                              className={styles.moveTrigger}
+                              onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
+                            >
+                              Move <ChevronDown size={12} />
+                            </button>
+                            {moveMenuOpen === menuKey && (
+                              <div className={styles.moveMenu}>
+                                <button className={styles.moveMenuItem} onClick={() => handleMoveImmediate(att.student_id, att.id)}>
+                                  Expected
+                                </button>
+                                <button className={styles.moveMenuItem} onClick={() => {
+                                  setMoveMenuOpen(null);
+                                  updateAttendance(att.id, { check_out: null });
+                                }}>
+                                  Checked In
+                                </button>
+                                <button className={styles.moveMenuItem} onClick={() => handleMoveImmediate(att.student_id, att.id)}>
+                                  No-Show
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     );
                   })
@@ -762,12 +891,25 @@ export default function AttendancePage() {
                   const isSent = sentMissedYou.has(sid);
                   const isSending = sendingMissedYou.has(sid);
                   const late = minutesLate(s);
+                  const menuKey = `noshow-${s.id}`;
+                  const noShowAtt = allAttendanceMap.get(s.id);
 
                   return (
                     <div key={s.id} className={styles.attendanceCard}>
                       <div className={styles.cardTop}>
                         <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                        <span className={styles.lateBadge}>{late}min late</span>
+                        <div className={styles.cardActions}>
+                          {noShowAtt && (
+                            <button
+                              className={styles.editBtn}
+                              onClick={() => setEditAttendance({ attendance: noShowAtt, studentName: `${s.first_name} ${s.last_name}` })}
+                              aria-label={`Edit attendance for ${s.first_name} ${s.last_name}`}
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          )}
+                          <span className={styles.lateBadge}>{late}min late</span>
+                        </div>
                       </div>
                       <p className={styles.cardTime}>
                         Expected {formatTimeKey(s.class_time_sort_key)}
@@ -812,15 +954,30 @@ export default function AttendancePage() {
                           </button>
                         </div>
                       )}
-                      <button
-                        className={styles.moveBtn}
-                        onClick={async () => {
-                          const duration = getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
-                          await checkInStudent({ student_id: s.id, source: 'kiosk', checked_in_by: 'staff', session_duration_minutes: duration });
-                        }}
-                      >
-                        Move to Checked In
-                      </button>
+                      <div className={styles.cardBottom}>
+                        <div />
+                        <div className={styles.moveWrap}>
+                          <button
+                            className={styles.moveTrigger}
+                            onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
+                          >
+                            Move <ChevronDown size={12} />
+                          </button>
+                          {moveMenuOpen === menuKey && (
+                            <div className={styles.moveMenu}>
+                              <button className={styles.moveMenuItem} onClick={() => { setMoveMenuOpen(null); }}>
+                                Expected
+                              </button>
+                              <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
+                                Checked In
+                              </button>
+                              <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`)}>
+                                Checked Out
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -886,8 +1043,58 @@ export default function AttendancePage() {
         />
       )}
 
+      {/* ── Move Time Prompt ── */}
+      {moveTimePrompt && (
+        <Modal
+          open
+          onClose={() => { setMoveTimePrompt(null); setMoveCheckInTime(''); setMoveCheckOutTime(''); }}
+          title={`Move to ${moveTimePrompt.target === 'checkedIn' ? 'Checked In' : 'Checked Out'}`}
+          subtitle={moveTimePrompt.studentName}
+          maxWidth="360px"
+        >
+          <div className={styles.moveTimeForm}>
+            <div className={styles.moveTimeField}>
+              <label className={styles.moveTimeLabel}>Check-in Time</label>
+              <input
+                type="time"
+                className={styles.moveTimeInput}
+                value={moveCheckInTime}
+                onChange={(e) => setMoveCheckInTime(e.target.value)}
+              />
+            </div>
+            {moveTimePrompt.target === 'checkedOut' && (
+              <div className={styles.moveTimeField}>
+                <label className={styles.moveTimeLabel}>Check-out Time</label>
+                <input
+                  type="time"
+                  className={styles.moveTimeInput}
+                  value={moveCheckOutTime}
+                  onChange={(e) => setMoveCheckOutTime(e.target.value)}
+                />
+              </div>
+            )}
+            <div className={styles.moveTimeActions}>
+              <button
+                className={styles.cancelSmBtn}
+                onClick={() => { setMoveTimePrompt(null); setMoveCheckInTime(''); setMoveCheckOutTime(''); }}
+              >
+                Cancel
+              </button>
+              <button className={styles.saveExcuseBtn} onClick={handleMoveConfirm}>
+                Confirm
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* ── Undo Toast ── */}
       <UndoToast item={undoToast} onDismiss={() => setUndoToast(null)} />
+
+      {/* Close move menu on outside click */}
+      {moveMenuOpen && (
+        <div className={styles.moveBackdrop} onClick={() => setMoveMenuOpen(null)} />
+      )}
 
       {/* Close search dropdown on outside click */}
       {showSearchDropdown && (

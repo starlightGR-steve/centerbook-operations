@@ -45,7 +45,6 @@ import type {
   PipelineSummary,
   CreateFamilyRequest,
 } from './types';
-import { MOCK_BOOKS, MOCK_BOOK_LOANS } from './mock-data';
 
 // ── Configuration ──────────────────────────
 
@@ -409,32 +408,21 @@ export const api = {
       directFetch<void>(`/journal/${id}`, { method: 'DELETE' }),
   },
 
-  // ── Library (no API yet — falls back to mock data) ──
+  // ── Library ──
   library: {
-    books: async (): Promise<Book[]> => {
-      try { return await directFetch<Book[]>('/library/books'); }
-      catch { return [...MOCK_BOOKS]; }
+    books: (): Promise<Book[]> => directFetch<Book[]>('/library/books'),
+    createBook: (data: Partial<Book>): Promise<Book> =>
+      directFetch<Book>('/library/books', { method: 'POST', body: JSON.stringify(data) }),
+    updateBook: (id: number, data: Partial<Book>): Promise<Book> =>
+      directFetch<Book>(`/library/books/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    loans: (status?: 'outstanding'): Promise<BookLoan[]> => {
+      const qs = status ? `?status=${status}` : '';
+      return directFetch<BookLoan[]>(`/library/loans${qs}`);
     },
-    createBook: async (data: Partial<Book>): Promise<Book> => {
-      try { return await directFetch<Book>('/library/books', { method: 'POST', body: JSON.stringify(data) }); }
-      catch { const book: Book = { id: Date.now(), ...data } as Book; MOCK_BOOKS.push(book); return book; }
-    },
-    updateBook: async (id: number, data: Partial<Book>): Promise<Book> => {
-      try { return await directFetch<Book>(`/library/books/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
-      catch { const idx = MOCK_BOOKS.findIndex((b) => b.id === id); if (idx >= 0) Object.assign(MOCK_BOOKS[idx], data); return MOCK_BOOKS[idx] ?? ({} as Book); }
-    },
-    loans: async (status?: 'outstanding'): Promise<BookLoan[]> => {
-      try { const qs = status ? `?status=${status}` : ''; return await directFetch<BookLoan[]>(`/library/loans${qs}`); }
-      catch { return status === 'outstanding' ? MOCK_BOOK_LOANS.filter((l) => !l.returned_at) : [...MOCK_BOOK_LOANS]; }
-    },
-    checkout: async (data: CheckoutBookRequest): Promise<BookLoan> => {
-      try { return await directFetch<BookLoan>('/library/checkout', { method: 'POST', body: JSON.stringify(data) }); }
-      catch { const loan: BookLoan = { id: Date.now(), book_id: data.book_id, student_id: data.student_id, checked_out_at: new Date().toISOString(), due_date: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0], returned_at: null, checked_out_by: null, returned_to: null, created_at: new Date().toISOString() }; MOCK_BOOK_LOANS.push(loan); return loan; }
-    },
-    returnBook: async (data: ReturnBookRequest): Promise<BookLoan> => {
-      try { return await directFetch<BookLoan>('/library/return', { method: 'POST', body: JSON.stringify(data) }); }
-      catch { const loan = MOCK_BOOK_LOANS.find((l) => l.book_id === data.book_id && !l.returned_at); if (loan) loan.returned_at = new Date().toISOString(); return loan ?? ({} as BookLoan); }
-    },
+    checkout: (data: CheckoutBookRequest): Promise<BookLoan> =>
+      directFetch<BookLoan>('/library/checkout', { method: 'POST', body: JSON.stringify(data) }),
+    returnBook: (data: ReturnBookRequest): Promise<BookLoan> =>
+      directFetch<BookLoan>('/library/return', { method: 'POST', body: JSON.stringify(data) }),
   },
 
   // ── Classroom Config ──

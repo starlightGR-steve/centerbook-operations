@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
-import { isDemoModeActive } from '@/context/MockDataContext';
 import styles from './CreateContactPage.module.css';
 
 const RELATIONSHIPS = ['Mother', 'Father', 'Step-Mother', 'Step-Father', 'Guardian'];
@@ -40,10 +39,6 @@ export default function CreateContactPage() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    if (isDemoModeActive()) {
-      setError('Cannot create contacts in demo mode.');
-      return;
-    }
 
     setSaving(true);
     setError(null);

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import AuthProvider from '@/components/AuthProvider';
-import { MockDataProvider } from '@/context/MockDataContext';
 import { SessionAdjustProvider } from '@/context/SessionAdjustContext';
 import Shell from '@/components/layout/Shell';
 import '@/styles/globals.css';
@@ -39,12 +38,10 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          <MockDataProvider>
-            <SessionAdjustProvider>
-              <a href="#main-content" className="skip-link">Skip to main content</a>
-              <Shell>{children}</Shell>
-            </SessionAdjustProvider>
-          </MockDataProvider>
+          <SessionAdjustProvider>
+            <a href="#main-content" className="skip-link">Skip to main content</a>
+            <Shell>{children}</Shell>
+          </SessionAdjustProvider>
         </AuthProvider>
       </body>
     </html>

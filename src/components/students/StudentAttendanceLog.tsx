@@ -4,8 +4,6 @@ import { useState, useMemo } from 'react';
 import { ClipboardList } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
-import { MOCK_ATTENDANCE, MOCK_ABSENCES } from '@/lib/mock-data';
-import { useDemoMode } from '@/context/MockDataContext';
 import { formatTime } from '@/lib/types';
 import type { Attendance, Absence } from '@/lib/types';
 import styles from './StudentAttendanceLog.module.css';
@@ -47,7 +45,6 @@ function toISODate(d: Date): string {
 }
 
 export default function StudentAttendanceLog({ studentId, scheduleDays = [] }: StudentAttendanceLogProps) {
-  const { isDemoMode } = useDemoMode();
   const [dateRange, setDateRange] = useState<DateRange>('last3months');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -79,18 +76,16 @@ export default function StudentAttendanceLog({ studentId, scheduleDays = [] }: S
 
   // Fetch attendance for student
   const { data: attendanceData } = useSWR<Attendance[]>(
-    isDemoMode ? `demo-student-att-${studentId}` : `student-att-${studentId}-${from}-${to}`,
+    `student-att-${studentId}-${from}-${to}`,
     async () => {
-      if (isDemoMode) return MOCK_ATTENDANCE.filter(a => a.student_id === studentId);
       return api.attendance.forStudent(studentId, from, to);
     }
   );
 
   // Fetch absences for student
   const { data: absenceData } = useSWR<Absence[]>(
-    isDemoMode ? `demo-student-abs-${studentId}` : `student-abs-${studentId}`,
+    `student-abs-${studentId}`,
     async () => {
-      if (isDemoMode) return MOCK_ABSENCES.filter(a => a.student_id === studentId);
       return api.absences.forStudent(studentId);
     }
   );

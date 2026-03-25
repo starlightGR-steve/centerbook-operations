@@ -24,8 +24,6 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { isDemoModeActive } from '@/context/MockDataContext';
-import { MOCK_CONTACTS } from '@/lib/mock-data';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Badge from '@/components/ui/Badge';
 import StudentJournal from '@/components/StudentJournal';
@@ -188,8 +186,8 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [unlinkConfirm, setUnlinkConfirm] = useState<number | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const { data: allContacts, isLoading: allContactsLoading } = useSWR<Contact[]>(
-    showLinkContact ? (isDemoModeActive() ? 'demo-all-contacts' : 'all-contacts-for-picker') : null,
-    () => isDemoModeActive() ? MOCK_CONTACTS : api.contacts.list()
+    showLinkContact ? 'all-contacts-for-picker' : null,
+    () => api.contacts.list()
   );
 
   // Edit mode
@@ -315,9 +313,7 @@ export default function StudentProfilePage({ studentId }: Props) {
           payload.schedule_review_reason = `Subjects changed from ${oldSubjects || 'none'} to ${newSubjects || 'none'}`;
         }
       }
-      if (!isDemoModeActive()) {
-        await api.students.update(studentId, payload as Partial<typeof student>);
-      }
+      await api.students.update(studentId, payload as Partial<typeof student>);
       await mutateStudent();
       setEditFields({});
       setIsEditing(false);
@@ -330,9 +326,7 @@ export default function StudentProfilePage({ studentId }: Props) {
 
   const handleMarkReviewed = async () => {
     try {
-      if (!isDemoModeActive()) {
-        await api.students.update(studentId, { schedule_review_needed: false, schedule_review_reason: null } as Partial<typeof student>);
-      }
+      await api.students.update(studentId, { schedule_review_needed: false, schedule_review_reason: null } as Partial<typeof student>);
       await mutateStudent();
     } catch {
       // silently ignore — user can retry
@@ -341,18 +335,14 @@ export default function StudentProfilePage({ studentId }: Props) {
 
   const handleLinkContact = async (contactId: number, role: string) => {
     setLinkError(null);
-    if (!isDemoModeActive()) {
-      await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
-    }
+    await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
     mutateContacts();
   };
 
   const handleUnlinkContact = async (contactId: number) => {
     setLinkError(null);
     try {
-      if (!isDemoModeActive()) {
-        await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
-      }
+      await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
       mutateContacts();
       setUnlinkConfirm(null);
     } catch (e) {
@@ -367,9 +357,7 @@ export default function StudentProfilePage({ studentId }: Props) {
   const handleSetPrimary = async (contactId: number) => {
     setLinkError(null);
     try {
-      if (!isDemoModeActive()) {
-        await api.students.update(studentId, { primary_contact_id: contactId } as Partial<typeof student>);
-      }
+      await api.students.update(studentId, { primary_contact_id: contactId } as Partial<typeof student>);
       await mutateStudent();
       mutateContacts();
     } catch {
@@ -380,9 +368,7 @@ export default function StudentProfilePage({ studentId }: Props) {
   const handleSetBilling = async (contactId: number) => {
     setLinkError(null);
     try {
-      if (!isDemoModeActive()) {
-        await api.students.update(studentId, { billing_contact_id: contactId } as Partial<typeof student>);
-      }
+      await api.students.update(studentId, { billing_contact_id: contactId } as Partial<typeof student>);
       await mutateStudent();
       mutateContacts();
     } catch {

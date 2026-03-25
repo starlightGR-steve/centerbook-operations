@@ -17,12 +17,10 @@ import {
   BarChart2,
   TrendingUp,
   UserCircle,
-  FlaskConical,
   Settings,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppRole } from '@/lib/auth';
-import { useDemoMode } from '@/context/MockDataContext';
 
 interface NavItem {
   href: string;
@@ -50,7 +48,6 @@ export default function MobileNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = (session?.user as { role?: AppRole } | undefined)?.role;
-  const { isDemoMode, toggleDemoMode, demoRole, setDemoRole } = useDemoMode();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -71,9 +68,8 @@ export default function MobileNav() {
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/');
 
-  const effectiveRole = isDemoMode ? demoRole : role;
   const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.roles || (effectiveRole && item.roles.includes(effectiveRole))
+    (item) => !item.roles || (role && item.roles.includes(role))
   );
 
   // Find current page label
@@ -111,22 +107,6 @@ export default function MobileNav() {
           }}
         >
           {currentPage?.label || 'The Center Book'}
-          {isDemoMode && (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: '#92400e',
-                background: '#FEF3C7',
-                padding: '2px 8px',
-                borderRadius: 10,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-              }}
-            >
-              DEMO
-            </span>
-          )}
         </span>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
@@ -201,104 +181,6 @@ export default function MobileNav() {
               </Link>
             );
           })}
-
-          {/* Demo Mode toggle */}
-          <div
-            style={{
-              borderTop: '1px solid rgba(255,255,255,0.1)',
-              marginTop: 4,
-              padding: '12px 20px',
-            }}
-          >
-            <button
-              onClick={toggleDemoMode}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                background: 'none',
-                border: 'none',
-                color: isDemoMode ? '#FEF3C7' : 'rgba(255,255,255,0.6)',
-                fontFamily: 'Montserrat, sans-serif',
-                fontSize: 14,
-                fontWeight: 500,
-                padding: 0,
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <FlaskConical size={18} />
-                Demo Mode
-              </span>
-              {/* Toggle switch */}
-              <span
-                style={{
-                  width: 36,
-                  height: 20,
-                  borderRadius: 10,
-                  background: isDemoMode ? '#E0712C' : 'rgba(255,255,255,0.2)',
-                  position: 'relative',
-                  transition: 'background 0.2s',
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    left: isDemoMode ? 18 : 2,
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    background: '#fff',
-                    transition: 'left 0.2s',
-                  }}
-                />
-              </span>
-            </button>
-            {isDemoMode && (
-              <div style={{ marginTop: 10 }}>
-                <p
-                  style={{
-                    margin: '0 0 6px',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: 'rgba(255,255,255,0.4)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    fontFamily: 'Montserrat, sans-serif',
-                  }}
-                >
-                  Preview as
-                </p>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {(['admin', 'staff'] as const).map((r) => (
-                    <button
-                      key={r}
-                      onClick={(e) => { e.stopPropagation(); setDemoRole(r); }}
-                      style={{
-                        flex: 1,
-                        padding: '6px 0',
-                        border: 'none',
-                        borderRadius: 6,
-                        background: demoRole === r ? '#E0712C' : 'rgba(255,255,255,0.1)',
-                        color: demoRole === r ? '#fff' : 'rgba(255,255,255,0.5)',
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        textTransform: 'capitalize',
-                      }}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </nav>
       )}
     </>

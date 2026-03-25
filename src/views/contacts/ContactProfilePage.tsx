@@ -11,7 +11,6 @@ import EmptyState from '@/components/ui/EmptyState';
 import LinkPickerModal from '@/components/LinkPickerModal';
 import { api } from '@/lib/api';
 import { useAllStudents } from '@/hooks/useStudents';
-import { useDemoMode, isDemoModeActive } from '@/context/MockDataContext';
 import type { Contact, LinkedStudent, Student } from '@/lib/types';
 import styles from './ContactProfilePage.module.css';
 
@@ -36,10 +35,9 @@ interface Props {
 
 export default function ContactProfilePage({ contactId }: Props) {
   const router = useRouter();
-  const { isDemoMode } = useDemoMode();
 
   const { data: contact, isLoading, error, mutate: mutateContact } = useSWR<Contact>(
-    isDemoMode ? null : `contact-${contactId}`,
+    `contact-${contactId}`,
     () => api.contacts.get(contactId),
     { dedupingInterval: 10000, revalidateOnFocus: false }
   );
@@ -50,7 +48,7 @@ export default function ContactProfilePage({ contactId }: Props) {
     isLoading: studentsLoading,
     mutate: mutateStudents,
   } = useSWR<LinkedStudent[]>(
-    isDemoMode ? null : `contact-students-${contactId}`,
+    `contact-students-${contactId}`,
     () => api.contacts.students(contactId),
     { dedupingInterval: 10000, revalidateOnFocus: false }
   );
@@ -138,9 +136,7 @@ export default function ContactProfilePage({ contactId }: Props) {
     setEditSaving(true);
     setEditError(null);
     try {
-      if (!isDemoModeActive()) {
-        await api.contacts.update(contactId, changedFields as Partial<Contact>);
-      }
+      await api.contacts.update(contactId, changedFields as Partial<Contact>);
       await mutateContact();
       setEditFields({});
       setIsEditing(false);
@@ -155,18 +151,14 @@ export default function ContactProfilePage({ contactId }: Props) {
 
   const handleLinkStudent = async (studentId: number, role: string) => {
     setLinkError(null);
-    if (!isDemoModeActive()) {
-      await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
-    }
+    await api.studentContact.link({ student_id: studentId, contact_id: contactId, role: role || undefined });
     mutateStudents();
   };
 
   const handleUnlinkStudent = async (studentId: number) => {
     setLinkError(null);
     try {
-      if (!isDemoModeActive()) {
-        await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
-      }
+      await api.studentContact.unlink({ student_id: studentId, contact_id: contactId });
       mutateStudents();
       setUnlinkConfirm(null);
     } catch (e) {

@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Pencil, Trash2, Plus, X } from 'lucide-react';
 import { api } from '@/lib/api';
-import { isDemoModeActive } from '@/context/MockDataContext';
 import styles from './ClassroomSetup.module.css';
 
 interface ConfigSection {
@@ -42,27 +41,9 @@ export default function ClassroomSetup({ onBack }: ClassroomSetupProps) {
   useEffect(() => {
     (async () => {
       try {
-        if (isDemoModeActive()) {
-          setSections([
-            { id: 'sec-el', name: 'Early Learners', order: 1 },
-            { id: 'sec-main', name: 'Main Classroom', order: 2 },
-            { id: 'sec-upper', name: 'Upper Classroom', order: 3 },
-          ]);
-          setRows([
-            { id: 'el1', section_id: 'sec-el', name: 'EL-1', seats: 4, order: 1 },
-            { id: 'el2', section_id: 'sec-el', name: 'EL-2', seats: 4, order: 2 },
-            { id: 'm1', section_id: 'sec-main', name: 'MC-1', seats: 6, order: 1 },
-            { id: 'm2', section_id: 'sec-main', name: 'MC-2', seats: 6, order: 2 },
-            { id: 'm3', section_id: 'sec-main', name: 'MC-3', seats: 6, order: 3 },
-            { id: 'm4', section_id: 'sec-main', name: 'MC-4', seats: 6, order: 4 },
-            { id: 'uc1', section_id: 'sec-upper', name: 'UC-1', seats: 5, order: 1 },
-            { id: 'uc2', section_id: 'sec-upper', name: 'UC-2', seats: 5, order: 2 },
-          ]);
-        } else {
-          const data = await api.classroomConfig.get();
-          setSections(data.sections || []);
-          setRows(data.rows || []);
-        }
+        const data = await api.classroomConfig.get();
+        setSections(data.sections || []);
+        setRows(data.rows || []);
       } catch {
         setSections([]);
         setRows([]);
@@ -146,15 +127,13 @@ export default function ClassroomSetup({ onBack }: ClassroomSetupProps) {
     setSaving(true);
     setSaveMessage(null);
     try {
-      if (!isDemoModeActive()) {
-        await api.classroomConfig.save({
-          sections: sections.map((s, i) => ({ ...s, order: i + 1 })),
-          rows: rows.map((r) => {
-            const sectionRows = rows.filter((rr) => rr.section_id === r.section_id);
-            return { ...r, order: sectionRows.indexOf(r) + 1 };
-          }),
-        });
-      }
+      await api.classroomConfig.save({
+        sections: sections.map((s, i) => ({ ...s, order: i + 1 })),
+        rows: rows.map((r) => {
+          const sectionRows = rows.filter((rr) => rr.section_id === r.section_id);
+          return { ...r, order: sectionRows.indexOf(r) + 1 };
+        }),
+      });
       setSaveMessage({ type: 'success', text: 'Saved successfully.' });
       setTimeout(() => setSaveMessage(null), 3000);
     } catch {

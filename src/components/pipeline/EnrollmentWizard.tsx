@@ -4,8 +4,6 @@ import React, { useState, useCallback } from 'react';
 import { Check, ChevronRight, Plus, Search } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { api } from '@/lib/api';
-import { isDemoModeActive } from '@/context/MockDataContext';
-import { MOCK_STUDENTS, MOCK_CONTACTS } from '@/lib/mock-data';
 import type { Family, Student, Contact } from '@/lib/types';
 import styles from './EnrollmentWizard.module.css';
 
@@ -206,52 +204,17 @@ export default function EnrollmentWizard({ family, onClose, onComplete }: Enroll
       const today = new Date().toISOString().split('T')[0];
       const created: Student[] = [];
       for (const form of studentForms) {
-        if (isDemoModeActive()) {
-          const mockStudent = {
-            id: Date.now() + Math.round(Math.random() * 10000),
-            system_id: `SYS-${Date.now()}`,
-            clickup_task_id: null,
-            first_name: form.first_name,
-            last_name: form.last_name,
-            student_id: null,
-            kc_username: null,
-            kc_password: null,
-            date_of_birth: form.date_of_birth || null,
-            grade_level: form.grade_level || null,
-            school: null,
-            medical_notes: null,
-            enrollment_status: 'Active' as const,
-            program_type: (form.program_type || null) as Student['program_type'],
-            subjects: form.subjects || null,
-            enroll_date: today,
-            classroom_position: null,
-            class_schedule_days: null,
-            class_time_sort_key: null,
-            schedule_detail: null,
-            current_level_math: null,
-            current_level_reading: null,
-            ashr_math_status: null,
-            ashr_reading_status: null,
-            primary_contact_id: null,
-            billing_contact_id: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } satisfies Student;
-          MOCK_STUDENTS.push(mockStudent);
-          created.push(mockStudent);
-        } else {
-          const s = await api.students.create({
-            first_name: form.first_name,
-            last_name: form.last_name,
-            date_of_birth: form.date_of_birth || undefined,
-            grade_level: form.grade_level || undefined,
-            subjects: form.subjects || undefined,
-            program_type: (form.program_type || undefined) as Student['program_type'],
-            enrollment_status: 'Active',
-            enroll_date: today,
-          });
-          created.push(s);
-        }
+        const s = await api.students.create({
+          first_name: form.first_name,
+          last_name: form.last_name,
+          date_of_birth: form.date_of_birth || undefined,
+          grade_level: form.grade_level || undefined,
+          subjects: form.subjects || undefined,
+          program_type: (form.program_type || undefined) as Student['program_type'],
+          enrollment_status: 'Active',
+          enroll_date: today,
+        });
+        created.push(s);
       }
       setCreatedStudents(created);
 
@@ -285,46 +248,24 @@ export default function EnrollmentWizard({ family, onClose, onComplete }: Enroll
     try {
       const created: Contact[] = [];
       for (const form of contactForms) {
-        if (isDemoModeActive()) {
-          const mockContact = {
-            id: Date.now() + Math.round(Math.random() * 10000),
-            system_id: `SYS-C-${Date.now()}`,
-            clickup_task_id: null,
-            first_name: form.first_name,
-            last_name: form.last_name,
-            email: form.email || null,
-            phone: form.phone || null,
-            relationship_to_students: form.relationship || null,
-            preferred_contact_method: null,
-            portal_access_enabled: 0 as const,
-            wp_user_id: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } satisfies Contact;
-          MOCK_CONTACTS.push(mockContact);
-          created.push(mockContact);
-        } else {
-          const c = await api.contacts.create({
-            first_name: form.first_name,
-            last_name: form.last_name,
-            email: form.email || undefined,
-            phone: form.phone || undefined,
-            relationship_to_students: form.relationship || undefined,
-          });
-          created.push(c);
-        }
+        const c = await api.contacts.create({
+          first_name: form.first_name,
+          last_name: form.last_name,
+          email: form.email || undefined,
+          phone: form.phone || undefined,
+          relationship_to_students: form.relationship || undefined,
+        });
+        created.push(c);
       }
       setCreatedContacts(created);
 
       // Link each contact to each student
       for (const student of createdStudents) {
         for (const contact of created) {
-          if (!isDemoModeActive()) {
-            await api.studentContact.link({
-              student_id: student.id,
-              contact_id: contact.id,
-            });
-          }
+          await api.studentContact.link({
+            student_id: student.id,
+            contact_id: contact.id,
+          });
         }
       }
 
@@ -356,18 +297,10 @@ export default function EnrollmentWizard({ family, onClose, onComplete }: Enroll
       for (const student of createdStudents) {
         const commId = primaryComm[student.id] || null;
         const billId = primaryBilling[student.id] || null;
-        if (isDemoModeActive()) {
-          const idx = MOCK_STUDENTS.findIndex(s => s.id === student.id);
-          if (idx >= 0) {
-            MOCK_STUDENTS[idx].primary_contact_id = commId;
-            MOCK_STUDENTS[idx].billing_contact_id = billId;
-          }
-        } else {
-          await api.students.update(student.id, {
-            primary_contact_id: commId,
-            billing_contact_id: billId,
-          });
-        }
+        await api.students.update(student.id, {
+          primary_contact_id: commId,
+          billing_contact_id: billId,
+        });
       }
       setStep(4);
     } catch {
@@ -404,22 +337,12 @@ export default function EnrollmentWizard({ family, onClose, onComplete }: Enroll
         const classDays = sched.days.join(', ');
         const firstDaySortKey = sched.times[sched.days[0]] || 1500;
 
-        if (isDemoModeActive()) {
-          const idx = MOCK_STUDENTS.findIndex(s => s.id === student.id);
-          if (idx >= 0) {
-            MOCK_STUDENTS[idx].schedule_detail = scheduleDetail;
-            MOCK_STUDENTS[idx].class_schedule_days = classDays;
-            MOCK_STUDENTS[idx].class_time_sort_key = firstDaySortKey;
-            MOCK_STUDENTS[idx].classroom_position = sched.classroom_position as Student['classroom_position'];
-          }
-        } else {
-          await api.students.update(student.id, {
-            schedule_detail: scheduleDetail,
-            class_schedule_days: classDays,
-            class_time_sort_key: firstDaySortKey,
-            classroom_position: sched.classroom_position as Student['classroom_position'],
-          });
-        }
+        await api.students.update(student.id, {
+          schedule_detail: scheduleDetail,
+          class_schedule_days: classDays,
+          class_time_sort_key: firstDaySortKey,
+          classroom_position: sched.classroom_position as Student['classroom_position'],
+        });
       }
       setStep(5);
     } catch {

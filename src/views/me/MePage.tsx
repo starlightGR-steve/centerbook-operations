@@ -12,8 +12,6 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { api } from '@/lib/api';
-import { useDemoMode, isDemoModeActive } from '@/context/MockDataContext';
-import { MOCK_TASKS } from '@/lib/mock-data';
 import type { CbTask, CbTaskType, CreateTaskRequest } from '@/lib/types';
 import styles from './MePage.module.css';
 
@@ -42,8 +40,6 @@ function timeAgo(dateStr: string): string {
 
 export default function MePage() {
   const { data: session } = useSession();
-  const { isDemoMode } = useDemoMode();
-
   const user = session?.user;
   const role = (user as { role?: string } | undefined)?.role ?? 'staff';
   const staffId = (user as { id?: string } | undefined)?.id;
@@ -62,21 +58,15 @@ export default function MePage() {
   const [newType, setNewType] = useState<CbTaskType>('general');
   const [addingTask, setAddingTask] = useState(false);
 
-  const swrKey = staffId
-    ? (isDemoMode ? `demo-my-tasks-${staffId}` : `my-tasks-${staffId}`)
-    : null;
+  const swrKey = staffId ? `my-tasks-${staffId}` : null;
 
   const { data: tasks, error: tasksError, isLoading: tasksLoading } = useSWR<CbTask[]>(
     swrKey,
     async () => {
-      if (isDemoMode) {
-        return MOCK_TASKS.filter((t) => t.assigned_to === Number(staffId));
-      }
-      // Fetch all tasks and filter client-side (small dataset, assigned_to filter not confirmed)
       const all = await api.tasks.forAssignee(Number(staffId));
       return all;
     },
-    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: true }
+    { dedupingInterval: 5000, revalidateOnFocus: true }
   );
 
   const sortedTasks = useMemo(() => {
@@ -100,9 +90,7 @@ export default function MePage() {
         false
       );
     }
-    if (!isDemoModeActive()) {
-      await api.tasks.update(task.id, { status: newStatus });
-    }
+    await api.tasks.update(task.id, { status: newStatus });
     globalMutate(swrKey);
   };
 
@@ -115,27 +103,7 @@ export default function MePage() {
       type: newType,
       title: newTitle.trim(),
     };
-    if (isDemoModeActive()) {
-      const task: CbTask = {
-        id: Date.now(),
-        student_id: null,
-        contact_id: null,
-        assigned_to: Number(staffId),
-        created_by: Number(staffId),
-        type: newType,
-        title: newTitle.trim(),
-        notes: null,
-        due_date: null,
-        status: 'open',
-        recurrence_rule: null,
-        completed_at: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      MOCK_TASKS.push(task);
-    } else {
-      await api.tasks.create(data);
-    }
+    await api.tasks.create(data);
     globalMutate(swrKey);
     setNewTitle('');
     setNewType('general');

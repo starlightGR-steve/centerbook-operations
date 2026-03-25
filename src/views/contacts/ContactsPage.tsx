@@ -7,7 +7,6 @@ import { ChevronUp, ChevronDown, Check, Minus, Plus } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import { api } from '@/lib/api';
-import { useDemoMode } from '@/context/MockDataContext';
 import type { Contact } from '@/lib/types';
 import styles from './ContactsPage.module.css';
 
@@ -16,18 +15,16 @@ type SortDir = 'asc' | 'desc';
 
 export default function ContactsPage() {
   const router = useRouter();
-  const { isDemoMode } = useDemoMode();
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const { data: contacts, isLoading, error } = useSWR<Contact[]>(
-    isDemoMode ? 'demo-contacts' : 'contacts',
+    'contacts',
     async () => {
-      if (isDemoMode) return [];
       return api.contacts.list();
     },
-    { dedupingInterval: isDemoMode ? 60000 : 10000, revalidateOnFocus: !isDemoMode }
+    { dedupingInterval: 10000 }
   );
 
   const filtered = useMemo(() => {

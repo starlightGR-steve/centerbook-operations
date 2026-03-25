@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
-import { isDemoModeActive } from '@/context/MockDataContext';
 import styles from './CreateStudentPage.module.css';
 
 const GRADE_LEVELS = ['PK2', 'PK1', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'];
@@ -71,10 +70,6 @@ export default function CreateStudentPage() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    if (isDemoModeActive()) {
-      setError('Cannot create students in demo mode.');
-      return;
-    }
 
     setSaving(true);
     setError(null);

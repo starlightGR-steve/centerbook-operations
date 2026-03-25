@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { Settings, Play, Check } from 'lucide-react';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useStudents } from '@/hooks/useStudents';
-import { useDemoMode } from '@/context/MockDataContext';
 import { getTimeRemaining, getSessionDuration, parseSubjects, formatTime } from '@/lib/types';
 import type { Student } from '@/lib/types';
 import styles from './LobbyBoard.module.css';
@@ -43,8 +42,6 @@ export default function LobbyBoard() {
   /* Data */
   const { data: attendance } = useAttendance(undefined, 5000);
   const { data: students } = useStudents();
-  const { isDemoMode, toggleDemoMode } = useDemoMode();
-
   const lobbyStudents = useMemo<LobbyStudent[]>(() => {
     if (!attendance || !students) return [];
     const checkedIn = attendance.filter(a => a.check_in && !a.check_out);
@@ -183,13 +180,6 @@ export default function LobbyBoard() {
             </button>
           </div>
 
-          {/* Demo toggle */}
-          <button
-            className={`${styles.demoToggle} ${isDemoMode ? styles.demoToggleActive : ''}`}
-            onClick={toggleDemoMode}
-          >
-            {isDemoMode ? 'Demo Mode ON' : 'Demo Mode OFF'}
-          </button>
         </div>
       </div>
     );

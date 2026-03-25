@@ -12,7 +12,6 @@ import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
 import { useStudents } from '@/hooks/useStudents';
 import { createOverride } from '@/hooks/useScheduleOverrides';
 import { api } from '@/lib/api';
-import { isDemoModeActive } from '@/context/MockDataContext';
 import type { AppRole } from '@/lib/auth';
 import type { CapacityCell, Student, ScheduleOverride } from '@/lib/types';
 import { parseScheduleDays, bucketTimeKey, formatTimeSortKey } from '@/lib/types';
@@ -111,9 +110,7 @@ export default function SlotDetailModal({
     if (!dayDetail) return;
     const isZoom = !dayDetail.is_zoom;
     detail[cell.day] = { ...dayDetail, is_zoom: isZoom };
-    if (!isDemoModeActive()) {
-      await api.students.update(student.id, { schedule_detail: detail, zoom_student: isZoom || undefined } as Partial<Student>);
-    }
+    await api.students.update(student.id, { schedule_detail: detail, zoom_student: isZoom || undefined } as Partial<Student>);
     mutateStudents();
   }
 

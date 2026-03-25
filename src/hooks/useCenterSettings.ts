@@ -1,9 +1,13 @@
 import useSWR, { mutate } from 'swr';
-import { MOCK_CENTER_SETTINGS } from '@/lib/mock-data';
 import type { CenterSettings } from '@/lib/types';
 
 // In-memory store — future: replace with api.settings.get()
-let currentSettings: CenterSettings = { ...MOCK_CENTER_SETTINGS };
+let currentSettings: CenterSettings = {
+  center_capacity: 48,
+  operating_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+  time_slots: [],
+  staff_student_ratio: 4,
+};
 
 export function useCenterSettings() {
   return useSWR<CenterSettings>(

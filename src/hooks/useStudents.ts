@@ -1,69 +1,55 @@
 import useSWR from 'swr';
 import { api } from '@/lib/api';
-import { MOCK_STUDENTS } from '@/lib/mock-data';
-import { useDemoMode } from '@/context/MockDataContext';
 import type { Student, StudentContact } from '@/lib/types';
 
 /** Fetch all active students */
 export function useStudents() {
-  const { isDemoMode } = useDemoMode();
-
   return useSWR<Student[]>(
-    isDemoMode ? 'demo-students' : 'students',
+    'students',
     async () => {
-      if (isDemoMode) return MOCK_STUDENTS.filter((s) => s.enrollment_status === 'Active');
       const all = await api.students.list();
       return all.filter((s) => s.enrollment_status === 'Active');
     },
-    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
+    { dedupingInterval: 5000 }
   );
 }
 
 /** Fetch a single student by ID */
 export function useStudent(id: number | null) {
-  const { isDemoMode } = useDemoMode();
-
   return useSWR<Student | null>(
-    id ? (isDemoMode ? `demo-student-${id}` : `student-${id}`) : null,
+    id ? `student-${id}` : null,
     async () => {
       if (!id) return null;
-      if (isDemoMode) return MOCK_STUDENTS.find((s) => s.id === id) || null;
       const raw = await api.students.get(id);
       // Strip nested objects that the API embeds but Student type doesn't define
       // (primary_contact, billing_contact are full Contact objects — rendering them causes React error #310)
       const { primary_contact, billing_contact, ...student } = raw as Student & { primary_contact?: unknown; billing_contact?: unknown };
       return student as Student;
     },
-    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
+    { dedupingInterval: 5000 }
   );
 }
 
 /** Fetch all students (all statuses) for roster view */
 export function useAllStudents() {
-  const { isDemoMode } = useDemoMode();
-
   return useSWR<Student[]>(
-    isDemoMode ? 'demo-all-students' : 'all-students',
+    'all-students',
     async () => {
-      if (isDemoMode) return MOCK_STUDENTS;
       return api.students.list();
     },
-    { dedupingInterval: isDemoMode ? 60000 : 5000, revalidateOnFocus: !isDemoMode }
+    { dedupingInterval: 5000 }
   );
 }
 
 /** Fetch contacts linked to a student */
 export function useStudentContacts(studentId: number | null) {
-  const { isDemoMode } = useDemoMode();
-
   return useSWR<StudentContact[]>(
-    studentId ? (isDemoMode ? `demo-student-contacts-${studentId}` : `student-contacts-${studentId}`) : null,
+    studentId ? `student-contacts-${studentId}` : null,
     async () => {
       if (!studentId) return [];
-      if (isDemoMode) return [];
       return api.students.contacts(studentId);
     },
-    { dedupingInterval: isDemoMode ? 60000 : 10000, revalidateOnFocus: !isDemoMode }
+    { dedupingInterval: 10000 }
   );
 }
 

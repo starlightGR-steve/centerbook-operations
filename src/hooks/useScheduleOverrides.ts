@@ -1,9 +1,8 @@
 import useSWR, { mutate } from 'swr';
-import { MOCK_SCHEDULE_OVERRIDES } from '@/lib/mock-data';
 import type { ScheduleOverride } from '@/lib/types';
 
 // In-memory store — future: replace with api.scheduleOverrides.*
-let overrides: ScheduleOverride[] = [...MOCK_SCHEDULE_OVERRIDES];
+let overrides: ScheduleOverride[] = [];
 
 export function useScheduleOverrides(weekStartDate: string) {
   return useSWR<ScheduleOverride[]>(
