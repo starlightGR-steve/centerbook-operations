@@ -116,6 +116,7 @@ export default function AttendancePage() {
 
   // Move dropdown + time prompt
   const [moveMenuOpen, setMoveMenuOpen] = useState<string | null>(null);
+  const [moveMenuPos, setMoveMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [moveTimePrompt, setMoveTimePrompt] = useState<{
     studentId: number;
     studentName: string;
@@ -423,7 +424,7 @@ export default function AttendancePage() {
 
   /* ── Move to Expected (delete attendance record) ── */
   const handleMoveToExpected = async (studentId: number, attendanceId: number) => {
-    setMoveMenuOpen(null);
+    closeMoveMenu();
     const student = allStudents?.find((s) => s.id === studentId);
     const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
     try {
@@ -447,7 +448,7 @@ export default function AttendancePage() {
 
   /* ── Move Checked Out → Checked In (clear check_out) ── */
   const handleMoveToCheckedIn = async (studentId: number, attendanceId: number) => {
-    setMoveMenuOpen(null);
+    closeMoveMenu();
     const student = allStudents?.find((s) => s.id === studentId);
     const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
     try {
@@ -508,13 +509,29 @@ export default function AttendancePage() {
   };
 
   /* ── Move between columns ── */
+  const toggleMoveMenu = (menuKey: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (moveMenuOpen === menuKey) {
+      setMoveMenuOpen(null);
+      setMoveMenuPos(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMoveMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setMoveMenuOpen(menuKey);
+  };
+
+  const closeMoveMenu = () => {
+    setMoveMenuOpen(null);
+    setMoveMenuPos(null);
+  };
+
   const handleMoveWithTime = (
     target: 'checkedIn' | 'checkedOut',
     studentId: number,
     studentName: string,
     attendanceId?: number,
   ) => {
-    setMoveMenuOpen(null);
+    closeMoveMenu();
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
@@ -745,12 +762,12 @@ export default function AttendancePage() {
                           <div className={styles.moveWrap}>
                             <button
                               className={styles.moveTrigger}
-                              onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
+                              onClick={(e) => toggleMoveMenu(menuKey, e)}
                             >
                               Move <ChevronDown size={12} />
                             </button>
-                            {moveMenuOpen === menuKey && (
-                              <div className={styles.moveMenu}>
+                            {moveMenuOpen === menuKey && moveMenuPos && (
+                              <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
                                   Checked In
                                 </button>
@@ -815,16 +832,16 @@ export default function AttendancePage() {
                           <div className={styles.moveWrap}>
                             <button
                               className={styles.moveTrigger}
-                              onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
+                              onClick={(e) => toggleMoveMenu(menuKey, e)}
                             >
                               Move <ChevronDown size={12} />
                             </button>
-                            {moveMenuOpen === menuKey && (
-                              <div className={styles.moveMenu}>
+                            {moveMenuOpen === menuKey && moveMenuPos && (
+                              <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveToExpected(att.student_id, att.id)}>
                                   Expected
                                 </button>
-                                <button className={styles.moveMenuItem} onClick={() => { setMoveMenuOpen(null); handleCheckOut(att.student_id); }}>
+                                <button className={styles.moveMenuItem} onClick={() => { closeMoveMenu(); handleCheckOut(att.student_id); }}>
                                   Checked Out
                                 </button>
                               </div>
@@ -872,12 +889,12 @@ export default function AttendancePage() {
                           <div className={styles.moveWrap}>
                             <button
                               className={styles.moveTrigger}
-                              onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
+                              onClick={(e) => toggleMoveMenu(menuKey, e)}
                             >
                               Move <ChevronDown size={12} />
                             </button>
-                            {moveMenuOpen === menuKey && (
-                              <div className={styles.moveMenu}>
+                            {moveMenuOpen === menuKey && moveMenuPos && (
+                              <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveToCheckedIn(att.student_id, att.id)}>
                                   Checked In
                                 </button>
@@ -973,12 +990,12 @@ export default function AttendancePage() {
                         <div className={styles.moveWrap}>
                           <button
                             className={styles.moveTrigger}
-                            onClick={() => setMoveMenuOpen(moveMenuOpen === menuKey ? null : menuKey)}
+                            onClick={(e) => toggleMoveMenu(menuKey, e)}
                           >
                             Move <ChevronDown size={12} />
                           </button>
-                          {moveMenuOpen === menuKey && (
-                            <div className={styles.moveMenu}>
+                          {moveMenuOpen === menuKey && moveMenuPos && (
+                            <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
                               <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
                                 Checked In
                               </button>
@@ -1104,7 +1121,7 @@ export default function AttendancePage() {
 
       {/* Close move menu on outside click */}
       {moveMenuOpen && (
-        <div className={styles.moveBackdrop} onClick={() => setMoveMenuOpen(null)} />
+        <div className={styles.moveBackdrop} onClick={closeMoveMenu} />
       )}
 
       {/* Close search dropdown on outside click */}
