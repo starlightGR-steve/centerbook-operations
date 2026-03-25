@@ -595,6 +595,9 @@ export interface CenterSettings {
   sms_pickup_alert_minutes?: number;
   no_show_threshold_minutes?: number;
   default_session_minutes?: number;
+  operating_hours?: Record<string, { open: string; close: string }>;
+  session_duration_default?: number;
+  _source?: string;
 }
 
 export interface TimeSlot {

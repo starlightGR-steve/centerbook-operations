@@ -4,7 +4,7 @@
    - Basic Auth via env vars
    - Rate-limited batch queue for bulk operations
    - Response envelope unwrapping
-   - Library endpoints fall back to mock data (no API yet)
+   - Library endpoints use live API
    ═══════════════════════════════════════════ */
 
 import type {
@@ -44,6 +44,7 @@ import type {
   Family,
   PipelineSummary,
   CreateFamilyRequest,
+  CenterSettings,
 } from './types';
 
 // ── Configuration ──────────────────────────
@@ -538,6 +539,11 @@ export const api = {
       }),
     delete: (id: number) =>
       directFetch<void>(`/absences/${id}`, { method: 'DELETE' }),
+  },
+
+  // ── Center Settings ──
+  center: {
+    settings: () => directFetch<CenterSettings>('/center/settings'),
   },
 
   // ── Batch utility for bulk operations ──
