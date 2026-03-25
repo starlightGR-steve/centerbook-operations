@@ -10,8 +10,19 @@ import SubjectBadges from '@/components/SubjectBadges';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const DAY_SHORT: Record<string, string> = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri' };
-// Standard center hours + extended Zoom morning slots
-const TIME_SLOTS = [800, 830, 900, 930, 1000, 1030, 1100, 1130, 1200, 1230, 1300, 1330, 1400, 1430, 1500, 1530, 1600, 1630, 1700, 1730];
+// Standard center hours + extended Virtual morning slots (15-min increments)
+const TIME_SLOTS = [
+  800, 815, 830, 845,
+  900, 915, 930, 945,
+  1000, 1015, 1030, 1045,
+  1100, 1115, 1130, 1145,
+  1200, 1215, 1230, 1245,
+  1300, 1315, 1330, 1345,
+  1400, 1415, 1430, 1445,
+  1500, 1515, 1530, 1545,
+  1600, 1615, 1630, 1645,
+  1700, 1715, 1730, 1745,
+];
 
 function cellColor(count: number): string {
   if (count === 0) return '#ffffff';
@@ -238,7 +249,7 @@ export default function WeeklyPlanGrid() {
                               )}
                               {s.schedule_detail?.[day]?.is_zoom && !absence && (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 9, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
-                                  <Video size={9} /> Zoom
+                                  <Video size={9} /> Virtual
                                 </span>
                               )}
                             </span>
@@ -387,7 +398,7 @@ export default function WeeklyPlanGrid() {
                                   )}
                                   {s.schedule_detail?.[day]?.is_zoom && !absence && (
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 9, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
-                                      <Video size={9} /> Zoom
+                                      <Video size={9} /> Virtual
                                     </span>
                                   )}
                                 </span>

@@ -16,7 +16,6 @@ import {
   UserCircle,
   FlaskConical,
   Settings,
-  CalendarClock,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppRole } from '@/lib/auth';
@@ -33,12 +32,11 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/attendance', icon: ClipboardList, label: 'Attendance' },
+  { href: '/rows', icon: Users, label: 'Live Class' },
+  { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
   { href: '/students', icon: GraduationCap, label: 'Students' },
   { href: '/contacts', icon: Users, label: 'Contacts' },
   { href: '/onboarding', icon: UserPlus, label: 'Onboarding', roles: ['superuser', 'admin'] },
-  { href: '/rows', icon: Users, label: 'Live Class' },
-  { href: '/logistics', icon: CalendarDays, label: 'Scheduler' },
-  { href: '/staff-schedule', icon: CalendarClock, label: 'Staff Schedule', roles: ['superuser', 'admin'] },
   { href: '/staff', icon: Briefcase, label: 'Staff', roles: ['superuser', 'admin'] },
   { href: '/library', icon: BookOpen, label: 'Library' },
   { href: '/progress', icon: BarChart2, label: 'Progress', roles: ['superuser', 'admin'] },

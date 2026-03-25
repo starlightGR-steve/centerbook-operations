@@ -154,6 +154,45 @@
   margin: 2px 0 0;
 }
 
+.staffControls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.staffSearch {
+  flex: 1;
+  min-width: 160px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}
+
+.staffSearch:focus {
+  border-color: var(--secondary);
+}
+
+.staffFilter {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+}
+
+.staffFilter:focus {
+  border-color: var(--secondary);
+}
+
 .rosterTable {
   width: 100%;
   border-collapse: collapse;

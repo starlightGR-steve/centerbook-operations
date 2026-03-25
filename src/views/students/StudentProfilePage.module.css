@@ -119,6 +119,45 @@
   margin: clamp(0.75rem, 2vw, 1.25rem) 0;
 }
 
+/* ── Schedule Review Banner ── */
+.reviewBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  color: #92400E;
+}
+
+.reviewBannerIcon {
+  flex-shrink: 0;
+  color: #F59E0B;
+}
+
+.reviewBannerBtn {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid #F59E0B;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-family: var(--font-primary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #92400E;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.reviewBannerBtn:hover {
+  background: #FDE68A;
+}
+
 /* ── Details Grid ── */
 .detailsGrid {
   display: grid;

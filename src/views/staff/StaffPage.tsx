@@ -431,10 +431,40 @@ interface MgmtProps {
   clockedInIds: Set<number>;
 }
 
+const ROLE_FILTER_OPTIONS = [
+  { value: '', label: 'All Roles' },
+  { value: 'owner', label: 'Owner' },
+  { value: 'instruction_manager', label: 'Instruction Manager' },
+  { value: 'teacher', label: 'Teacher' },
+  { value: 'grader', label: 'Grader' },
+];
+
+type StaffSortOption = 'name_asc' | 'name_desc' | 'role';
+
 function StaffManagement({ staff, clockedInIds }: MgmtProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<Staff | null>(null);
   const [resetTarget, setResetTarget] = useState<Staff | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [sortBy, setSortBy] = useState<StaffSortOption>('name_asc');
+
+  const filteredStaff = useMemo(() => {
+    let result = [...staff];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((s) => getStaffName(s).toLowerCase().includes(q));
+    }
+    if (roleFilter) {
+      result = result.filter((s) => s.role === roleFilter);
+    }
+    result.sort((a, b) => {
+      if (sortBy === 'name_asc') return getStaffName(a).localeCompare(getStaffName(b));
+      if (sortBy === 'name_desc') return getStaffName(b).localeCompare(getStaffName(a));
+      return (a.role || '').localeCompare(b.role || '');
+    });
+    return result;
+  }, [staff, searchQuery, roleFilter, sortBy]);
 
   const refreshStaff = () => {
     mutate('staff');
@@ -455,6 +485,34 @@ function StaffManagement({ staff, clockedInIds }: MgmtProps) {
         </Button>
       </div>
 
+      <div className={styles.staffControls}>
+        <input
+          className={styles.staffSearch}
+          type="text"
+          placeholder="Search by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <select
+          className={styles.staffFilter}
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+        >
+          {ROLE_FILTER_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <select
+          className={styles.staffFilter}
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as StaffSortOption)}
+        >
+          <option value="name_asc">Name A–Z</option>
+          <option value="name_desc">Name Z–A</option>
+          <option value="role">Role</option>
+        </select>
+      </div>
+
       <table className={styles.rosterTable}>
         <thead>
           <tr>
@@ -466,7 +524,7 @@ function StaffManagement({ staff, clockedInIds }: MgmtProps) {
           </tr>
         </thead>
         <tbody>
-          {staff.map((s) => (
+          {filteredStaff.map((s) => (
             <tr key={s.id}>
               <td className={styles.rosterName}>{getStaffName(s)}</td>
               <td>{s.email || '—'}</td>
@@ -484,6 +542,13 @@ function StaffManagement({ staff, clockedInIds }: MgmtProps) {
               </td>
             </tr>
           ))}
+          {filteredStaff.length === 0 && (
+            <tr>
+              <td colSpan={5} style={{ textAlign: 'center', padding: '16px', fontFamily: 'var(--font-primary)', fontSize: 13, color: 'var(--neutral)' }}>
+                No staff members match your search.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 

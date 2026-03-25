@@ -188,18 +188,18 @@ export default function SlotDetailModal({
                 </div>
                 <div className={styles.studentActions}>
                   {isAdmin && (
-                    <label className={styles.zoomToggle} title="Zoom session">
+                    <label className={styles.zoomToggle} title="Virtual session">
                       <input
                         type="checkbox"
                         checked={!!student.schedule_detail?.[cell.day]?.is_zoom}
                         onChange={() => handleToggleZoom(student)}
                       />
                       <Video size={12} />
-                      <span className={styles.zoomLabel}>Zoom</span>
+                      <span className={styles.zoomLabel}>Virtual</span>
                     </label>
                   )}
                   {!isAdmin && student.schedule_detail?.[cell.day]?.is_zoom && (
-                    <span className={styles.zoomBadge}><Video size={10} /> Zoom</span>
+                    <span className={styles.zoomBadge}><Video size={10} /> Virtual</span>
                   )}
                   {isAdmin && (
                     <button

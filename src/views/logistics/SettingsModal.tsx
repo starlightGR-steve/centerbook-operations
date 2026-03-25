@@ -51,9 +51,9 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
         if (daySlots.length > 0) {
           const start = Math.min(...daySlots);
           const maxKey = Math.max(...daySlots);
-          // End is 30 min after the last slot
-          const mEnd = (maxKey % 100) + 30;
-          const end = mEnd >= 60 ? (Math.floor(maxKey / 100) + 1) * 100 + (mEnd - 60) : maxKey + 30;
+          // End is 15 min after the last slot
+          const mEnd = (maxKey % 100) + 15;
+          const end = mEnd >= 60 ? (Math.floor(maxKey / 100) + 1) * 100 + (mEnd - 60) : maxKey + 15;
           hours[day] = { start, end };
         }
       }

@@ -105,7 +105,7 @@ export const MOCK_STUDENTS: Student[] = [
     kc_username: null, kc_password: null,
     date_of_birth: '2020-11-03', grade_level: 'PK1', school: 'Knapp Forest Elementary',
     medical_notes: null, enrollment_status: 'Active',
-    program_type: 'Paper', subjects: 'Math',
+    program_type: 'Paper', subjects: 'Math, Reading',
     enroll_date: '2025-02-01', classroom_position: 'Early Learners',
     class_schedule_days: 'Monday, Thursday', class_time_sort_key: 1500,
     schedule_detail: { Thursday: { start: '3:00 PM', sort_key: 1500, duration: 30 }, Monday: { start: '3:00 PM', sort_key: 1500, duration: 30 } },
@@ -114,6 +114,8 @@ export const MOCK_STUDENTS: Student[] = [
     birth_month: 11, enroll_month: 2, starting_grade_level: 'PK1',
     primary_contact_id: 2, billing_contact_id: 2,
     created_at: '2025-02-01T00:00:00Z', updated_at: now,
+    schedule_review_needed: true,
+    schedule_review_reason: 'Subjects changed from Math to Math, Reading',
   },
   {
     id: 3, system_id: 'DEMO-003', clickup_task_id: null,

@@ -10,6 +10,7 @@ import WeeklyPlanGrid from './WeeklyPlanGrid';
 import SlotDetailModal from './SlotDetailModal';
 import SettingsModal from './SettingsModal';
 import RescheduleFlow from './RescheduleFlow';
+import StaffSchedulePage from '@/views/staff-schedule/StaffSchedulePage';
 import { useCapacityGrid } from '@/hooks/useCapacityGrid';
 import { useCenterSettings } from '@/hooks/useCenterSettings';
 import { useScheduleOverrides } from '@/hooks/useScheduleOverrides';
@@ -19,6 +20,7 @@ import LogisticsSkeleton from './LogisticsSkeleton';
 import styles from './LogisticsPage.module.css';
 
 export default function LogisticsPage() {
+  const [section, setSection] = useState<'students' | 'staff'>('students');
   const [viewMode, setViewMode] = useState<'live' | 'weekly'>('live');
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedCell, setSelectedCell] = useState<CapacityCell | null>(null);
@@ -64,28 +66,46 @@ export default function LogisticsPage() {
           <div className={styles.controlsRow}>
             <div className={styles.segmented}>
               <button
-                className={`${styles.segBtn} ${viewMode === 'live' ? styles.segActive : ''}`}
-                onClick={() => setViewMode('live')}
+                className={`${styles.segBtn} ${section === 'students' ? styles.segActive : ''}`}
+                onClick={() => setSection('students')}
               >
-                Live
+                Students
               </button>
               <button
-                className={`${styles.segBtn} ${viewMode === 'weekly' ? styles.segActive : ''}`}
-                onClick={() => setViewMode('weekly')}
+                className={`${styles.segBtn} ${section === 'staff' ? styles.segActive : ''}`}
+                onClick={() => setSection('staff')}
               >
-                Weekly Plan
+                Staff
               </button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSettings(true)}
-            >
-              <Settings size={16} />
-              Settings
-            </Button>
+            {section === 'students' && (
+              <>
+                <div className={styles.segmented}>
+                  <button
+                    className={`${styles.segBtn} ${viewMode === 'live' ? styles.segActive : ''}`}
+                    onClick={() => setViewMode('live')}
+                  >
+                    Live
+                  </button>
+                  <button
+                    className={`${styles.segBtn} ${viewMode === 'weekly' ? styles.segActive : ''}`}
+                    onClick={() => setViewMode('weekly')}
+                  >
+                    Weekly Plan
+                  </button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSettings(true)}
+                >
+                  <Settings size={16} />
+                  Settings
+                </Button>
+              </>
+            )}
           </div>
-          {viewMode === 'live' && (
+          {section === 'students' && viewMode === 'live' && (
             <WeekNavigator
               weekLabel={gridData?.weekLabel || ''}
               onPrev={() => setWeekOffset((o) => o - 1)}
@@ -97,7 +117,9 @@ export default function LogisticsPage() {
       </div>
 
       <div className={styles.content}>
-        {viewMode === 'weekly' ? (
+        {section === 'staff' ? (
+          <StaffSchedulePage />
+        ) : viewMode === 'weekly' ? (
           <WeeklyPlanGrid />
         ) : isLoading ? (
           <LogisticsSkeleton />

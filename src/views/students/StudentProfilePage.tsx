@@ -306,8 +306,17 @@ export default function StudentProfilePage({ studentId }: Props) {
     setEditSaving(true);
     setEditError(null);
     try {
+      const payload = { ...changedFields } as Record<string, unknown>;
+      if ('subjects' in changedFields) {
+        const oldSubjects = student.subjects ?? '';
+        const newSubjects = (changedFields.subjects as string | null) ?? '';
+        if (oldSubjects !== newSubjects) {
+          payload.schedule_review_needed = true;
+          payload.schedule_review_reason = `Subjects changed from ${oldSubjects || 'none'} to ${newSubjects || 'none'}`;
+        }
+      }
       if (!isDemoModeActive()) {
-        await api.students.update(studentId, changedFields as Partial<typeof student>);
+        await api.students.update(studentId, payload as Partial<typeof student>);
       }
       await mutateStudent();
       setEditFields({});
@@ -316,6 +325,17 @@ export default function StudentProfilePage({ studentId }: Props) {
       setEditError('Failed to save changes. Please try again.');
     } finally {
       setEditSaving(false);
+    }
+  };
+
+  const handleMarkReviewed = async () => {
+    try {
+      if (!isDemoModeActive()) {
+        await api.students.update(studentId, { schedule_review_needed: false, schedule_review_reason: null } as Partial<typeof student>);
+      }
+      await mutateStudent();
+    } catch {
+      // silently ignore — user can retry
     }
   };
 
@@ -689,6 +709,15 @@ export default function StudentProfilePage({ studentId }: Props) {
 
           {/* ── Schedule (existing section — do not modify) ── */}
           <h4 className={styles.groupHeading}>Schedule</h4>
+          {student.schedule_review_needed && (
+            <div className={styles.reviewBanner}>
+              <AlertTriangle size={15} className={styles.reviewBannerIcon} />
+              <span>{student.schedule_review_reason || 'Schedule review needed'}</span>
+              <button className={styles.reviewBannerBtn} onClick={handleMarkReviewed}>
+                Mark Reviewed
+              </button>
+            </div>
+          )}
           {isEditing ? (
             <div className={`${styles.detailItem} ${isChanged('class_schedule_days') || isChanged('schedule_detail') ? styles.fieldChanged : ''}`}>
               <div className={styles.scheduleGrid}>

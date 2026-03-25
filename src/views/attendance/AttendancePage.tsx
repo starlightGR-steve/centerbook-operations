@@ -613,20 +613,30 @@ export default function AttendancePage() {
                   <p className={styles.emptyCol}>All students accounted for.</p>
                 ) : (
                   filteredExpected.map((s) => (
-                    <button
-                      key={s.id}
-                      className={styles.cardClickable}
-                      onClick={() => setCheckInPopupStudent(s)}
-                      aria-label={`Check in ${s.first_name} ${s.last_name}`}
-                    >
-                      <div className={styles.cardTop}>
-                        <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                        <Plus size={14} className={styles.checkInIcon} />
-                      </div>
-                      <p className={styles.cardTime}>
-                        Scheduled {formatTimeKey(s.class_time_sort_key)}
-                      </p>
-                    </button>
+                    <div key={s.id} className={styles.attendanceCard}>
+                      <button
+                        className={styles.cardClickableInner}
+                        onClick={() => setCheckInPopupStudent(s)}
+                        aria-label={`Check in ${s.first_name} ${s.last_name}`}
+                      >
+                        <div className={styles.cardTop}>
+                          <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
+                          <Plus size={14} className={styles.checkInIcon} />
+                        </div>
+                        <p className={styles.cardTime}>
+                          Scheduled {formatTimeKey(s.class_time_sort_key)}
+                        </p>
+                      </button>
+                      <button
+                        className={styles.moveBtn}
+                        onClick={async () => {
+                          const duration = getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
+                          await checkInStudent({ student_id: s.id, source: 'kiosk', checked_in_by: 'staff', session_duration_minutes: duration });
+                        }}
+                      >
+                        Move to Checked In
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -675,6 +685,15 @@ export default function AttendancePage() {
                             Check Out
                           </button>
                         </div>
+                        <button
+                          className={styles.moveBtn}
+                          onClick={async () => {
+                            await deleteAttendance(att.id);
+                            try { await removeStudentFromRow(att.student_id); } catch { /* noop */ }
+                          }}
+                        >
+                          Move to Expected
+                        </button>
                       </div>
                     );
                   })
@@ -783,6 +802,15 @@ export default function AttendancePage() {
                           </button>
                         </div>
                       )}
+                      <button
+                        className={styles.moveBtn}
+                        onClick={async () => {
+                          const duration = getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
+                          await checkInStudent({ student_id: s.id, source: 'kiosk', checked_in_by: 'staff', session_duration_minutes: duration });
+                        }}
+                      >
+                        Move to Checked In
+                      </button>
                     </div>
                   );
                 })}

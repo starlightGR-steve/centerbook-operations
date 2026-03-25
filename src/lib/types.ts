@@ -66,6 +66,8 @@ export interface Student {
   pertinent_note?: string | null;
   tasks?: Array<{ id: string; label: string; completed: boolean }>;
   flags?: string[]; // "new_concept" | "needs_help"
+  schedule_review_needed?: boolean | null;
+  schedule_review_reason?: string | null;
 }
 
 // Parsed subjects as array for UI consumption
@@ -750,11 +752,11 @@ export function formatTimeSortKey(key: number): string {
   return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
-/** Bucket a class_time_sort_key into the nearest 30-min slot (e.g., 1515 → 1500) */
+/** Bucket a class_time_sort_key into the nearest 15-min slot (e.g., 1527 → 1515) */
 export function bucketTimeKey(key: number): number {
   const h = Math.floor(key / 100);
   const m = key % 100;
-  const bucketed = Math.floor(m / 30) * 30;
+  const bucketed = Math.floor(m / 15) * 15;
   return h * 100 + bucketed;
 }
 
@@ -766,10 +768,10 @@ export function generateTimeSlots(
   for (const { start, end } of Object.values(dayHours)) {
     for (let key = start; key < end; ) {
       allKeys.add(key);
-      // Increment by 30 minutes in HHMM format
+      // Increment by 15 minutes in HHMM format
       const h = Math.floor(key / 100);
       const m = key % 100;
-      const next = m + 30 >= 60 ? (h + 1) * 100 + (m + 30 - 60) : key + 30;
+      const next = m + 15 >= 60 ? (h + 1) * 100 + (m + 15 - 60) : key + 15;
       key = next;
     }
   }

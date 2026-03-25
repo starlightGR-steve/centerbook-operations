@@ -17,7 +17,7 @@ interface UndoToastProps {
 
 export type { UndoToastItem };
 
-export default function UndoToast({ item, duration = 10000, onDismiss }: UndoToastProps) {
+export default function UndoToast({ item, duration = 3000, onDismiss }: UndoToastProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const dismiss = useCallback(() => {
