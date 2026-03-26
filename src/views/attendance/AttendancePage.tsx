@@ -21,7 +21,7 @@ import {
 } from '@/hooks/useAttendance';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
-import { assignStudentToRow, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
+import { useClassroomAssignments, assignStudentToRow, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
 import { useAbsences } from '@/hooks/useAbsences';
 import {
   getTimeRemaining, getSessionDuration, formatTimeKey, formatTime, parseSubjects,
@@ -75,6 +75,24 @@ function minutesLate(student: Student): number {
   return Math.max(0, nowMinutes - scheduledMinutes);
 }
 
+function parseExistingFlags(flags: unknown): { flags: string[]; checklist: string[]; teacherNote: string } {
+  if (!flags || typeof flags !== 'object') return { flags: [], checklist: [], teacherNote: '' };
+  const f = flags as Record<string, unknown>;
+  const flagKeys: string[] = [];
+  const checklist: string[] = [];
+  for (const [key, val] of Object.entries(f)) {
+    if (key === 'tasks' && typeof val === 'object' && val !== null) {
+      for (const [tk, tv] of Object.entries(val as Record<string, unknown>)) {
+        if (tk === 'custom' && typeof tv === 'string') checklist.push(`__custom__:${tv}`);
+        else if (tv === true) checklist.push(tk);
+      }
+    } else if (key !== 'teacher_note' && val === true) {
+      flagKeys.push(key);
+    }
+  }
+  return { flags: flagKeys, checklist, teacherNote: typeof f.teacher_note === 'string' ? f.teacher_note : '' };
+}
+
 /* ── Mobile tab names ── */
 type MobileTab = 'expected' | 'checkedIn' | 'checkedOut' | 'noShow';
 
@@ -94,6 +112,9 @@ export default function AttendancePage() {
 
   // Check-in popup
   const [checkInPopupStudent, setCheckInPopupStudent] = useState<Student | null>(null);
+  const [checkInEditPrep, setCheckInEditPrep] = useState<{
+    flags: string[]; checklist: string[]; teacherNote: string;
+  } | null>(null);
 
   // Search dropdown (all active students)
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -137,6 +158,7 @@ export default function AttendancePage() {
   const { data: activeStaff } = useActiveStaff();
   const { data: timeEntries } = useTimeclock();
   const { data: todayAbsences, mutate: mutateAbsences } = useAbsences();
+  const { data: assignments } = useClassroomAssignments();
 
   const today = getToday();
   const todayDay = today;
@@ -349,8 +371,36 @@ export default function AttendancePage() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  /* ── Edit class prep for already-checked-in student ── */
+  const handleEditPrep = (student: Student) => {
+    const assignment = assignments?.find((a) => a.student_id === student.id);
+    setCheckInEditPrep(parseExistingFlags(assignment?.flags));
+    setCheckInPopupStudent(student);
+  };
+
   /* ── Check-in confirm from popup ── */
   const handleCheckInConfirm = async (options: CheckInOptions) => {
+    // Edit mode: only update flags, don't create a new check-in record
+    if (checkInEditPrep) {
+      const flags: Record<string, unknown> = {};
+      options.selectedFlags.forEach((key) => { flags[key] = true; });
+      const tasks: Record<string, unknown> = {};
+      options.selectedChecklist.forEach((key) => {
+        if (key.startsWith('__custom__:')) tasks.custom = key.slice(11);
+        else tasks[key] = true;
+      });
+      if (Object.keys(tasks).length > 0) flags.tasks = tasks;
+      if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
+      try {
+        await updateStudentFlags(options.studentId, flags);
+      } catch (err) {
+        console.error('handleEditPrep: failed to update flags', err);
+      }
+      setCheckInPopupStudent(null);
+      setCheckInEditPrep(null);
+      return;
+    }
+
     console.log('handleCheckInConfirm called', options.studentId);
     const studentName = checkInPopupStudent
       ? `${checkInPopupStudent.first_name} ${checkInPopupStudent.last_name}`
@@ -820,20 +870,25 @@ export default function AttendancePage() {
                     const remClass = remainingClass(remaining);
                     const menuKey = `checkedin-${att.id}`;
                     return (
-                      <div key={att.id} className={`${styles.attendanceCard} ${remClass}`}>
+                      <div
+                        key={att.id}
+                        className={`${styles.attendanceCard} ${remClass}`}
+                        onClick={() => handleEditPrep(s)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <div className={styles.cardTop}>
                           <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
                           <div className={styles.cardActions}>
                             <button
                               className={styles.editBtn}
-                              onClick={() => setEditAttendance({ attendance: att, studentName: `${s.first_name} ${s.last_name}` })}
+                              onClick={(e) => { e.stopPropagation(); setEditAttendance({ attendance: att, studentName: `${s.first_name} ${s.last_name}` }); }}
                               aria-label={`Edit attendance for ${s.first_name} ${s.last_name}`}
                             >
                               <Pencil size={12} />
                             </button>
                             <button
                               className={styles.checkOutArrowBtn}
-                              onClick={() => handleCheckOut(att.student_id)}
+                              onClick={(e) => { e.stopPropagation(); handleCheckOut(att.student_id); }}
                               aria-label={`Check out ${s.first_name} ${s.last_name}`}
                             >
                               <span className={styles.checkOutArrowInner}>
@@ -852,7 +907,7 @@ export default function AttendancePage() {
                           <div className={styles.moveWrap}>
                             <button
                               className={styles.moveTrigger}
-                              onClick={(e) => toggleMoveMenu(menuKey, e)}
+                              onClick={(e) => { e.stopPropagation(); toggleMoveMenu(menuKey, e); }}
                             >
                               Move <ChevronDown size={12} />
                             </button>
@@ -1071,8 +1126,9 @@ export default function AttendancePage() {
       {checkInPopupStudent && (
         <CheckInPopup
           student={checkInPopupStudent}
-          onClose={() => setCheckInPopupStudent(null)}
+          onClose={() => { setCheckInPopupStudent(null); setCheckInEditPrep(null); }}
           onConfirm={handleCheckInConfirm}
+          existingPrep={checkInEditPrep ?? undefined}
         />
       )}
 

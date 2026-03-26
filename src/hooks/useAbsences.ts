@@ -37,3 +37,20 @@ export async function createAbsence(data: CreateAbsenceRequest): Promise<Absence
   mutate(dateKey(data.absence_date));
   return result;
 }
+
+const studentKey = (studentId: number) => `absences-student-${studentId}`;
+
+/** Fetch all absences for a specific student */
+export function useStudentAbsences(studentId: number) {
+  return useSWR<Absence[]>(
+    studentKey(studentId),
+    () => api.absences.forStudent(studentId),
+    { dedupingInterval: 5000 }
+  );
+}
+
+/** Delete an absence record and revalidate the student's absence list */
+export async function deleteAbsence(id: number, studentId: number): Promise<void> {
+  await api.absences.delete(id);
+  mutate(studentKey(studentId));
+}

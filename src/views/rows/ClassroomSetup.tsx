@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Pencil, Trash2, Plus, X } from 'lucide-react';
+import { mutate } from 'swr';
 import { api } from '@/lib/api';
 import styles from './ClassroomSetup.module.css';
 
@@ -134,6 +135,7 @@ export default function ClassroomSetup({ onBack }: ClassroomSetupProps) {
           return { ...r, order: sectionRows.indexOf(r) + 1 };
         }),
       });
+      mutate('classroom-config');
       setSaveMessage({ type: 'success', text: 'Saved successfully.' });
       setTimeout(() => setSaveMessage(null), 3000);
     } catch {

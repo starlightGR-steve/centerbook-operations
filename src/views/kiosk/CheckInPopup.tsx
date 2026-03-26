@@ -27,13 +27,19 @@ interface CheckInPopupProps {
   student: Student;
   onClose: () => void;
   onConfirm: (options: CheckInOptions) => void;
+  existingPrep?: {
+    flags: string[];
+    checklist: string[];
+    teacherNote: string;
+  };
 }
 
 const PRESET_TIMES = [30, 45, 60, 90];
 
 // Checklist items and flag options are now loaded from center config via hooks
 
-export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPopupProps) {
+export default function CheckInPopup({ student, onClose, onConfirm, existingPrep }: CheckInPopupProps) {
+  const isEditMode = !!existingPrep;
   const router = useRouter();
   const { data: session } = useSession();
   const { flags: flagConfigItems } = useFlagConfig();
@@ -71,10 +77,10 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
   const defaultMinutes = todayDetail?.duration ?? (subjects.length > 1 ? 60 : 30);
   const [sessionMinutes, setSessionMinutes] = useState(defaultMinutes);
   const [pickupContactId, setPickupContactId] = useState<number | null>(null);
-  const [selectedChecklist, setSelectedChecklist] = useState<string[]>([]);
-  const [selectedFlags, setSelectedFlags] = useState<string[]>([]);
+  const [selectedChecklist, setSelectedChecklist] = useState<string[]>(existingPrep?.checklist ?? []);
+  const [selectedFlags, setSelectedFlags] = useState<string[]>(existingPrep?.flags ?? []);
   const [customTask, setCustomTask] = useState('');
-  const [teacherNote, setTeacherNote] = useState('');
+  const [teacherNote, setTeacherNote] = useState(existingPrep?.teacherNote ?? '');
   const [noteSending, setNoteSending] = useState(false);
   const [noteSent, setNoteSent] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -410,17 +416,19 @@ export default function CheckInPopup({ student, onClose, onConfirm }: CheckInPop
           >
             <ExternalLink size={14} /> Student Record
           </button>
-          <button
-            className={styles.outlineBtn}
-            onClick={() => { handleConfirm(); router.push(`/students/${student.id}`); }}
-            disabled={confirming}
-          >
-            <Check size={14} /> Check In &amp; Open Record
-          </button>
+          {!isEditMode && (
+            <button
+              className={styles.outlineBtn}
+              onClick={() => { handleConfirm(); router.push(`/students/${student.id}`); }}
+              disabled={confirming}
+            >
+              <Check size={14} /> Check In &amp; Open Record
+            </button>
+          )}
           <button className={styles.confirmBtn} onClick={handleConfirm} disabled={confirming}>
-            {confirming ? 'Checking in...' : (
+            {confirming ? (isEditMode ? 'Saving...' : 'Checking in...') : (
               <>
-                <Check size={16} /> Confirm Check-In
+                <Check size={16} /> {isEditMode ? 'Update Class Prep' : 'Confirm Check-In'}
               </>
             )}
           </button>

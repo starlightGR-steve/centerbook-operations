@@ -1021,3 +1021,182 @@
     align-items: flex-start;
   }
 }
+
+/* ── Absence Planning ── */
+.absencePlanningHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: clamp(0.5rem, 1.5vw, 0.75rem);
+}
+
+.planAbsenceBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--secondary);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--secondary);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.planAbsenceBtn:hover {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.absenceList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.absenceCard {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.absenceCardPast {
+  opacity: 0.6;
+}
+
+.absenceCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.absenceCardLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.absenceDate {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.reasonBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.reasonSick {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.reasonVacation {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.reasonFamily {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.reasonOther {
+  background: var(--base);
+  color: var(--neutral);
+}
+
+.absenceDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--neutral);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.absenceDeleteBtn:hover {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.absenceDetail {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--neutral);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.absenceDetailTeal {
+  color: var(--secondary);
+  font-weight: 600;
+}
+
+.absenceDetailGreen {
+  color: var(--green);
+}
+
+.absenceNotes {
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--neutral);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.absenceEmpty {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  color: var(--neutral);
+  font-style: italic;
+  margin: 0;
+  padding: clamp(0.5rem, 1.5vw, 0.75rem) 0;
+}
+
+.pastAbsenceToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  min-height: 44px;
+}
+
+.pastAbsenceToggle:hover {
+  text-decoration: underline;
+}

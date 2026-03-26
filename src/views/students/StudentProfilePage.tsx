@@ -22,6 +22,7 @@ import {
   Crown,
   CreditCard,
   BookOpen,
+  X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import SectionHeader from '@/components/ui/SectionHeader';
@@ -34,15 +35,33 @@ import PosBadge from '@/components/PosBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import { useStudent, useStudentContacts, useAllStudents } from '@/hooks/useStudents';
 import { useClassroomNotes } from '@/hooks/useClassroomNotes';
+import { useStudentAbsences, deleteAbsence } from '@/hooks/useAbsences';
+import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
 import useSWR from 'swr';
 import LinkPickerModal from '@/components/LinkPickerModal';
 import { useStudentTasks, completeTask, createTask } from '@/hooks/useStudentTasks';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
-import type { CbTaskType, Contact } from '@/lib/types';
+import type { CbTaskType, Contact, Absence } from '@/lib/types';
 import styles from './StudentProfilePage.module.css';
 
 const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const ABSENCE_REASON_LABELS: Record<string, string> = {
+  sick: 'Sick', vacation: 'Vacation', family: 'Family', other: 'Other',
+};
+
+function formatAbsenceDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatMakeupTime(time: string | null): string {
+  if (!time) return '';
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
 
 function formatRelativeTime(dateStr: string): string {
   const now = new Date();
@@ -164,6 +183,10 @@ export default function StudentProfilePage({ studentId }: Props) {
   const { data: contacts, error: contactsError, isLoading: contactsLoading, mutate: mutateContacts } = useStudentContacts(studentId);
   const { data: staffList } = useActiveStaff();
   const { data: classroomNotes } = useClassroomNotes(studentId);
+  const { data: studentAbsences, mutate: mutateStudentAbsences } = useStudentAbsences(studentId);
+
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const isAdmin = role === 'admin' || role === 'superuser';
 
   // Password visibility
   const [showKcPw, setShowKcPw] = useState(false);
@@ -177,6 +200,10 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [taskAssignedTo, setTaskAssignedTo] = useState<number>(1);
   const [taskSaving, setTaskSaving] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
+
+  // Absence planning
+  const [showAbsenceModal, setShowAbsenceModal] = useState(false);
+  const [showPastAbsences, setShowPastAbsences] = useState(false);
 
   // Status change confirmation
   const [statusConfirm, setStatusConfirm] = useState<string | null>(null);
@@ -886,6 +913,91 @@ export default function StudentProfilePage({ studentId }: Props) {
 
           <hr className={styles.groupDivider} />
 
+          {/* ── Absence Planning ── */}
+          {(() => {
+            const today = new Date().toISOString().split('T')[0];
+            const upcoming = (studentAbsences || [])
+              .filter((a: Absence) => a.absence_date >= today)
+              .sort((a: Absence, b: Absence) => a.absence_date.localeCompare(b.absence_date));
+            const past = (studentAbsences || [])
+              .filter((a: Absence) => a.absence_date < today)
+              .sort((a: Absence, b: Absence) => b.absence_date.localeCompare(a.absence_date))
+              .slice(0, 20);
+            const reasonClass = (r: string) =>
+              r === 'sick' ? styles.reasonSick : r === 'vacation' ? styles.reasonVacation : r === 'family' ? styles.reasonFamily : styles.reasonOther;
+            const renderCard = (a: Absence, muted = false) => (
+              <div key={a.id} className={`${styles.absenceCard} ${muted ? styles.absenceCardPast : ''}`}>
+                <div className={styles.absenceCardTop}>
+                  <div className={styles.absenceCardLeft}>
+                    <span className={styles.absenceDate}>{formatAbsenceDate(a.absence_date)}</span>
+                    <span className={`${styles.reasonBadge} ${reasonClass(a.reason)}`}>
+                      {ABSENCE_REASON_LABELS[a.reason] || a.reason}
+                    </span>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      className={styles.absenceDeleteBtn}
+                      onClick={() => deleteAbsence(a.id, studentId).then(() => mutateStudentAbsences())}
+                      aria-label="Delete absence"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                {a.reason === 'vacation' && a.vacation_start && a.vacation_end && (
+                  <p className={styles.absenceDetail}>
+                    {formatAbsenceDate(a.vacation_start)} – {formatAbsenceDate(a.vacation_end)}
+                  </p>
+                )}
+                {a.makeup_scheduled && a.makeup_date && (
+                  <p className={`${styles.absenceDetail} ${styles.absenceDetailTeal}`}>
+                    Makeup: {formatAbsenceDate(a.makeup_date)}{a.makeup_time ? `, ${formatMakeupTime(a.makeup_time)}` : ''}
+                  </p>
+                )}
+                <p className={styles.absenceDetail}>
+                  {a.homework_out
+                    ? <span className={styles.absenceDetailGreen}>✓ Homework sent</span>
+                    : <span>No homework</span>}
+                </p>
+                {a.notes && <p className={styles.absenceNotes}>{a.notes}</p>}
+              </div>
+            );
+            return (
+              <>
+                <div className={styles.absencePlanningHeader}>
+                  <h4 className={styles.groupHeading} style={{ margin: 0 }}>Absence Planning</h4>
+                  {isAdmin && student && (
+                    <button className={styles.planAbsenceBtn} onClick={() => setShowAbsenceModal(true)}>
+                      <Plus size={13} /> Plan Absence
+                    </button>
+                  )}
+                </div>
+                <div className={styles.absenceList}>
+                  {upcoming.length === 0 ? (
+                    <p className={styles.absenceEmpty}>No upcoming absences planned.</p>
+                  ) : (
+                    upcoming.map((a: Absence) => renderCard(a))
+                  )}
+                </div>
+                {past.length > 0 && (
+                  <>
+                    <button className={styles.pastAbsenceToggle} onClick={() => setShowPastAbsences((v) => !v)}>
+                      {showPastAbsences ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      {showPastAbsences ? 'Hide' : `Show past absences (${past.length})`}
+                    </button>
+                    {showPastAbsences && (
+                      <div className={styles.absenceList}>
+                        {past.map((a: Absence) => renderCard(a, true))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            );
+          })()}
+
+          <hr className={styles.groupDivider} />
+
           {/* ── Student Journal ── */}
           <StudentJournal
             studentId={studentId}
@@ -1022,6 +1134,14 @@ export default function StudentProfilePage({ studentId }: Props) {
             </div>
           )}
         </div>
+
+        {showAbsenceModal && student && (
+          <ExcusedAbsenceModal
+            student={student}
+            onClose={() => setShowAbsenceModal(false)}
+            onSave={() => mutateStudentAbsences()}
+          />
+        )}
 
         {showLinkContact && (
           <LinkPickerModal
