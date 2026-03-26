@@ -356,9 +356,15 @@
   background: var(--secondary-ul);
 }
 
-/* Check-in icon on expected cards */
-.checkInIcon {
-  color: var(--accent);
+/* Check-in circle on expected cards — orange filled circle with white + */
+.checkInCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--accent);
   flex-shrink: 0;
 }
 
@@ -718,7 +724,7 @@
   color: var(--green);
 }
 
-/* Green arrow checkout button */
+/* Green arrow checkout button — transparent 44px touch target, green circle inside */
 .checkOutArrowBtn {
   display: flex;
   align-items: center;
@@ -727,15 +733,27 @@
   height: 2.75rem;
   border-radius: 50%;
   border: none;
-  background: var(--green);
-  color: var(--white);
+  background: transparent;
   cursor: pointer;
   transition: opacity 0.15s;
   flex-shrink: 0;
+  padding: 0;
 }
 
 .checkOutArrowBtn:hover {
   opacity: 0.85;
+}
+
+/* Visible green circle inside the touch target */
+.checkOutArrowInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--white);
 }
 
 /* Move dropdown wrapper */

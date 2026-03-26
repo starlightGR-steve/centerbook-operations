@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Scan, Search, X, UserCheck, Clock, Pencil, Send, CheckCircle2,
   AlertTriangle, CalendarPlus, Plus, Check, ArrowRight, ChevronDown,
@@ -602,6 +603,11 @@ export default function AttendancePage() {
               onChange={(e) => setScan(e.target.value)}
               placeholder="Scan folder barcode..."
               className={styles.scanInput}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              inputMode="none"
             />
             {scanError && <span className={styles.scanError}>{scanError}</span>}
           </div>
@@ -757,7 +763,9 @@ export default function AttendancePage() {
                         >
                           <div className={styles.cardTop}>
                             <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                            <Plus size={14} className={styles.checkInIcon} />
+                            <span className={styles.checkInCircle}>
+                              <Plus size={12} color="#fff" />
+                            </span>
                           </div>
                           <p className={styles.cardTime}>
                             Scheduled {formatTimeKey(s.class_time_sort_key)}
@@ -772,7 +780,7 @@ export default function AttendancePage() {
                             >
                               Move <ChevronDown size={12} />
                             </button>
-                            {moveMenuOpen === menuKey && moveMenuPos && (
+                            {moveMenuOpen === menuKey && moveMenuPos && createPortal(
                               <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
                                   Checked In
@@ -780,7 +788,8 @@ export default function AttendancePage() {
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`)}>
                                   Checked Out
                                 </button>
-                              </div>
+                              </div>,
+                              document.body
                             )}
                           </div>
                         </div>
@@ -824,7 +833,9 @@ export default function AttendancePage() {
                               onClick={() => handleCheckOut(att.student_id)}
                               aria-label={`Check out ${s.first_name} ${s.last_name}`}
                             >
-                              <ArrowRight size={16} />
+                              <span className={styles.checkOutArrowInner}>
+                                <ArrowRight size={12} />
+                              </span>
                             </button>
                           </div>
                         </div>
@@ -842,7 +853,7 @@ export default function AttendancePage() {
                             >
                               Move <ChevronDown size={12} />
                             </button>
-                            {moveMenuOpen === menuKey && moveMenuPos && (
+                            {moveMenuOpen === menuKey && moveMenuPos && createPortal(
                               <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveToExpected(att.student_id, att.id)}>
                                   Expected
@@ -850,7 +861,8 @@ export default function AttendancePage() {
                                 <button className={styles.moveMenuItem} onClick={() => { closeMoveMenu(); handleCheckOut(att.student_id); }}>
                                   Checked Out
                                 </button>
-                              </div>
+                              </div>,
+                              document.body
                             )}
                           </div>
                         </div>
@@ -899,12 +911,13 @@ export default function AttendancePage() {
                             >
                               Move <ChevronDown size={12} />
                             </button>
-                            {moveMenuOpen === menuKey && moveMenuPos && (
+                            {moveMenuOpen === menuKey && moveMenuPos && createPortal(
                               <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveToCheckedIn(att.student_id, att.id)}>
                                   Checked In
                                 </button>
-                              </div>
+                              </div>,
+                              document.body
                             )}
                           </div>
                         </div>
@@ -1000,7 +1013,7 @@ export default function AttendancePage() {
                           >
                             Move <ChevronDown size={12} />
                           </button>
-                          {moveMenuOpen === menuKey && moveMenuPos && (
+                          {moveMenuOpen === menuKey && moveMenuPos && createPortal(
                             <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
                               <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
                                 Checked In
@@ -1008,7 +1021,8 @@ export default function AttendancePage() {
                               <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`)}>
                                 Checked Out
                               </button>
-                            </div>
+                            </div>,
+                            document.body
                           )}
                         </div>
                       </div>
@@ -1126,8 +1140,9 @@ export default function AttendancePage() {
       <UndoToast item={undoToast} onDismiss={() => setUndoToast(null)} />
 
       {/* Close move menu on outside click */}
-      {moveMenuOpen && (
-        <div className={styles.moveBackdrop} onClick={closeMoveMenu} />
+      {moveMenuOpen && createPortal(
+        <div className={styles.moveBackdrop} onClick={closeMoveMenu} />,
+        document.body
       )}
 
       {/* Close search dropdown on outside click */}
