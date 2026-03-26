@@ -268,7 +268,7 @@ export default function StudentDetailPanel({
                     onClick={() => onToggleFlag?.(fc.key)}
                     disabled={!onToggleFlag}
                   >
-                    <span className={styles.flagCircleLg} style={{ background: fc.color }}>
+                    <span className={styles.flagCircleLg} style={{ background: '#1E335E' }}>
                       <FlagIcon icon={fc.icon} size={12} />
                     </span>
                     <span className={styles.flagToggleLabel}>{fc.label}</span>

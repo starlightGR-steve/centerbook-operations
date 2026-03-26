@@ -508,6 +508,7 @@
   height: 1.25rem;
   border-radius: 50%;
   border: none;
+  background: #1E335E;
   color: var(--white);
   cursor: pointer;
   transition: opacity 0.15s;
