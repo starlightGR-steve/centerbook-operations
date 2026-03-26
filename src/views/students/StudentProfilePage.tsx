@@ -223,6 +223,13 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
+  // Level-up triggers
+  const [levelUpMathEmail, setLevelUpMathEmail] = useState(true);
+  const [levelUpMathPortal, setLevelUpMathPortal] = useState(true);
+  const [levelUpReadingEmail, setLevelUpReadingEmail] = useState(true);
+  const [levelUpReadingPortal, setLevelUpReadingPortal] = useState(true);
+  const [levelUpMessage, setLevelUpMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // useMemo MUST be above early returns to satisfy React hooks rules
   const changedFields = useMemo(() => {
     if (!student) return {};
@@ -306,6 +313,11 @@ export default function StudentProfilePage({ studentId }: Props) {
     setEditFields({});
     setEditError(null);
     setIsEditing(false);
+    setLevelUpMathEmail(true);
+    setLevelUpMathPortal(true);
+    setLevelUpReadingEmail(true);
+    setLevelUpReadingPortal(true);
+    setLevelUpMessage(null);
   };
 
   const setField = (key: keyof EditableFields, value: unknown) => {
@@ -341,9 +353,68 @@ export default function StudentProfilePage({ studentId }: Props) {
         }
       }
       await api.students.update(studentId, payload as Partial<typeof student>);
+
+      // ── Level-up triggers ──
+      const mathLevelChanged = isChanged('current_level_math') && !!getField('current_level_math');
+      const readingLevelChanged = isChanged('current_level_reading') && !!getField('current_level_reading');
+      const lvMessages: string[] = [];
+      const lvErrors: string[] = [];
+
+      if (mathLevelChanged && (levelUpMathEmail || levelUpMathPortal)) {
+        try {
+          const res = await api.levelUp({
+            student_id: studentId,
+            subject: 'Math',
+            old_level: student.current_level_math ?? '',
+            new_level: getField('current_level_math'),
+            send_email: levelUpMathEmail,
+            show_on_portal: levelUpMathPortal,
+          });
+          if (levelUpMathEmail && res.email_sent) {
+            const contact = contacts?.find((c) => c.email === res._email_to);
+            const name = contact ? `${contact.first_name} ${contact.last_name}` : (res._email_to ?? 'parent');
+            lvMessages.push(`Math level-up email sent to ${name}`);
+          }
+        } catch {
+          lvErrors.push('Math level-up record failed (student record saved).');
+        }
+      }
+
+      if (readingLevelChanged && (levelUpReadingEmail || levelUpReadingPortal)) {
+        try {
+          const res = await api.levelUp({
+            student_id: studentId,
+            subject: 'Reading',
+            old_level: student.current_level_reading ?? '',
+            new_level: getField('current_level_reading'),
+            send_email: levelUpReadingEmail,
+            show_on_portal: levelUpReadingPortal,
+          });
+          if (levelUpReadingEmail && res.email_sent) {
+            const contact = contacts?.find((c) => c.email === res._email_to);
+            const name = contact ? `${contact.first_name} ${contact.last_name}` : (res._email_to ?? 'parent');
+            lvMessages.push(`Reading level-up email sent to ${name}`);
+          }
+        } catch {
+          lvErrors.push('Reading level-up record failed (student record saved).');
+        }
+      }
+
+      if (lvErrors.length > 0) {
+        setLevelUpMessage({ type: 'error', text: lvErrors.join(' ') });
+        setTimeout(() => setLevelUpMessage(null), 6000);
+      } else if (lvMessages.length > 0) {
+        setLevelUpMessage({ type: 'success', text: lvMessages.join('. ') });
+        setTimeout(() => setLevelUpMessage(null), 5000);
+      }
+
       await mutateStudent();
       setEditFields({});
       setIsEditing(false);
+      setLevelUpMathEmail(true);
+      setLevelUpMathPortal(true);
+      setLevelUpReadingEmail(true);
+      setLevelUpReadingPortal(true);
     } catch {
       setEditError('Failed to save changes. Please try again.');
     } finally {
@@ -489,6 +560,9 @@ export default function StudentProfilePage({ studentId }: Props) {
 
           {editError && (
             <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{editError}</p>
+          )}
+          {levelUpMessage && (
+            <p style={{ color: levelUpMessage.type === 'success' ? 'var(--green)' : 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{levelUpMessage.text}</p>
           )}
 
           {/* ── Personal Information ── */}
@@ -812,6 +886,19 @@ export default function StudentProfilePage({ studentId }: Props) {
                   <option value="">—</option>
                   {MATH_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
+                {isChanged('current_level_math') && !!getField('current_level_math') && (
+                  <div className={styles.levelUpTrigger}>
+                    <span className={styles.levelUpFrom}>changed from {student.current_level_math || '—'}</span>
+                    <label className={styles.levelUpCheckLabel}>
+                      <input type="checkbox" checked={levelUpMathEmail} onChange={(e) => setLevelUpMathEmail(e.target.checked)} />
+                      Send level-up email
+                    </label>
+                    <label className={styles.levelUpCheckLabel}>
+                      <input type="checkbox" checked={levelUpMathPortal} onChange={(e) => setLevelUpMathPortal(e.target.checked)} />
+                      Show on parent portal
+                    </label>
+                  </div>
+                )}
               </div>
             ) : (
               <DetailRow label="Current Math Level" value={student.current_level_math ?? '—'} />
@@ -824,6 +911,19 @@ export default function StudentProfilePage({ studentId }: Props) {
                   <option value="">—</option>
                   {READING_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
+                {isChanged('current_level_reading') && !!getField('current_level_reading') && (
+                  <div className={styles.levelUpTrigger}>
+                    <span className={styles.levelUpFrom}>changed from {student.current_level_reading || '—'}</span>
+                    <label className={styles.levelUpCheckLabel}>
+                      <input type="checkbox" checked={levelUpReadingEmail} onChange={(e) => setLevelUpReadingEmail(e.target.checked)} />
+                      Send level-up email
+                    </label>
+                    <label className={styles.levelUpCheckLabel}>
+                      <input type="checkbox" checked={levelUpReadingPortal} onChange={(e) => setLevelUpReadingPortal(e.target.checked)} />
+                      Show on parent portal
+                    </label>
+                  </div>
+                )}
               </div>
             ) : (
               <DetailRow label="Current Reading Level" value={student.current_level_reading ?? '—'} />

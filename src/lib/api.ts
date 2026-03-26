@@ -541,6 +541,13 @@ export const api = {
       directFetch<void>(`/absences/${id}`, { method: 'DELETE' }),
   },
 
+  // ── Level-up milestones ──
+  levelUp: (data: { student_id: number; subject: string; old_level: string; new_level: string; send_email: boolean; show_on_portal: boolean }) =>
+    directFetch<{ id: number; email_sent: boolean; portal_visible: boolean; _email_to?: string }>('/level-up', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   // ── Center Settings ──
   center: {
     settings: () => directFetch<CenterSettings>('/center/settings'),

@@ -1200,3 +1200,43 @@
 .pastAbsenceToggle:hover {
   text-decoration: underline;
 }
+
+/* ── Level-up trigger checkboxes ── */
+.levelUpTrigger {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: rgba(0, 154, 171, 0.06);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 154, 171, 0.2);
+}
+
+.levelUpFrom {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.levelUpCheckLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  min-height: 44px;
+  padding: 2px 0;
+}
+
+.levelUpCheckLabel input[type='checkbox'] {
+  accent-color: var(--secondary);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
