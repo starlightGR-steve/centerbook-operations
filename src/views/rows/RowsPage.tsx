@@ -642,7 +642,6 @@ export default function RowsPage() {
                             <button
                               key={key}
                               className={styles.flagCircleBtn}
-                              style={{ background: fc.color }}
                               onClick={() => toggleFlag(s.id, key)}
                               title={fc.label}
                             >
