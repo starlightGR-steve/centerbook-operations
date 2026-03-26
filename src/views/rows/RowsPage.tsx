@@ -540,7 +540,8 @@ export default function RowsPage() {
               const studentFlagsObj = getStudentFlags(s.id);
               const hasPertinentNote = !!s.pertinent_note;
               const flagTasks = studentFlagsObj.tasks || {};
-              const currentDuration = sessionOptimistic[s.id] ?? att?.session_duration_minutes ?? getSessionDuration(s.subjects, { scheduleDetail: s.schedule_detail });
+              const _scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+              const currentDuration = sessionOptimistic[s.id] ?? s.schedule_detail?.[_scheduleDay]?.duration ?? att?.session_duration_minutes ?? 60;
               const isSessionOpen = sessionPopoverStudent === s.id;
               const isNoteExpanded = expandedNoteStudent === s.id;
 
@@ -729,9 +730,23 @@ export default function RowsPage() {
                             >
                               -15
                             </button>
+                            <button
+                              className={styles.sessionDeltaMinor}
+                              onClick={() => att && persistAdjustment(att.id, s.id, Math.max(5, currentDuration - 5))}
+                              disabled={!att}
+                            >
+                              -5
+                            </button>
                             <span className={styles.sessionCurrent}>
                               {currentDuration}m
                             </span>
+                            <button
+                              className={styles.sessionDeltaMinor}
+                              onClick={() => att && persistAdjustment(att.id, s.id, currentDuration + 5)}
+                              disabled={!att}
+                            >
+                              +5
+                            </button>
                             <button
                               className={styles.sessionDelta}
                               onClick={() => att && persistAdjustment(att.id, s.id, currentDuration + 15)}
