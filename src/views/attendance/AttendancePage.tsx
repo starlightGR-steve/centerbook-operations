@@ -20,7 +20,7 @@ import {
 } from '@/hooks/useAttendance';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
-import { updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
+import { assignStudentToRow, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
 import { useAbsences } from '@/hooks/useAbsences';
 import {
   getTimeRemaining, getSessionDuration, formatTimeKey, formatTime, parseSubjects,
@@ -385,9 +385,15 @@ export default function AttendancePage() {
       if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
       try {
         const todayDate = new Date().toISOString().split('T')[0];
+        await assignStudentToRow({
+          student_id: options.studentId,
+          row_label: 'Unassigned',
+          session_date: todayDate,
+          assigned_by: 'kiosk',
+        });
         await updateStudentFlags(options.studentId, flags, todayDate);
-      } catch {
-        // Non-critical
+      } catch (err) {
+        console.error('handleCheckInConfirm: failed to persist check-in flags', err);
       }
     }
 
