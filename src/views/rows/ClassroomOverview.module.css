@@ -9,6 +9,7 @@
   background: var(--white);
   border-bottom: 1px solid var(--border);
   padding: 14px 40px;
+  padding-top: max(14px, env(safe-area-inset-top, 0px));
   display: flex;
   justify-content: space-between;
   align-items: center;

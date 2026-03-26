@@ -18,6 +18,7 @@
   align-items: center;
   gap: clamp(0.5rem, 2vw, 1.5rem);
   padding: clamp(0.5rem, 1.5vw, 1rem) clamp(1rem, 3vw, 2.5rem);
+  padding-top: max(clamp(0.5rem, 1.5vw, 1rem), env(safe-area-inset-top, 0px));
   background: var(--white);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;

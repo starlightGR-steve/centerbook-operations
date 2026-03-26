@@ -77,8 +77,8 @@ export default function MobileNav() {
 
   return (
     <>
-      {/* Spacer to offset fixed nav bar */}
-      <div style={{ height: 48, flexShrink: 0 }} />
+      {/* Spacer to offset fixed nav bar — matches bar height including safe area */}
+      <div style={{ height: 'calc(48px + env(safe-area-inset-top, 0px))', flexShrink: 0 }} />
       {/* Top bar */}
       <div
         style={{
@@ -86,12 +86,15 @@ export default function MobileNav() {
           top: 0,
           left: 0,
           right: 0,
-          height: 48,
+          height: 'calc(48px + env(safe-area-inset-top, 0px))',
           background: '#355caa',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'space-between',
-          padding: '0 16px',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          paddingBottom: '0',
           zIndex: 900,
         }}
       >
@@ -147,7 +150,7 @@ export default function MobileNav() {
         <nav
           style={{
             position: 'fixed',
-            top: 48,
+            top: 'calc(48px + env(safe-area-inset-top, 0px))',
             left: 0,
             right: 0,
             background: '#1e3a6e',
