@@ -788,6 +788,9 @@ export default function AttendancePage() {
                                 <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`)}>
                                   Checked Out
                                 </button>
+                                <button className={styles.moveMenuItem} onClick={() => { closeMoveMenu(); setExcuseModalStudent(s); }}>
+                                  Mark Excused
+                                </button>
                               </div>,
                               document.body
                             )}
