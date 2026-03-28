@@ -6,7 +6,9 @@ import Link from 'next/link';
 import {
   X, BookOpen, Heart, AlertTriangle, Check, ArrowRight, Pencil, Plus,
   Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
+  ChevronDown, ChevronUp,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
 import type { AppRole } from '@/lib/auth';
@@ -91,6 +93,16 @@ export default function StudentDetailPanel({
   const [teacherNoteInput, setTeacherNoteInput] = useState(flags?.teacher_note ?? '');
   const [editingNote, setEditingNote] = useState(false);
   const [showAddItems, setShowAddItems] = useState(false);
+
+  // Test Result form state
+  const [trOpen, setTrOpen] = useState(false);
+  const [trSubject, setTrSubject] = useState<'math' | 'reading' | null>(null);
+  const [trResult, setTrResult] = useState<'passed' | 'review' | 'borderline' | null>(null);
+  const [trNotes, setTrNotes] = useState('');
+  const [trManagerReview, setTrManagerReview] = useState(false);
+  const [trSubmitting, setTrSubmitting] = useState(false);
+  const [trError, setTrError] = useState<string | null>(null);
+  const [trSuccess, setTrSuccess] = useState(false);
   const { data: classroomNotes, mutate: mutateNotes } = useClassroomNotes(student.id);
   const { data: allLoans } = useOutstandingLoans();
   const { flags: flagConfig } = useFlagConfig();
@@ -376,6 +388,151 @@ export default function StudentDetailPanel({
             }
             return null;
           })()}
+
+          {/* 6f. Record Test Result */}
+          <div className={styles.testResultSection}>
+            <button
+              className={`${styles.testResultToggle} ${trOpen ? styles.testResultToggleOpen : ''}`}
+              onClick={() => setTrOpen(o => !o)}
+            >
+              <span className={styles.testResultToggleLabel}>Record test result</span>
+              {trOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {trOpen && (
+              <div className={styles.testResultForm}>
+                {/* Subject */}
+                <div className={styles.trRow}>
+                  <span className={styles.trFieldLabel}>Subject</span>
+                  <div className={styles.trToggleGroup}>
+                    {subjects.includes('Math') && student.current_level_math && (
+                      <button
+                        className={`${styles.trToggleBtn} ${trSubject === 'math' ? styles.trToggleMath : ''}`}
+                        onClick={() => setTrSubject('math')}
+                      >
+                        Math {student.current_level_math}
+                      </button>
+                    )}
+                    {subjects.includes('Reading') && student.current_level_reading && (
+                      <button
+                        className={`${styles.trToggleBtn} ${trSubject === 'reading' ? styles.trToggleReading : ''}`}
+                        onClick={() => setTrSubject('reading')}
+                      >
+                        Reading {student.current_level_reading}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Result */}
+                <div className={styles.trRow}>
+                  <span className={styles.trFieldLabel}>Result</span>
+                  <div className={styles.trToggleGroup}>
+                    {([
+                      { id: 'passed'     as const, label: 'Passed',          cls: styles.trTogglePassed },
+                      { id: 'review'     as const, label: 'Review & retest',  cls: styles.trToggleReview },
+                      { id: 'borderline' as const, label: 'Borderline',       cls: styles.trToggleBorderline },
+                    ]).map(r => (
+                      <button
+                        key={r.id}
+                        className={`${styles.trToggleBtn} ${trResult === r.id ? r.cls : ''}`}
+                        onClick={() => setTrResult(r.id)}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <textarea
+                  className={styles.trNotes}
+                  value={trNotes}
+                  onChange={(e) => setTrNotes(e.target.value)}
+                  placeholder="Notes on the test..."
+                  rows={2}
+                />
+
+                {/* Manager review */}
+                <label className={styles.trManagerRow}>
+                  <input
+                    type="checkbox"
+                    checked={trManagerReview}
+                    onChange={(e) => setTrManagerReview(e.target.checked)}
+                    className={styles.trManagerCheckbox}
+                  />
+                  <span>Amy/Bincy needs to review</span>
+                </label>
+
+                {/* Contextual hint */}
+                {trResult && (
+                  <div className={
+                    trResult === 'passed' ? styles.trHintGreen
+                    : trResult === 'review' ? styles.trHintRed
+                    : styles.trHintAmber
+                  }>
+                    {trResult === 'passed' && 'Fran will be notified to prepare certificate + $1 and pull homework for next level'}
+                    {trResult === 'review' && 'Fran will be notified to pull review worksheets'}
+                    {trResult === 'borderline' && 'This will be sent to Amy/Bincy for review before going to Fran'}
+                  </div>
+                )}
+
+                {trError && <p className={styles.trError}>{trError}</p>}
+                {trSuccess && (
+                  <p className={styles.trSuccessMsg}>
+                    <Check size={14} /> Test result recorded
+                  </p>
+                )}
+
+                {/* Actions */}
+                <div className={styles.trActions}>
+                  <button
+                    className={styles.trCancelBtn}
+                    onClick={() => {
+                      setTrOpen(false);
+                      setTrSubject(null); setTrResult(null);
+                      setTrNotes(''); setTrManagerReview(false);
+                      setTrError(null); setTrSuccess(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={styles.trSubmitBtn}
+                    disabled={!trSubject || !trResult || trSubmitting}
+                    onClick={async () => {
+                      if (!trSubject || !trResult || trSubmitting) return;
+                      setTrSubmitting(true);
+                      setTrError(null);
+                      try {
+                        await api.notifications.create({
+                          type: 'test_result',
+                          student_id: student.id,
+                          subject: trSubject,
+                          level: trSubject === 'math'
+                            ? (student.current_level_math ?? '')
+                            : (student.current_level_reading ?? ''),
+                          result: trResult,
+                          notes: trNotes.trim() || undefined,
+                          needs_manager_review: trManagerReview,
+                        });
+                        setTrSuccess(true);
+                        setTrSubject(null); setTrResult(null);
+                        setTrNotes(''); setTrManagerReview(false);
+                        setTimeout(() => { setTrOpen(false); setTrSuccess(false); }, 2000);
+                      } catch {
+                        setTrError('Failed to submit. Please try again.');
+                      } finally {
+                        setTrSubmitting(false);
+                      }
+                    }}
+                  >
+                    {trSubmitting ? 'Submitting…' : 'Submit →'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* 6e. Observation Notes */}
           <div>

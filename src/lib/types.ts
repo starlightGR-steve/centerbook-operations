@@ -637,6 +637,32 @@ export interface ScheduleOverride {
   student?: Student;
 }
 
+// ── Notifications / Test Results ──────────
+
+export interface Notification {
+  id: number;
+  type: string;
+  student_id: number;
+  student_first_name?: string;
+  student_last_name?: string;
+  created_by: number;
+  creator_name?: string;
+  assigned_to: number;
+  subject?: string;
+  level?: string;
+  result?: string;
+  notes?: string;
+  worksheet_instructions?: string;
+  reference_id?: number;
+  status: string;
+  needs_manager_review?: boolean;
+  review_decision?: string;
+  review_notes?: string;
+  reviewed_by?: number;
+  reviewed_at?: string;
+  created_at: string;
+}
+
 // ── Capacity Grid (computed) ─────────────
 
 export interface CapacityCell {

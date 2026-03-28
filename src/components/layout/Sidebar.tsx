@@ -19,6 +19,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import type { AppRole } from '@/lib/auth';
 import Logo from '@/components/Logo';
+import { useNotifications } from '@/hooks/useNotifications';
 import styles from './Sidebar.module.css';
 
 interface NavItem {
@@ -47,6 +48,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = (session?.user as { role?: AppRole } | undefined)?.role;
+  const staffId = session?.user ? Number((session.user as { id: string }).id) : null;
+  const { pendingCount } = useNotifications(staffId);
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.roles || (role && item.roles.includes(role))
@@ -60,6 +63,7 @@ export default function Sidebar() {
       <nav className={styles.nav} aria-label="Module navigation">
         {visibleItems.map(({ href, icon: Icon, label }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
+          const showBadge = href === '/me' && pendingCount > 0;
           return (
             <Link
               key={href}
@@ -67,7 +71,14 @@ export default function Sidebar() {
               className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}
               aria-current={active ? 'page' : undefined}
             >
-              <Icon size={18} aria-hidden="true" />
+              <span className={styles.iconWrap}>
+                <Icon size={18} aria-hidden="true" />
+                {showBadge && (
+                  <span className={styles.badge} aria-label={`${pendingCount} pending`}>
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
+              </span>
               <span className={styles.label}>{label}</span>
             </Link>
           );

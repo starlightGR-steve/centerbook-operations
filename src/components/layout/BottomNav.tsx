@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppRole } from '@/lib/auth';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface NavItem {
   href: string;
@@ -48,6 +49,8 @@ export default function MobileNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = (session?.user as { role?: AppRole } | undefined)?.role;
+  const staffId = session?.user ? Number((session.user as { id: string }).id) : null;
+  const { pendingCount } = useNotifications(staffId);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -123,9 +126,36 @@ export default function MobileNav() {
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
+            position: 'relative',
           }}
         >
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          {!menuOpen && pendingCount > 0 && (
+            <span
+              aria-label={`${pendingCount} pending notifications`}
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                minWidth: 16,
+                height: 16,
+                padding: '0 3px',
+                background: '#e53e3e',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+                boxSizing: 'border-box',
+                fontFamily: 'Montserrat, sans-serif',
+              }}
+            >
+              {pendingCount > 9 ? '9+' : pendingCount}
+            </span>
+          )}
         </button>
       </div>
 

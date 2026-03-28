@@ -9,6 +9,7 @@
 
 import type {
   ApiResponse,
+  Notification,
   Student,
   StudentContact,
   Contact,
@@ -540,6 +541,40 @@ export const api = {
       }),
     delete: (id: number) =>
       directFetch<void>(`/absences/${id}`, { method: 'DELETE' }),
+  },
+
+  // ── Notifications ──
+  notifications: {
+    list: (assignedTo: number, status?: string) => {
+      const params = new URLSearchParams({ assigned_to: String(assignedTo) });
+      if (status) params.append('status', status);
+      return directFetch<Notification[]>(`/notifications?${params}`);
+    },
+    count: (assignedTo: number) =>
+      directFetch<{ count: number }>(`/notifications/count?assigned_to=${assignedTo}`),
+    create: (data: {
+      type: string;
+      student_id: number;
+      subject?: string;
+      level?: string;
+      result?: string;
+      notes?: string;
+      needs_manager_review?: boolean;
+    }) =>
+      directFetch<{ test_result_id: number; notifications_created: number }>(
+        '/notifications',
+        { method: 'POST', body: JSON.stringify(data) }
+      ),
+    update: (id: number, data: {
+      status: string;
+      review_decision?: string;
+      worksheet_instructions?: string;
+      review_notes?: string;
+    }) =>
+      directFetch<Notification>(`/notifications/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
   },
 
   // ── Attendance Summary (aggregate) ──
