@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
-  X, BookOpen, Heart, AlertTriangle, Check, ArrowRight, Pencil, Plus,
+  X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
   Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, Pin,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import EmptyState from '@/components/ui/EmptyState';
@@ -17,6 +17,7 @@ import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
 import { useOutstandingLoans } from '@/hooks/useLibrary';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
+import { usePersistentItems } from '@/hooks/usePersistentItems';
 import styles from './StudentDetailPanel.module.css';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
@@ -84,14 +85,12 @@ export default function StudentDetailPanel({
   const staffId = Number((session?.user as { id?: string } | undefined)?.id) || 0;
   const role = (session?.user as { role?: AppRole } | undefined)?.role;
   const isAdmin = role === 'admin' || role === 'superuser';
-  const canWriteNote = role === 'admin' || role === 'superuser';
   const [noteText, setNoteText] = useState('');
   const [needsAttention, setNeedsAttention] = useState(false);
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteSuccess, setNoteSuccess] = useState(false);
   const [teacherNoteInput, setTeacherNoteInput] = useState(flags?.teacher_note ?? '');
-  const [editingNote, setEditingNote] = useState(false);
   const [showAddItems, setShowAddItems] = useState(false);
 
   // Test Result form state
@@ -107,18 +106,19 @@ export default function StudentDetailPanel({
   const { data: allLoans } = useOutstandingLoans();
   const { flags: flagConfig } = useFlagConfig();
   const { items: checklistConfig } = useChecklistConfig();
+  const { isStayOn, addItem: addPersistentItem, removeItem: removePersistentItem } = usePersistentItems(
+    isAdmin ? student.id : null
+  );
 
   // Mobile: intercept device back button to close this panel instead of navigating away
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!window.matchMedia('(max-width: 768px)').matches) return;
-    // Push a history entry so the back gesture lands here first
     window.history.pushState({ detailPanel: true }, '');
     const handlePopState = () => onClose();
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      // If panel closed via X (not back gesture), consume the extra history entry
       if (window.history.state?.detailPanel) {
         window.history.back();
       }
@@ -126,16 +126,20 @@ export default function StudentDetailPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync teacher note input with flags prop (student switch or flag update)
+  // Sync teacher note input when student changes
   useEffect(() => {
-    if (!editingNote) {
-      setTeacherNoteInput(flags?.teacher_note ?? '');
-    }
-  }, [student.id, flags?.teacher_note, editingNote]);
+    setTeacherNoteInput(flags?.teacher_note ?? '');
+  }, [student.id, flags?.teacher_note]);
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
   const subjects = parseSubjects(student.subjects);
+  const scheduleDetail = student.schedule_detail;
+
+  const handleOpenAddItems = () => {
+    setTeacherNoteInput(flags?.teacher_note ?? '');
+    setShowAddItems(true);
+  };
 
   const handleSaveNote = async () => {
     if (!noteText.trim() || noteSaving) return;
@@ -166,22 +170,42 @@ export default function StudentDetailPanel({
 
   return (
     <div className={styles.panel}>
-      {/* 1. Header */}
+      {/* 1. Header — name is clickable link for admins; profile arrow + close */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <div className={styles.avatar}>{student.first_name[0]}</div>
           <div>
-            <h3 className={styles.headerName}>
-              {student.first_name} {student.last_name}
-            </h3>
+            {isAdmin ? (
+              <Link href={`/students/${student.id}`} className={styles.headerNameLink} onClick={onClose}>
+                <h3 className={styles.headerName}>
+                  {student.first_name} {student.last_name}
+                </h3>
+              </Link>
+            ) : (
+              <h3 className={styles.headerName}>
+                {student.first_name} {student.last_name}
+              </h3>
+            )}
             <p className={styles.headerSub}>
               {rowLabel || 'Row'} · Grade {student.grade_level || '—'} · {student.program_type || 'Paper'}
             </p>
           </div>
         </div>
-        <button className={styles.closeBtn} onClick={onClose}>
-          <X size={20} />
-        </button>
+        <div className={styles.headerActions}>
+          {isAdmin && (
+            <Link
+              href={`/students/${student.id}`}
+              className={styles.profileIconLink}
+              onClick={onClose}
+              title="View Full Profile"
+            >
+              <ArrowRight size={16} />
+            </Link>
+          )}
+          <button className={styles.closeBtn} onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
       </div>
 
       <div className={styles.body}>
@@ -206,12 +230,7 @@ export default function StudentDetailPanel({
           <span className={styles.gradeBadge}>Grade {student.grade_level || '—'}</span>
         </div>
 
-        {/* 3. SMS Status */}
-        {attendance && attendance.sms_10min_sent && (
-          <SmsStatusIndicator attendance={attendance} variant="detail" />
-        )}
-
-        {/* 4. Medical / Allergies */}
+        {/* 3. Medical / Allergies */}
         {student.medical_notes && (
           <div className={styles.medicalAlert}>
             <Heart size={16} color="var(--red)" />
@@ -222,102 +241,68 @@ export default function StudentDetailPanel({
           </div>
         )}
 
-        {/* 5. Schedule */}
+        {/* 4. SMS Status */}
+        {attendance && attendance.sms_10min_sent && (
+          <SmsStatusIndicator attendance={attendance} variant="detail" />
+        )}
+
+        {/* 5. Schedule — text list using schedule_detail per-day times */}
         <div>
           <label className={styles.label}>Schedule</label>
-          <div className={styles.scheduleDays}>
-            {DAYS.map((d) => (
-              <span
-                key={d}
-                className={`${styles.dayBadge} ${
-                  scheduleDays.includes(d) ? styles.dayBadgeActive : ''
-                }`}
-              >
-                {d.slice(0, 3)}
-              </span>
-            ))}
-            {student.class_time_sort_key && (
-              <span className={styles.timeBadge}>
-                {formatTimeKey(student.class_time_sort_key)}
-              </span>
-            )}
-          </div>
+          {scheduleDetail && Object.keys(scheduleDetail).length > 0 ? (
+            <div className={styles.scheduleList}>
+              {Object.entries(scheduleDetail)
+                .sort(([, a], [, b]) => a.sort_key - b.sort_key)
+                .map(([day, info]) => (
+                  <div key={day} className={styles.scheduleRow}>
+                    <span className={styles.scheduleDay}>{day.slice(0, 3)}</span>
+                    <span className={styles.scheduleTime}>{formatTimeKey(info.start)}</span>
+                    {info.is_zoom && <span className={styles.scheduleZoom}>Zoom</span>}
+                  </div>
+                ))}
+            </div>
+          ) : scheduleDays.length > 0 ? (
+            <div className={styles.scheduleList}>
+              {DAYS.filter((d) => scheduleDays.includes(d)).map((d) => (
+                <div key={d} className={styles.scheduleRow}>
+                  <span className={styles.scheduleDay}>{d.slice(0, 3)}</span>
+                  {student.class_time_sort_key && (
+                    <span className={styles.scheduleTime}>{formatTimeKey(student.class_time_sort_key)}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.scheduleEmpty}>No schedule set</p>
+          )}
         </div>
 
         {/* 6. During Class */}
         <div className={styles.duringClassSection}>
           <div className={styles.duringClassHeader}>
             <label className={styles.duringClassHeading}>During Class</label>
-          </div>
-
-          {/* 6a. Teacher Note — first */}
-          <div className={styles.teacherNoteWrap}>
-            <p className={styles.teacherNoteLabel}>Teacher Note</p>
-            {editingNote && canWriteNote ? (
-              <div className={styles.teacherNoteForm}>
-                <textarea
-                  className={styles.teacherNoteInput}
-                  value={teacherNoteInput}
-                  onChange={(e) => setTeacherNoteInput(e.target.value)}
-                  rows={3}
-                  placeholder="Instruction note for this student..."
-                  autoFocus
-                />
-                <div className={styles.teacherNoteFormActions}>
-                  <button
-                    className={styles.teacherNoteSaveBtn}
-                    onClick={() => {
-                      onSetTeacherNote?.(teacherNoteInput.trim() || null);
-                      setEditingNote(false);
-                    }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className={styles.teacherNoteCancelBtn}
-                    onClick={() => {
-                      setTeacherNoteInput(flags?.teacher_note ?? '');
-                      setEditingNote(false);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : flags?.teacher_note ? (
-              <div className={styles.teacherNoteCard}>
-                <p className={styles.teacherNoteText}>{flags.teacher_note}</p>
-                {canWriteNote && (
-                  <div className={styles.teacherNoteCardActions}>
-                    <button
-                      className={styles.teacherNoteIconBtn}
-                      onClick={() => { setTeacherNoteInput(flags.teacher_note ?? ''); setEditingNote(true); }}
-                      aria-label="Edit note"
-                    >
-                      <Pencil size={12} />
-                    </button>
-                    <button
-                      className={styles.teacherNoteIconBtn}
-                      onClick={() => { setTeacherNoteInput(''); onSetTeacherNote?.(null); }}
-                      aria-label="Remove note"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : canWriteNote ? (
-              <button
-                className={styles.teacherNoteAddBtn}
-                onClick={() => setEditingNote(true)}
-                disabled={!onSetTeacherNote}
-              >
-                <Plus size={13} /> Add note
+            {isAdmin && onBulkUpdate && (
+              <button className={styles.assignClassBtn} onClick={handleOpenAddItems}>
+                + Assign Class Tasks
               </button>
-            ) : (
-              <p className={styles.teacherNotePlaceholder}>No note</p>
             )}
           </div>
+
+          {/* 6a. Teacher note amber banner */}
+          {flags?.teacher_note && (
+            <div className={styles.teacherNoteBanner}>
+              <AlertTriangle size={14} className={styles.teacherNoteBannerIcon} />
+              <p className={styles.teacherNoteBannerText}>{flags.teacher_note}</p>
+              {isAdmin && (
+                <button
+                  className={styles.teacherNoteBannerDone}
+                  onClick={() => onSetTeacherNote?.(null)}
+                >
+                  Mark done
+                </button>
+              )}
+            </div>
+          )}
 
           {/* 6b. Assigned flags only */}
           {(() => {
@@ -389,7 +374,7 @@ export default function StudentDetailPanel({
             return null;
           })()}
 
-          {/* 6f. Record Test Result */}
+          {/* 6e. Record Test Result */}
           <div className={styles.testResultSection}>
             <button
               className={`${styles.testResultToggle} ${trOpen ? styles.testResultToggleOpen : ''}`}
@@ -534,127 +519,54 @@ export default function StudentDetailPanel({
             )}
           </div>
 
-          {/* 6e. Observation Notes */}
-          <div>
-            <label className={styles.observationHeading}>Classroom Observations</label>
-            <div className={styles.noteInputWrap}>
-              <textarea
-                className={styles.noteInput}
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Add observation note..."
-                rows={3}
-              />
-              <label
-                className={`${styles.attentionRow} ${needsAttention ? styles.attentionRowActive : ''}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={needsAttention}
-                  onChange={(e) => setNeedsAttention(e.target.checked)}
-                  className={styles.attentionCheckbox}
-                />
-                <AlertTriangle size={14} className={styles.attentionIcon} />
-                <span className={styles.attentionLabel}>Needs management attention</span>
-              </label>
-              <button
-                className={styles.saveNoteBtn}
-                onClick={handleSaveNote}
-                disabled={!noteText.trim() || noteSaving}
-              >
-                {noteSaving ? 'Saving…' : 'Save Note'}
-              </button>
-              {noteSuccess && (
-                <p className={styles.noteSuccessMsg}>
-                  <Check size={14} /> Note saved
-                </p>
-              )}
-              {noteError && (
-                <p className={styles.noteErrorMsg}>{noteError}</p>
-              )}
-            </div>
-            <div className={styles.observationLog}>
-              {classroomNotes && classroomNotes.length > 0 ? (
-                classroomNotes.map((n) => (
-                  <div key={n.id} className={styles.noteCard}>
-                    <div className={styles.noteCardHeader}>
-                      <div className={styles.noteCardLeft}>
-                        {n.needs_management_attention && (
-                          <span className={styles.attentionDot} />
-                        )}
-                        <span className={styles.noteAuthorName}>
-                          {n.author_name || 'Staff'}
+          {/* Assign Class Tasks modal (moved inside During Class) */}
+          {showAddItems && (
+            <div className={styles.addItemsOverlay}>
+              <div className={styles.addItemsPanel}>
+                <div className={styles.addItemsPanelHeader}>
+                  <span className={styles.addItemsPanelTitle}>Assign Class Tasks</span>
+                  <button className={styles.addItemsClose} onClick={() => setShowAddItems(false)}>
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <label className={styles.addItemsSectionLabel}>Flags</label>
+                <div className={styles.addItemsGrid}>
+                  {flagConfig.map((fc) => {
+                    const isOn = !!(flags && (flags as Record<string, unknown>)[fc.key]);
+                    return (
+                      <button
+                        key={fc.key}
+                        className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
+                        onClick={() => {
+                          if (!onBulkUpdate) return;
+                          const updated = { ...flags } as RowAssignmentFlags;
+                          if (isOn) {
+                            delete (updated as Record<string, unknown>)[fc.key];
+                          } else {
+                            (updated as Record<string, unknown>)[fc.key] = true;
+                          }
+                          onBulkUpdate(updated);
+                        }}
+                      >
+                        <span className={styles.addItemCircle} style={isOn ? { background: fc.color } : undefined}>
+                          <FlagIcon icon={fc.icon} size={10} />
                         </span>
-                        <span className={styles.noteSep}>—</span>
-                        <span className={styles.noteDate}>
-                          {formatRelativeTime(n.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                    <p className={styles.noteContent}>{n.note_text}</p>
-                  </div>
-                ))
-              ) : (
-                <EmptyState icon={BookOpen} title="No observations recorded yet." />
-              )}
-            </div>
-          </div>
-        </div>
+                        <span>{fc.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-        {/* 7. Assign Class Tasks — admin/superuser only */}
-        {isAdmin && onBulkUpdate && (
-          <div className={styles.assignTasksSection}>
-            <label className={styles.assignTasksHeading}>Assign Class Tasks</label>
-            <button className={styles.addItemsBtn} onClick={() => setShowAddItems(true)}>
-              + Add Items
-            </button>
-
-            {showAddItems && (
-              <div className={styles.addItemsOverlay}>
-                <div className={styles.addItemsPanel}>
-                  <div className={styles.addItemsPanelHeader}>
-                    <span className={styles.addItemsPanelTitle}>Add Items</span>
-                    <button className={styles.addItemsClose} onClick={() => setShowAddItems(false)}>
-                      <X size={16} />
-                    </button>
-                  </div>
-
-                  <label className={styles.addItemsSectionLabel}>Flags</label>
-                  <div className={styles.addItemsGrid}>
-                    {flagConfig.map((fc) => {
-                      const isOn = !!(flags && (flags as Record<string, unknown>)[fc.key]);
-                      return (
+                <label className={styles.addItemsSectionLabel}>Checklist</label>
+                <div className={styles.addItemsGrid}>
+                  {checklistConfig.map((ci) => {
+                    const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
+                    const isOn = val !== undefined && val !== null;
+                    const stayOn = isStayOn(ci.key);
+                    return (
+                      <div key={ci.key} className={styles.addItemRow}>
                         <button
-                          key={fc.key}
-                          className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
-                          onClick={() => {
-                            if (!onBulkUpdate) return;
-                            const updated = { ...flags } as RowAssignmentFlags;
-                            if (isOn) {
-                              delete (updated as Record<string, unknown>)[fc.key];
-                            } else {
-                              (updated as Record<string, unknown>)[fc.key] = true;
-                            }
-                            onBulkUpdate(updated);
-                          }}
-                        >
-                          <span className={styles.addItemCircle} style={isOn ? { background: fc.color } : undefined}>
-                            <FlagIcon icon={fc.icon} size={10} />
-                          </span>
-                          <span>{fc.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <label className={styles.addItemsSectionLabel}>Checklist</label>
-                  <div className={styles.addItemsGrid}>
-                    {checklistConfig.map((ci) => {
-                      const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
-                      const isOn = val !== undefined && val !== null;
-                      return (
-                        <button
-                          key={ci.key}
                           className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
                           onClick={() => {
                             if (!onBulkUpdate) return;
@@ -662,7 +574,7 @@ export default function StudentDetailPanel({
                             if (isOn) {
                               delete tasks[ci.key];
                             } else {
-                              tasks[ci.key] = false; // assigned but not done
+                              tasks[ci.key] = false;
                             }
                             onBulkUpdate({ ...flags, tasks } as RowAssignmentFlags);
                           }}
@@ -672,18 +584,111 @@ export default function StudentDetailPanel({
                           </span>
                           <span>{ci.label}</span>
                         </button>
-                      );
-                    })}
-                  </div>
-
-                  <button className={styles.addItemsDone} onClick={() => setShowAddItems(false)}>
-                    Done
-                  </button>
+                        <button
+                          className={`${styles.pinBtn} ${stayOn ? styles.pinBtnActive : ''}`}
+                          onClick={() => stayOn
+                            ? removePersistentItem(ci.key)
+                            : addPersistentItem(ci.key, 'checklist')
+                          }
+                          title={stayOn ? 'Repeats daily — click to remove' : 'Set to repeat daily'}
+                          aria-label={stayOn ? 'Remove from daily repeats' : 'Add to daily repeats'}
+                        >
+                          <Pin size={13} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
+
+                {/* Note for teacher — pre-filled with existing note */}
+                <label className={styles.addItemsSectionLabel}>Note for Teacher</label>
+                <textarea
+                  className={styles.teacherNoteModalInput}
+                  value={teacherNoteInput}
+                  onChange={(e) => setTeacherNoteInput(e.target.value)}
+                  rows={3}
+                  placeholder="Instruction note for this student..."
+                />
+
+                <button
+                  className={styles.addItemsDone}
+                  onClick={() => {
+                    onSetTeacherNote?.(teacherNoteInput.trim() || null);
+                    setShowAddItems(false);
+                  }}
+                >
+                  Save &amp; Done
+                </button>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* 7. Classroom Observations */}
+        <div>
+          <label className={styles.observationHeading}>Classroom Observations</label>
+          <div className={styles.noteInputWrap}>
+            <textarea
+              className={styles.noteInput}
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Add observation note..."
+              rows={3}
+            />
+            <label
+              className={`${styles.attentionRow} ${needsAttention ? styles.attentionRowActive : ''}`}
+            >
+              <input
+                type="checkbox"
+                checked={needsAttention}
+                onChange={(e) => setNeedsAttention(e.target.checked)}
+                className={styles.attentionCheckbox}
+              />
+              <AlertTriangle size={14} className={styles.attentionIcon} />
+              <span className={styles.attentionLabel}>Needs management attention</span>
+            </label>
+            <button
+              className={styles.saveNoteBtn}
+              onClick={handleSaveNote}
+              disabled={!noteText.trim() || noteSaving}
+            >
+              {noteSaving ? 'Saving…' : 'Save Note'}
+            </button>
+            {noteSuccess && (
+              <p className={styles.noteSuccessMsg}>
+                <Check size={14} /> Note saved
+              </p>
+            )}
+            {noteError && (
+              <p className={styles.noteErrorMsg}>{noteError}</p>
             )}
           </div>
-        )}
+          <div className={styles.observationLog}>
+            {classroomNotes && classroomNotes.length > 0 ? (
+              classroomNotes.map((n) => (
+                <div key={n.id} className={styles.noteCard}>
+                  <div className={styles.noteCardHeader}>
+                    <div className={styles.noteCardLeft}>
+                      {n.needs_management_attention && (
+                        <span className={styles.attentionDot} />
+                      )}
+                      <span className={styles.noteAuthorName}>
+                        {n.author_name || 'Staff'}
+                      </span>
+                      <span className={styles.noteSep}>—</span>
+                      <span className={styles.noteDate}>
+                        {formatRelativeTime(n.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                  <p className={styles.noteContent}>{n.note_text}</p>
+                </div>
+              ))
+            ) : (
+              <EmptyState icon={BookOpen} title="No observations recorded yet." />
+            )}
+          </div>
+        </div>
 
         {/* 8. Library Books */}
         <div>
@@ -701,17 +706,6 @@ export default function StudentDetailPanel({
             <EmptyState icon={BookOpen} title="No checked out items" />
           )}
         </div>
-
-        {/* 9. View Full Profile — last */}
-        {isAdmin && (
-          <Link
-            href={`/students/${student.id}`}
-            className={styles.profileLink}
-            onClick={onClose}
-          >
-            View Full Profile <ArrowRight size={14} />
-          </Link>
-        )}
 
       </div>
     </div>

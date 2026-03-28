@@ -2,16 +2,20 @@
 
 import { useState, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import Link from 'next/link';
 import useSWR, { mutate as globalMutate } from 'swr';
 import {
   LogOut, UserCircle, Key, Eye, EyeOff,
   ClipboardList, Plus, Check, Inbox,
+  Calendar, Trash2, Search, X as XIcon,
 } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { api } from '@/lib/api';
+import { useActiveStaff } from '@/hooks/useStaff';
+import { useStudents } from '@/hooks/useStudents';
 import type { CbTask, CbTaskType, CreateTaskRequest } from '@/lib/types';
 import styles from './MePage.module.css';
 
@@ -38,11 +42,29 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
+function dueDateColor(dateStr: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  if (dateStr < today) return 'var(--red)';
+  if (dateStr === today) return '#d97706';
+  return 'var(--neutral)';
+}
+
+function formatDueDate(dateStr: string): string {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function sortTasks(a: CbTask, b: CbTask): number {
+  if (a.status !== b.status) return a.status === 'open' ? -1 : 1;
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+}
+
 export default function MePage() {
   const { data: session } = useSession();
   const user = session?.user;
   const role = (user as { role?: string } | undefined)?.role ?? 'staff';
   const staffId = (user as { id?: string } | undefined)?.id;
+  const staffIdNum = Number(staffId) || 0;
+  const isAdmin = role === 'admin' || role === 'superuser';
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -52,41 +74,105 @@ export default function MePage() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Task creation form state
+  // Task UI state
+  const [taskTab, setTaskTab] = useState<'inbox' | 'mine' | 'sent'>('inbox');
   const [showAddTask, setShowAddTask] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newType, setNewType] = useState<CbTaskType>('general');
+  const [newAssignTo, setNewAssignTo] = useState<number>(0);
+  const [newStudentId, setNewStudentId] = useState<number | null>(null);
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newNotes, setNewNotes] = useState('');
+  const [newDueDate, setNewDueDate] = useState('');
   const [addingTask, setAddingTask] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [showStudentSearch, setShowStudentSearch] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  // Data
+  const { data: staff } = useActiveStaff();
+  const { data: students } = useStudents();
 
   const swrKey = staffId ? `my-tasks-${staffId}` : null;
-
   const { data: tasks, error: tasksError, isLoading: tasksLoading } = useSWR<CbTask[]>(
     swrKey,
-    async () => {
-      const all = await api.tasks.forAssignee(Number(staffId));
-      return all;
-    },
+    () => api.tasks.forAssignee(staffIdNum),
     { dedupingInterval: 5000, revalidateOnFocus: true }
   );
 
-  const sortedTasks = useMemo(() => {
-    if (!tasks) return [];
-    return [...tasks].sort((a, b) => {
-      // Open first, then by created_at desc
-      if (a.status !== b.status) return a.status === 'open' ? -1 : 1;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-  }, [tasks]);
+  const sentSwrKey = isAdmin && staffId ? `sent-tasks-${staffId}` : null;
+  const { data: rawSentTasks } = useSWR<CbTask[]>(
+    sentSwrKey,
+    () => api.tasks.forCreator(staffIdNum),
+    { dedupingInterval: 5000, revalidateOnFocus: true }
+  );
 
-  const openCount = useMemo(() => tasks?.filter((t) => t.status === 'open').length ?? 0, [tasks]);
+  // Lookup maps
+  const staffMap = useMemo(() => {
+    const m = new Map<number, string>();
+    staff?.forEach((s) => m.set(s.id, s.full_name));
+    return m;
+  }, [staff]);
+
+  const studentMap = useMemo(() => {
+    const m = new Map<number, { first: string; last: string }>();
+    students?.forEach((s) => m.set(s.id, { first: s.first_name, last: s.last_name }));
+    return m;
+  }, [students]);
+
+  // Tab data
+  const inboxTasks = useMemo(
+    () => [...(tasks || []).filter((t) => t.assigned_to === staffIdNum && t.created_by !== staffIdNum)].sort(sortTasks),
+    [tasks, staffIdNum]
+  );
+  const mineTasks = useMemo(
+    () => [...(tasks || []).filter((t) => t.created_by === staffIdNum)].sort(sortTasks),
+    [tasks, staffIdNum]
+  );
+  const sentTasks = useMemo(
+    () =>
+      [...(rawSentTasks || []).filter((t) => t.assigned_to !== staffIdNum)].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
+    [rawSentTasks, staffIdNum]
+  );
+
+  const inboxOpenCount = inboxTasks.filter((t) => t.status === 'open').length;
+  const mineOpenCount = mineTasks.filter((t) => t.status === 'open').length;
+  const currentTabTasks = taskTab === 'inbox' ? inboxTasks : taskTab === 'mine' ? mineTasks : sentTasks;
+
+  // Student search
+  const filteredStudents = useMemo(() => {
+    if (!studentSearch.trim() || !students) return [];
+    const q = studentSearch.toLowerCase();
+    return students
+      .filter((s) => `${s.first_name} ${s.last_name}`.toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [students, studentSearch]);
+
+  const openAddTaskForm = () => {
+    setNewTitle('');
+    setNewType('general');
+    setNewAssignTo(staffIdNum);
+    setNewStudentId(null);
+    setNewStudentName('');
+    setNewNotes('');
+    setNewDueDate('');
+    setStudentSearch('');
+    setShowStudentSearch(false);
+    setShowAddTask(true);
+  };
 
   const handleCompleteTask = async (task: CbTask) => {
     const newStatus = task.status === 'open' ? 'complete' : 'open';
-    // Optimistic update
     if (tasks) {
       globalMutate(
         swrKey,
-        tasks.map((t) => t.id === task.id ? { ...t, status: newStatus, completed_at: newStatus === 'complete' ? new Date().toISOString() : null } as CbTask : t),
+        tasks.map((t) =>
+          t.id === task.id
+            ? ({ ...t, status: newStatus, completed_at: newStatus === 'complete' ? new Date().toISOString() : null } as CbTask)
+            : t
+        ),
         false
       );
     }
@@ -97,23 +183,32 @@ export default function MePage() {
   const handleAddTask = async () => {
     if (!newTitle.trim() || !staffId) return;
     setAddingTask(true);
+    const effectiveAssignTo = isAdmin ? (newAssignTo || staffIdNum) : staffIdNum;
     const data: CreateTaskRequest = {
-      assigned_to: Number(staffId),
-      created_by: Number(staffId),
+      assigned_to: effectiveAssignTo,
+      created_by: staffIdNum,
       type: newType,
       title: newTitle.trim(),
+      notes: newNotes.trim() || null,
+      due_date: newDueDate || null,
+      student_id: newStudentId ?? undefined,
     };
     await api.tasks.create(data);
     globalMutate(swrKey);
-    setNewTitle('');
-    setNewType('general');
+    if (sentSwrKey) globalMutate(sentSwrKey);
     setShowAddTask(false);
     setAddingTask(false);
   };
 
+  const handleDeleteTask = async (taskId: number) => {
+    await api.tasks.delete(taskId);
+    globalMutate(swrKey);
+    if (sentSwrKey) globalMutate(sentSwrKey);
+    setConfirmDeleteId(null);
+  };
+
   const handleChangePassword = async () => {
     setPwMessage(null);
-
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPwMessage({ type: 'error', text: 'All fields are required.' });
       return;
@@ -126,7 +221,6 @@ export default function MePage() {
       setPwMessage({ type: 'error', text: 'New passwords do not match.' });
       return;
     }
-
     setPwLoading(true);
     try {
       const res = await fetch('/api/staff/password', {
@@ -135,17 +229,13 @@ export default function MePage() {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       const data = await res.json();
-
       if (res.ok && data.success) {
         setPwMessage({ type: 'success', text: 'Password updated successfully.' });
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        setPwMessage({
-          type: 'error',
-          text: data.message || data.error || 'Failed to update password.',
-        });
+        setPwMessage({ type: 'error', text: data.message || data.error || 'Failed to update password.' });
       }
     } catch {
       setPwMessage({ type: 'error', text: 'Network error. Please try again.' });
@@ -180,47 +270,139 @@ export default function MePage() {
           </div>
         </Card>
 
-        {/* My Tasks */}
+        {/* Tasks */}
         {staffId ? (
           <Card className={styles.actionsCard}>
             <div className={styles.tasksHeader}>
-              <div className={styles.tasksHeaderLeft}>
-                <h4 className={styles.tasksTitle}>
-                  <ClipboardList size={15} /> My Tasks
-                </h4>
-                {openCount > 0 && (
-                  <span className={styles.taskCount}>{openCount}</span>
-                )}
-              </div>
+              <h4 className={styles.tasksTitle}>
+                <ClipboardList size={15} /> Tasks
+              </h4>
               <button
                 className={styles.addTaskBtn}
-                onClick={() => setShowAddTask(!showAddTask)}
+                onClick={showAddTask ? () => setShowAddTask(false) : openAddTaskForm}
               >
-                <Plus size={13} /> Add
+                <Plus size={13} /> New
               </button>
             </div>
 
+            {/* Create task form */}
             {showAddTask && (
               <div className={styles.addTaskForm}>
-                <div className={styles.addTaskRow}>
-                  <input
-                    className={styles.addTaskInput}
-                    placeholder="Task title..."
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                    autoFocus
-                  />
-                  <select
-                    className={styles.addTaskSelect}
-                    value={newType}
-                    onChange={(e) => setNewType(e.target.value as CbTaskType)}
+                <input
+                  className={styles.addTaskInput}
+                  placeholder="Task title..."
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                  autoFocus
+                />
+
+                {isAdmin && (
+                  <div className={styles.addTaskField}>
+                    <label className={styles.addTaskLabel}>Assign to</label>
+                    <select
+                      className={styles.addTaskSelect}
+                      value={newAssignTo || staffIdNum}
+                      onChange={(e) => setNewAssignTo(Number(e.target.value))}
+                    >
+                      {staff?.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.full_name} ({s.role})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Student context */}
+                {newStudentId ? (
+                  <div className={styles.studentPill}>
+                    <span>re: {newStudentName}</span>
+                    <button
+                      className={styles.studentPillRemove}
+                      onClick={() => { setNewStudentId(null); setNewStudentName(''); }}
+                    >
+                      <XIcon size={11} />
+                    </button>
+                  </div>
+                ) : showStudentSearch ? (
+                  <div className={styles.studentSearchWrap}>
+                    <div className={styles.studentSearchInputRow}>
+                      <Search size={13} className={styles.studentSearchIcon} />
+                      <input
+                        className={styles.studentSearchInput}
+                        placeholder="Search students..."
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        autoFocus
+                      />
+                      <button
+                        className={styles.studentSearchCancel}
+                        onClick={() => { setShowStudentSearch(false); setStudentSearch(''); }}
+                      >
+                        <XIcon size={13} />
+                      </button>
+                    </div>
+                    {filteredStudents.length > 0 && (
+                      <div className={styles.studentSearchResults}>
+                        {filteredStudents.map((s) => (
+                          <button
+                            key={s.id}
+                            className={styles.studentSearchResult}
+                            onClick={() => {
+                              setNewStudentId(s.id);
+                              setNewStudentName(`${s.first_name} ${s.last_name}`);
+                              setShowStudentSearch(false);
+                              setStudentSearch('');
+                            }}
+                          >
+                            {s.first_name} {s.last_name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    className={styles.linkStudentBtn}
+                    onClick={() => setShowStudentSearch(true)}
                   >
-                    {Object.entries(TASK_TYPE_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </select>
+                    <Plus size={11} /> Link student
+                  </button>
+                )}
+
+                <textarea
+                  className={styles.addTaskNotes}
+                  placeholder="Add details or message..."
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  rows={3}
+                />
+
+                <div className={styles.addTaskRow}>
+                  <div className={styles.addTaskField} style={{ flex: 1 }}>
+                    <label className={styles.addTaskLabel}>Due date</label>
+                    <input
+                      type="date"
+                      className={styles.addTaskDateInput}
+                      value={newDueDate}
+                      onChange={(e) => setNewDueDate(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.addTaskField} style={{ flex: 1 }}>
+                    <label className={styles.addTaskLabel}>Type</label>
+                    <select
+                      className={styles.addTaskSelect}
+                      value={newType}
+                      onChange={(e) => setNewType(e.target.value as CbTaskType)}
+                    >
+                      {Object.entries(TASK_TYPE_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
                 <div className={styles.addTaskRow}>
                   <Button
                     variant="primary"
@@ -228,12 +410,12 @@ export default function MePage() {
                     onClick={handleAddTask}
                     disabled={addingTask || !newTitle.trim()}
                   >
-                    {addingTask ? 'Adding...' : 'Add Task'}
+                    {addingTask ? 'Creating...' : 'Create Task'}
                   </Button>
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => { setShowAddTask(false); setNewTitle(''); }}
+                    onClick={() => setShowAddTask(false)}
                   >
                     Cancel
                   </Button>
@@ -241,52 +423,145 @@ export default function MePage() {
               </div>
             )}
 
-            {tasksLoading && (
-              <p className={styles.sectionDesc}>Loading tasks...</p>
-            )}
+            {/* Tabs */}
+            <div className={styles.taskTabs}>
+              <button
+                className={`${styles.taskTab} ${taskTab === 'inbox' ? styles.taskTabActive : ''}`}
+                onClick={() => setTaskTab('inbox')}
+              >
+                Inbox
+                {inboxOpenCount > 0 && <span className={styles.taskTabCount}>{inboxOpenCount}</span>}
+              </button>
+              <button
+                className={`${styles.taskTab} ${taskTab === 'mine' ? styles.taskTabActive : ''}`}
+                onClick={() => setTaskTab('mine')}
+              >
+                My Tasks
+                {mineOpenCount > 0 && <span className={styles.taskTabCount}>{mineOpenCount}</span>}
+              </button>
+              {isAdmin && (
+                <button
+                  className={`${styles.taskTab} ${taskTab === 'sent' ? styles.taskTabActive : ''}`}
+                  onClick={() => setTaskTab('sent')}
+                >
+                  Sent
+                </button>
+              )}
+            </div>
 
-            {tasksError && (
-              <p className={styles.msgError}>Failed to load tasks.</p>
-            )}
+            {tasksLoading && <p className={styles.sectionDesc}>Loading tasks...</p>}
+            {tasksError && <p className={styles.msgError}>Failed to load tasks.</p>}
 
-            {!tasksLoading && !tasksError && sortedTasks.length === 0 && (
+            {!tasksLoading && !tasksError && currentTabTasks.length === 0 && (
               <div className={styles.emptyTasks}>
                 <div className={styles.emptyTasksIcon}>
                   <Inbox size={32} strokeWidth={1.5} />
                 </div>
-                <p className={styles.emptyTasksText}>No tasks assigned to you</p>
+                <p className={styles.emptyTasksText}>
+                  {taskTab === 'inbox' ? 'Nothing assigned to you' :
+                   taskTab === 'mine' ? 'No tasks created by you' :
+                   'No tasks sent to others'}
+                </p>
               </div>
             )}
 
-            {sortedTasks.length > 0 && (
+            {currentTabTasks.length > 0 && (
               <div className={styles.taskList}>
-                {sortedTasks.map((task) => {
+                {currentTabTasks.map((task) => {
                   const done = task.status === 'complete';
+                  const creatorName = task.created_by !== staffIdNum
+                    ? (staffMap.get(task.created_by) ?? `Staff #${task.created_by}`)
+                    : null;
+                  const assigneeName = task.assigned_to !== staffIdNum
+                    ? (staffMap.get(task.assigned_to) ?? `Staff #${task.assigned_to}`)
+                    : null;
+                  const studentInfo = task.student_id ? studentMap.get(task.student_id) : null;
+                  const canDelete = isAdmin || task.created_by === staffIdNum;
+
                   return (
-                    <div key={task.id} className={styles.taskItem}>
-                      <button
-                        className={done ? styles.taskCheckDone : styles.taskCheck}
-                        onClick={() => handleCompleteTask(task)}
-                        title={done ? 'Mark open' : 'Mark complete'}
-                      >
-                        {done && <Check size={12} color="#fff" strokeWidth={3} />}
-                      </button>
-                      <div className={styles.taskBody}>
-                        <p
-                          className={done ? styles.taskTitleDone : styles.taskTitleText}
-                          title={task.title}
+                    <div key={task.id} className={`${styles.taskItem} ${done ? styles.taskItemDone : ''}`}>
+                      {taskTab !== 'sent' && (
+                        <button
+                          className={done ? styles.taskCheckDone : styles.taskCheck}
+                          onClick={() => handleCompleteTask(task)}
+                          title={done ? 'Mark open' : 'Mark complete'}
                         >
+                          {done && <Check size={12} color="#fff" strokeWidth={3} />}
+                        </button>
+                      )}
+
+                      <div className={styles.taskBody}>
+                        <p className={done ? styles.taskTitleDone : styles.taskTitleText}>
                           {task.title}
                         </p>
+
+                        {creatorName && taskTab === 'inbox' && (
+                          <p className={styles.taskFrom}>From: {creatorName}</p>
+                        )}
+                        {assigneeName && taskTab === 'sent' && (
+                          <p className={styles.taskFrom}>To: {assigneeName}</p>
+                        )}
+
+                        {studentInfo && task.student_id && (
+                          <Link href={`/students/${task.student_id}`} className={styles.taskStudentLink}>
+                            re: {studentInfo.first} {studentInfo.last}
+                          </Link>
+                        )}
+
+                        {task.notes && (
+                          <p className={styles.taskNotes}>{task.notes}</p>
+                        )}
+
                         <div className={styles.taskMeta}>
+                          {task.due_date && (
+                            <span
+                              className={styles.taskDueDate}
+                              style={{ color: dueDateColor(task.due_date) }}
+                            >
+                              <Calendar size={10} />
+                              {formatDueDate(task.due_date)}
+                            </span>
+                          )}
                           <span className={styles.taskTypeBadge}>
                             {TASK_TYPE_LABELS[task.type] || task.type}
                           </span>
-                          <span className={styles.taskDate}>
-                            {timeAgo(task.created_at)}
-                          </span>
+                          <span className={styles.taskDate}>{timeAgo(task.created_at)}</span>
+                          {taskTab === 'sent' && (
+                            <span className={done ? styles.taskStatusDone : styles.taskStatusOpen}>
+                              {done ? 'Done' : 'Open'}
+                            </span>
+                          )}
                         </div>
                       </div>
+
+                      {canDelete && (
+                        <div className={styles.taskActions}>
+                          {confirmDeleteId === task.id ? (
+                            <>
+                              <button
+                                className={styles.taskDeleteConfirm}
+                                onClick={() => handleDeleteTask(task.id)}
+                              >
+                                Delete?
+                              </button>
+                              <button
+                                className={styles.taskDeleteCancel}
+                                onClick={() => setConfirmDeleteId(null)}
+                              >
+                                <XIcon size={11} />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className={styles.taskDeleteBtn}
+                              onClick={() => setConfirmDeleteId(task.id)}
+                              title="Delete task"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -368,12 +643,7 @@ export default function MePage() {
             </p>
           )}
 
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleChangePassword}
-            disabled={pwLoading}
-          >
+          <Button variant="primary" size="md" onClick={handleChangePassword} disabled={pwLoading}>
             {pwLoading ? 'Updating...' : 'Update Password'}
           </Button>
         </Card>
@@ -383,11 +653,7 @@ export default function MePage() {
           <p className={styles.sectionDesc}>
             Sign out of The Center Book Operations on this device.
           </p>
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={() => signOut({ callbackUrl: '/login' })}
-          >
+          <Button variant="secondary" size="md" onClick={() => signOut({ callbackUrl: '/login' })}>
             <LogOut size={16} />
             Sign Out
           </Button>

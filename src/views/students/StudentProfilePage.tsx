@@ -23,6 +23,7 @@ import {
   CreditCard,
   BookOpen,
   X,
+  Pin,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import SectionHeader from '@/components/ui/SectionHeader';
@@ -41,6 +42,8 @@ import useSWR from 'swr';
 import LinkPickerModal from '@/components/LinkPickerModal';
 import { useStudentTasks, completeTask, createTask } from '@/hooks/useStudentTasks';
 import { useActiveStaff } from '@/hooks/useStaff';
+import { usePersistentItems } from '@/hooks/usePersistentItems';
+import { useChecklistConfig } from '@/hooks/useFlagConfig';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import type { CbTaskType, Contact, Absence } from '@/lib/types';
 import styles from './StudentProfilePage.module.css';
@@ -187,6 +190,8 @@ export default function StudentProfilePage({ studentId }: Props) {
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === 'admin' || role === 'superuser';
+  const { items: persistentItems, removeItem: removePersistentItem } = usePersistentItems(studentId);
+  const { items: checklistConfig } = useChecklistConfig();
 
   // Password visibility
   const [showKcPw, setShowKcPw] = useState(false);
@@ -953,6 +958,34 @@ export default function StudentProfilePage({ studentId }: Props) {
               <DetailRow label="ASHR Reading Status" value={student.ashr_reading_status ?? '—'} />
             )}
           </div>
+
+          {/* ── Daily Checklist (persistent items) ── */}
+          {persistentItems.length > 0 && (
+            <>
+              <hr className={styles.groupDivider} />
+              <h4 className={styles.groupHeading}>Daily Checklist</h4>
+              <div className={styles.persistentItemsList}>
+                {persistentItems.map((p) => {
+                  const label = checklistConfig.find((c) => c.key === p.item_key)?.label ?? p.item_key;
+                  return (
+                    <div key={p.item_key} className={styles.persistentItemRow}>
+                      <Pin size={13} className={styles.persistentPin} />
+                      <span className={styles.persistentItemLabel}>{label}</span>
+                      {isAdmin && (
+                        <button
+                          className={styles.persistentRemoveBtn}
+                          onClick={() => removePersistentItem(p.item_key)}
+                          aria-label={`Remove ${label} from daily repeats`}
+                        >
+                          <X size={13} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           <hr className={styles.groupDivider} />
 

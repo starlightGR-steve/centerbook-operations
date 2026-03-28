@@ -391,6 +391,10 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+    delete: (id: number) =>
+      directFetch<void>(`/tasks/${id}`, { method: 'DELETE' }),
+    forCreator: (staffId: number) =>
+      directFetch<CbTask[]>(`/tasks?created_by=${staffId}`),
   },
 
   // ── Journal ──
@@ -617,6 +621,23 @@ export const api = {
         `/schedule-overrides/${id}`,
         { method: 'DELETE' }
       ),
+  },
+
+  // ── Persistent Checklist Items ──
+  persistentItems: {
+    list: (studentId: number) =>
+      directFetch<Array<{ id: number; item_key: string; item_type: string; created_by: number; created_at: string }>>(
+        `/students/${studentId}/persistent-items`
+      ),
+    add: (studentId: number, itemKey: string, itemType?: string) =>
+      directFetch(`/students/${studentId}/persistent-items`, {
+        method: 'POST',
+        body: JSON.stringify({ item_key: itemKey, item_type: itemType || 'checklist' }),
+      }),
+    remove: (studentId: number, itemKey: string) =>
+      directFetch(`/students/${studentId}/persistent-items/${itemKey}`, {
+        method: 'DELETE',
+      }),
   },
 
   // ── Center Settings ──

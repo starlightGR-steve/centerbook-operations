@@ -43,13 +43,19 @@ function getTodayIdx(): number {
   return idx >= 0 ? idx : 0;
 }
 
-export default function WeeklyPlanGrid() {
+interface WeeklyPlanGridProps {
+  weekReferenceDate?: Date;
+}
+
+export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProps) {
   const { data: students } = useStudents();
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   // Fetch absences for this week
-  const weekDates = useMemo(() => getWeekDates(new Date(), DAYS), []);
+  const refTime = weekReferenceDate?.getTime();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const weekDates = useMemo(() => getWeekDates(weekReferenceDate ?? new Date(), DAYS), [refTime]);
   const weekStart = weekDates[0]?.date || '';
   const weekEnd = weekDates[weekDates.length - 1]?.date || '';
   const { data: weekAbsences } = useWeekAbsences(weekStart, weekEnd);

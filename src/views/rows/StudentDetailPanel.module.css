@@ -912,6 +912,45 @@
   border-color: var(--secondary);
 }
 
+/* Checklist item row: assignment button + pin button side by side */
+.addItemRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.addItemRow .addItemToggle {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Stay-On pin button */
+.pinBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--text-muted, #999);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pinBtn:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.pinBtnActive {
+  border-color: var(--secondary);
+  background: rgba(0, 154, 171, 0.1);
+  color: var(--secondary);
+}
+
 .addItemsDone {
   font-family: var(--font-primary);
   font-size: 0.8125rem;
@@ -1200,6 +1239,174 @@
 .trSubmitBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* ── Header name link + profile icon ── */
+.headerNameLink {
+  text-decoration: none;
+}
+
+.headerNameLink:hover .headerName {
+  text-decoration: underline;
+  color: var(--secondary);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.profileIconLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--secondary);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.profileIconLink:hover {
+  background: var(--secondary-ul);
+}
+
+/* ── Schedule — text list ── */
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scheduleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scheduleDay {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  width: 2.5rem;
+}
+
+.scheduleTime {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--secondary);
+}
+
+.scheduleZoom {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--primary-ul);
+  color: var(--primary);
+}
+
+.scheduleEmpty {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  color: var(--neutral);
+  font-style: italic;
+}
+
+/* ── Teacher Note — amber alert banner ── */
+.teacherNoteBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.teacherNoteBannerIcon {
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.teacherNoteBannerText {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.teacherNoteBannerDone {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 5px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #92400e;
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.teacherNoteBannerDone:hover {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+/* ── Assign Class Tasks button (in During Class header) ── */
+.assignClassBtn {
+  font-family: var(--font-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background: none;
+  border: 1px solid var(--secondary);
+  border-radius: var(--radius-btn);
+  padding: 0.25rem 0.625rem;
+  cursor: pointer;
+  min-height: 2rem;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.assignClassBtn:hover {
+  background: rgba(0, 154, 171, 0.06);
+}
+
+/* ── Teacher Note textarea in modal ── */
+.teacherNoteModalInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  min-height: 72px;
+}
+
+.teacherNoteModalInput:focus {
+  border-color: var(--secondary);
+}
+
+.teacherNoteModalInput::placeholder {
+  color: var(--neutral);
+  font-weight: 400;
 }
 
 /* ── Responsive ── */

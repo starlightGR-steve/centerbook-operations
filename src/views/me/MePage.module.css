@@ -154,7 +154,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .tasksHeaderLeft {
@@ -360,6 +360,378 @@
   font-size: 13px;
   font-weight: 500;
   margin: 0;
+}
+
+/* ── Task Tabs ── */
+.taskTabs {
+  display: flex;
+  gap: 2px;
+  background: var(--base);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px;
+  margin-bottom: 12px;
+}
+
+.taskTab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.3125rem 0.5rem;
+  min-height: 2rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font-family: var(--font-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.taskTab:hover {
+  color: var(--primary);
+}
+
+.taskTabActive {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.taskTabActive:hover {
+  color: var(--white);
+}
+
+.taskTabCount {
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+  line-height: 1.4;
+}
+
+.taskTabActive .taskTabCount {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Task card enhancements ── */
+.taskItemDone {
+  opacity: 0.6;
+}
+
+.taskFrom {
+  margin: 2px 0 0;
+  font-family: var(--font-primary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.taskStudentLink {
+  display: inline-block;
+  margin: 2px 0 0;
+  font-family: var(--font-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--secondary);
+  text-decoration: none;
+}
+
+.taskStudentLink:hover {
+  text-decoration: underline;
+}
+
+.taskNotes {
+  margin: 4px 0 0;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--neutral);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.taskDueDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-primary);
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.taskStatusOpen {
+  font-family: var(--font-primary);
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--secondary-ul);
+  color: var(--secondary);
+}
+
+.taskStatusDone {
+  font-family: var(--font-primary);
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--green);
+}
+
+.taskActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.taskDeleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  background: none;
+  color: var(--neutral);
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.taskItem:hover .taskDeleteBtn {
+  opacity: 1;
+}
+
+.taskDeleteBtn:hover {
+  color: var(--red);
+}
+
+.taskDeleteConfirm {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--red);
+  background: transparent;
+  color: var(--red);
+  font-family: var(--font-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.taskDeleteConfirm:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.taskDeleteCancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--neutral);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* ── Enhanced create form ── */
+.addTaskField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.addTaskLabel {
+  font-family: var(--font-primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.addTaskNotes {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4375rem 0.625rem;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 400;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.addTaskNotes:focus {
+  border-color: var(--secondary);
+}
+
+.addTaskNotes::placeholder {
+  color: var(--neutral);
+}
+
+.addTaskDateInput {
+  padding: 0.4375rem 0.625rem;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.addTaskDateInput:focus {
+  border-color: var(--secondary);
+}
+
+/* ── Student picker ── */
+.studentPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--secondary-ul);
+  border: 1px solid rgba(0, 154, 171, 0.25);
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.studentPillRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--secondary);
+  padding: 1px;
+  opacity: 0.7;
+}
+
+.studentPillRemove:hover {
+  opacity: 1;
+}
+
+.linkStudentBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--neutral);
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.linkStudentBtn:hover {
+  color: var(--secondary);
+}
+
+.studentSearchWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.studentSearchInputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--secondary);
+  border-radius: 6px;
+  background: var(--white);
+}
+
+.studentSearchIcon {
+  color: var(--neutral);
+  flex-shrink: 0;
+}
+
+.studentSearchInput {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.studentSearchInput::placeholder {
+  color: var(--neutral);
+}
+
+.studentSearchCancel {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--neutral);
+  padding: 2px;
+}
+
+.studentSearchResults {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.studentSearchResult {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border: none;
+  background: none;
+  font-family: var(--font-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+  min-height: 2.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.studentSearchResult:last-child {
+  border-bottom: none;
+}
+
+.studentSearchResult:hover {
+  background: var(--base);
+  color: var(--primary);
 }
 
 @media (max-width: 1024px) {
