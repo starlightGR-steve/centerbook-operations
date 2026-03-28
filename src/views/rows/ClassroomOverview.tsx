@@ -363,23 +363,6 @@ export default function ClassroomOverview({
                         </div>
                       )}
 
-                      {rs.length > 0 && (
-                        <div className={styles.rowBadges}>
-                          {rs.some((s) => s.subjects?.includes('Math')) && (
-                            <span className={styles.subBadgeMath}>Math</span>
-                          )}
-                          {rs.some((s) => s.subjects?.includes('Reading')) && (
-                            <span className={styles.subBadgeReading}>
-                              Reading
-                            </span>
-                          )}
-                          {row.advanced && (
-                            <span className={styles.subBadgeAdvanced}>
-                              Advanced
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   );
                 })}

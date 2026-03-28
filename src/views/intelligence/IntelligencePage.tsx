@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import useSWR from 'swr';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, ComposedChart, Area, AreaChart,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, ReferenceLine,
 } from 'recharts';
 import SectionHeader from '@/components/ui/SectionHeader';
+import { api } from '@/lib/api';
 import styles from './IntelligencePage.module.css';
 
 /* ── Brand constants (non-token colors) ───────────────────── */
@@ -139,6 +142,76 @@ const insights = [
   },
 ];
 
+/* ── Attendance / Enrollment helpers ─────────────────────── */
+
+interface AttSummaryDay {
+  date: string; day_name: string; expected: number;
+  attended: number; excused: number; no_show: number; rate: number;
+}
+
+type AttPreset = 'month' | 'q3' | 'year';
+
+const STATUS_COLORS: Record<string, string> = {
+  Active: '#22c55e', Trial: '#355caa', 'Month Off': '#eab308',
+  Paused: '#9ca3af', 'On Hold': '#6b7280', Withdrawn: '#ef4444',
+  Cancel: '#ef4444', Inactive: '#9ca3af',
+};
+
+function toYMD(d: Date): string { return d.toISOString().split('T')[0]; }
+
+function getAttRange(preset: AttPreset, offset: number): { from: string; to: string; label: string } {
+  const today = new Date();
+  const todayStr = toYMD(today);
+  if (preset === 'year') {
+    return { from: `${today.getFullYear()}-01-01`, to: todayStr, label: String(today.getFullYear()) };
+  }
+  if (preset === 'q3') {
+    const start = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+    return { from: toYMD(start), to: todayStr, label: 'Last 3 Months' };
+  }
+  const d = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  const to = offset >= 0 ? todayStr : toYMD(lastDay);
+  const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return { from: toYMD(d), to, label };
+}
+
+function fmtDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+}
+
+function fmtMonth(ym: string): string {
+  const [y, m] = ym.split('-');
+  return new Date(parseInt(y), parseInt(m) - 1, 1)
+    .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function AttTooltip({ active, payload, label }: CustomTooltipProps) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload as { attended: number; expected: number; rate: number; isToday: boolean } | undefined;
+  return (
+    <div className={styles.chartTooltip}>
+      <div className={styles.tooltipLabel}>{label}{row?.isToday ? ' (Today)' : ''}</div>
+      <div>Attended: <strong>{row?.attended ?? '—'}</strong></div>
+      <div>Expected: <strong>{row?.expected ?? '—'}</strong></div>
+      <div>Rate: <strong>{row?.rate != null ? `${row.rate}%` : '—'}</strong></div>
+    </div>
+  );
+}
+
+function EnrollTooltip({ active, payload, label }: CustomTooltipProps) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className={styles.chartTooltip}>
+      <div className={styles.tooltipLabel}>{label}</div>
+      {payload.map(p => (
+        <div key={p.name} style={{ color: p.color }}>{p.name}: <strong>{p.value}</strong></div>
+      ))}
+    </div>
+  );
+}
+
 /* ── Sub-components ───────────────────────────────────────── */
 
 function SectionTitle({ children, sub }: { children: React.ReactNode; sub: string }) {
@@ -241,11 +314,65 @@ export default function IntelligencePage() {
     { id: 'grades',      label: 'Grade Bands' },
     { id: 'atrisk',      label: 'At-Risk' },
     { id: 'insights',    label: 'Action Items' },
+    { id: 'attendance',  label: 'Attendance' },
+    { id: 'enrollment',  label: 'Enrollment' },
   ];
 
   const filteredInsights = insightFilter === 'all'
     ? insights
     : insights.filter(i => i.type === insightFilter);
+
+  // ── Attendance state ──
+  const [attPreset, setAttPreset] = useState<AttPreset>('month');
+  const [attMonthOffset, setAttMonthOffset] = useState(0);
+  const [attShowAll, setAttShowAll] = useState(false);
+
+  const { from: attFrom, to: attTo, label: attLabel } = getAttRange(attPreset, attMonthOffset);
+
+  const { data: attData, isLoading: attLoading } = useSWR<AttSummaryDay[]>(
+    activeTab === 'attendance' ? `attendance-summary-${attFrom}-${attTo}` : null,
+    () => api.attendanceSummary(attFrom, attTo),
+    { dedupingInterval: 60000 }
+  );
+
+  const { data: pipelineData, isLoading: pipelineLoading } = useSWR(
+    activeTab === 'enrollment' ? 'pipeline-summary' : null,
+    () => api.pipeline.summary(),
+    { dedupingInterval: 60000 }
+  );
+
+  // Attendance computed
+  const attTotalAttended = attData?.reduce((s, d) => s + d.attended, 0) ?? 0;
+  const attTotalNoShow   = attData?.reduce((s, d) => s + d.no_show, 0) ?? 0;
+  const attTotalExcused  = attData?.reduce((s, d) => s + d.excused, 0) ?? 0;
+  const attOverallRate   = attTotalAttended + attTotalNoShow > 0
+    ? Math.round(attTotalAttended / (attTotalAttended + attTotalNoShow) * 100) : 0;
+  const attTodayStr = toYMD(new Date());
+  const attTableRows = attShowAll ? (attData ?? []) : (attData ?? []).slice(-6);
+  const attChartData = (attData ?? []).map(d => ({
+    label: fmtDate(d.date), attended: d.attended,
+    expected: d.expected, rate: d.rate, isToday: d.date === attTodayStr,
+  }));
+
+  // Enrollment computed
+  const currentMonthKey = toYMD(new Date()).slice(0, 7);
+  const enrollMonths = Object.entries(pipelineData?.monthly_summary ?? {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-12)
+    .map(([ym, v]) => ({ ym, ...v }));
+  const enrollChartData = enrollMonths.map(m => ({
+    label: new Date(m.ym + '-15').toLocaleDateString('en-US', { month: 'short' }),
+    gained: m.gained, lost: m.lost, net: m.net,
+  }));
+  const currentMD = pipelineData?.monthly_summary?.[currentMonthKey];
+  const enGained = currentMD?.gained ?? 0;
+  const enLost   = currentMD?.lost ?? 0;
+  const enNet    = currentMD?.net ?? 0;
+  const enTotal  = pipelineData?.student_statuses?.['Active'] ?? 0;
+  const statusEntries = Object.entries(pipelineData?.student_statuses ?? {})
+    .filter(([, count]) => count > 0)
+    .map(([label, count]) => ({ label, count, color: STATUS_COLORS[label] ?? '#6b7280' }))
+    .sort((a, b) => b.count - a.count);
 
   return (
     <div className={styles.page}>
@@ -683,6 +810,220 @@ export default function IntelligencePage() {
             </div>
           </div>
         </>}
+
+        {/* ══════════════ ATTENDANCE TAB ══════════════ */}
+        {activeTab === 'attendance' && <>
+          {/* Month nav + preset chips */}
+          <div className={styles.attControls}>
+            <div className={styles.attMonthNav}>
+              <button
+                className={styles.attNavBtn}
+                disabled={attPreset !== 'month'}
+                onClick={() => setAttMonthOffset(o => o - 1)}
+                aria-label="Previous month"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className={styles.attMonthLabel}>{attLabel}</span>
+              <button
+                className={styles.attNavBtn}
+                disabled={attPreset !== 'month' || attMonthOffset >= 0}
+                onClick={() => setAttMonthOffset(o => Math.min(0, o + 1))}
+                aria-label="Next month"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <div className={styles.attPresets}>
+              {([
+                { id: 'month' as const, label: 'This Month' },
+                { id: 'q3'    as const, label: 'Last 3 Months' },
+                { id: 'year'  as const, label: 'This Year' },
+              ]).map(p => (
+                <button
+                  key={p.id}
+                  className={`${styles.attChip} ${attPreset === p.id ? styles.attChipActive : ''}`}
+                  onClick={() => { setAttPreset(p.id); setAttMonthOffset(0); }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {attLoading ? (
+            <div className={styles.loadingRow}>Loading attendance data…</div>
+          ) : <>
+            {/* Summary stats */}
+            <div className={styles.statStrip}>
+              {[
+                { label: 'Total Attended', value: String(attTotalAttended), color: 'var(--primary)' },
+                { label: 'Total No-Shows', value: String(attTotalNoShow),   color: '#ef4444' },
+                { label: 'Total Excused',  value: String(attTotalExcused),  color: 'var(--secondary)' },
+                { label: 'Attendance Rate', value: `${attOverallRate}%`,    color: 'var(--accent)' },
+              ].map(c => (
+                <div key={c.label} className={styles.statCard}>
+                  <div className={styles.statNum} style={{ color: c.color }}>{c.value}</div>
+                  <div className={styles.statLabel}>{c.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Daily bar chart */}
+            {attChartData.length > 0 && (
+              <div className={styles.card}>
+                <SectionTitle sub="Daily Attendance">Attendance by Day</SectionTitle>
+                <div className={styles.attLegend}>
+                  <span><span className={styles.legendDotGreen} /> 90%+ rate</span>
+                  <span><span className={styles.legendDotAmber} /> Below 90%</span>
+                </div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={attChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 9, fontFamily: 'Montserrat' }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 10, fontFamily: 'Montserrat' }} allowDecimals={false} />
+                    <Tooltip content={<AttTooltip />} />
+                    <Bar dataKey="attended" name="Attended" radius={[3, 3, 0, 0]}>
+                      {attChartData.map((entry, i) => (
+                        <Cell key={i} fill={entry.rate >= 90 ? '#22c55e' : '#eab308'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Daily breakdown table */}
+            <div className={styles.card}>
+              <SectionTitle sub="Daily Detail">Attendance Breakdown</SectionTitle>
+              <div className={styles.tableWrap}>
+                <table className={styles.attTable}>
+                  <thead>
+                    <tr>
+                      {['Date', 'Expected', 'Attended', 'Excused', 'No-Show', 'Rate'].map(h => (
+                        <th key={h} className={styles.attTh}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attTableRows.map(row => (
+                      <tr key={row.date} className={row.rate < 90 ? styles.attRowLow : styles.attRow}>
+                        <td className={styles.attTdDate}>
+                          {fmtDate(row.date)}
+                          {row.date === attTodayStr && <span className={styles.todayBadge}>Today</span>}
+                        </td>
+                        <td className={styles.attTd}>{row.expected}</td>
+                        <td className={`${styles.attTd} ${styles.attTdGreen}`}>{row.attended}</td>
+                        <td className={`${styles.attTd} ${styles.attTdTeal}`}>{row.excused}</td>
+                        <td className={`${styles.attTd} ${row.no_show > 3 ? styles.attTdRedBold : styles.attTdRed}`}>{row.no_show}</td>
+                        <td className={`${styles.attTd} ${row.rate < 90 ? styles.attTdAmber : ''}`}>{row.rate}%</td>
+                      </tr>
+                    ))}
+                    {attData?.length === 0 && (
+                      <tr><td colSpan={6} className={styles.attEmpty}>No attendance data for this period.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {attData && attData.length > 6 && (
+                <button className={styles.attShowAll} onClick={() => setAttShowAll(s => !s)}>
+                  {attShowAll ? 'Show fewer days' : `View all ${attData.length} center days`}
+                </button>
+              )}
+            </div>
+          </>}
+        </>}
+
+        {/* ══════════════ ENROLLMENT TAB ══════════════ */}
+        {activeTab === 'enrollment' && (
+          pipelineLoading ? (
+            <div className={styles.loadingRow}>Loading enrollment data…</div>
+          ) : <>
+            {/* Summary stats */}
+            <div className={styles.statStrip}>
+              {[
+                { label: 'New Enrollments (this month)', value: String(enGained), color: '#22c55e' },
+                { label: 'Cancellations (this month)',   value: String(enLost),   color: '#ef4444' },
+                { label: 'Net Change', value: `${enNet >= 0 ? '+' : ''}${enNet}`, color: enNet >= 0 ? '#22c55e' : '#ef4444' },
+                { label: 'Total Active', value: String(enTotal), color: 'var(--primary)' },
+              ].map(c => (
+                <div key={c.label} className={styles.statCard}>
+                  <div className={styles.statNum} style={{ color: c.color }}>{c.value}</div>
+                  <div className={styles.statLabel}>{c.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Trend chart */}
+            {enrollChartData.length > 0 && (
+              <div className={styles.card}>
+                <SectionTitle sub="12-Month Trend">Enrollment Activity</SectionTitle>
+                <ResponsiveContainer width="100%" height={250}>
+                  <ComposedChart data={enrollChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fontFamily: 'Montserrat' }} />
+                    <YAxis tick={{ fontSize: 10, fontFamily: 'Montserrat' }} />
+                    <Tooltip content={<EnrollTooltip />} />
+                    <Bar dataKey="gained" name="Gained" fill="#22c55e" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="lost"   name="Lost"   fill="#ef4444" radius={[3, 3, 0, 0]} />
+                    <Line type="monotone" dataKey="net" name="Net" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+                <div className={styles.attLegend}>
+                  <span><span className={styles.legendDotGreen} /> Gained</span>
+                  <span><span className={styles.legendDotRed} /> Lost</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: 600 }}>— Net</span>
+                </div>
+              </div>
+            )}
+
+            {/* Monthly table */}
+            <div className={styles.card}>
+              <SectionTitle sub="Monthly Breakdown">Enrollment by Month</SectionTitle>
+              <div className={styles.tableWrap}>
+                <table className={styles.attTable}>
+                  <thead>
+                    <tr>
+                      {['Month', 'Gained', 'Lost', 'Net'].map(h => (
+                        <th key={h} className={styles.attTh}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...enrollMonths].reverse().map(m => (
+                      <tr key={m.ym} className={m.ym === currentMonthKey ? styles.enrollRowCurrent : styles.attRow}>
+                        <td className={styles.attTdDate}>{fmtMonth(m.ym)}</td>
+                        <td className={`${styles.attTd} ${styles.attTdGreen}`}>{m.gained}</td>
+                        <td className={`${styles.attTd} ${styles.attTdRed}`}>{m.lost}</td>
+                        <td className={`${styles.attTd} ${m.net >= 0 ? styles.attTdGreenBold : styles.attTdRedBold}`}>
+                          {m.net >= 0 ? '+' : ''}{m.net}
+                        </td>
+                      </tr>
+                    ))}
+                    {enrollMonths.length === 0 && (
+                      <tr><td colSpan={4} className={styles.attEmpty}>No enrollment data available.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Status breakdown pills */}
+            {statusEntries.length > 0 && (
+              <div className={styles.card}>
+                <SectionTitle sub="Current Status">Student Status Breakdown</SectionTitle>
+                <div className={styles.statusPillRow}>
+                  {statusEntries.map(s => (
+                    <div key={s.label} className={styles.statusPill} style={{ borderLeftColor: s.color }}>
+                      <span className={styles.statusPillCount} style={{ color: s.color }}>{s.count}</span>
+                      <span className={styles.statusPillLabel}>{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {/* ══════════════ ACTION ITEMS TAB ══════════════ */}
         {activeTab === 'insights' && <>

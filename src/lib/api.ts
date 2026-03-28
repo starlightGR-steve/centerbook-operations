@@ -45,6 +45,7 @@ import type {
   PipelineSummary,
   CreateFamilyRequest,
   CenterSettings,
+  ScheduleOverride,
 } from './types';
 
 // ── Configuration ──────────────────────────
@@ -541,12 +542,47 @@ export const api = {
       directFetch<void>(`/absences/${id}`, { method: 'DELETE' }),
   },
 
+  // ── Attendance Summary (aggregate) ──
+  attendanceSummary: (from: string, to: string) =>
+    directFetch<Array<{ date: string; day_name: string; expected: number; attended: number; excused: number; no_show: number; rate: number }>>(
+      `/attendance/summary?from=${from}&to=${to}`
+    ),
+
   // ── Level-up milestones ──
   levelUp: (data: { student_id: number; subject: string; old_level: string; new_level: string; send_email: boolean; show_on_portal: boolean }) =>
     directFetch<{ id: number; email_sent: boolean; portal_visible: boolean; _email_to?: string }>('/level-up', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  // ── Schedule Overrides ──
+  scheduleOverrides: {
+    list: (weekStart: string, studentId?: number) => {
+      const params = new URLSearchParams({ week_start: weekStart });
+      if (studentId) params.append('student_id', String(studentId));
+      return directFetch<ScheduleOverride[]>(`/schedule-overrides?${params}`);
+    },
+    create: (data: {
+      student_id: number;
+      override_type: 'add' | 'remove' | 'move';
+      original_day: string | null;
+      original_time: number | null;
+      new_day: string | null;
+      new_time: number | null;
+      effective_date: string;
+      week_start: string;
+      reason: string | null;
+    }) =>
+      directFetch<ScheduleOverride>('/schedule-overrides', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    remove: (id: number) =>
+      directFetch<{ success: boolean; deleted_id: number }>(
+        `/schedule-overrides/${id}`,
+        { method: 'DELETE' }
+      ),
+  },
 
   // ── Center Settings ──
   center: {

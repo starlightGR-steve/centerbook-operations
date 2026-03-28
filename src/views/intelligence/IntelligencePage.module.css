@@ -728,6 +728,266 @@
   flex-shrink: 0;
 }
 
+/* ── Attendance / Enrollment dashboards ─────────────────── */
+
+.loadingRow {
+  text-align: center;
+  padding: clamp(24px, 5vw, 48px) 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* Attendance controls */
+.attControls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.attMonthNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attNavBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  color: var(--neutral);
+  transition: background 0.15s;
+}
+
+.attNavBtn:hover:not(:disabled) {
+  background: var(--base);
+}
+
+.attNavBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.attMonthLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 9rem;
+  text-align: center;
+}
+
+.attPresets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.attChip {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid #d0d0d0;
+  background: var(--white);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral);
+  cursor: pointer;
+  transition: all 0.12s;
+  min-height: 28px;
+}
+
+.attChip:hover {
+  background: var(--base);
+}
+
+.attChipActive {
+  border-color: var(--secondary);
+  background: #eef5f6;
+  color: var(--secondary);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--secondary);
+}
+
+/* Stats strip */
+.statStrip {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.statCard {
+  flex: 1 1 0;
+  min-width: 120px;
+  background: var(--white);
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statNum {
+  font-family: var(--font-primary);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Chart legend dots */
+.attLegend {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  align-items: center;
+}
+
+.legendDotGreen,
+.legendDotAmber,
+.legendDotRed {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.legendDotGreen { background: #22c55e; }
+.legendDotAmber { background: #eab308; }
+.legendDotRed   { background: #ef4444; }
+
+/* Attendance table */
+.attTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-primary);
+  font-size: 12px;
+}
+
+.attTh {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.attRow,
+.attRowLow {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.attRowLow {
+  background: #fffbeb;
+}
+
+.attTdDate {
+  padding: 9px 12px;
+  color: #374151;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.attTd {
+  padding: 9px 12px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.attTdGreen     { color: #16a34a; font-weight: 600; }
+.attTdTeal      { color: var(--secondary); }
+.attTdRed       { color: #ef4444; }
+.attTdRedBold   { color: #ef4444; font-weight: 700; }
+.attTdGreenBold { color: #16a34a; font-weight: 700; }
+.attTdAmber     { color: #d97706; }
+
+.attEmpty {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.todayBadge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  background: var(--secondary);
+  color: var(--white);
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.attShowAll {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--secondary);
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Enrollment table + pills */
+.enrollRowCurrent {
+  background: #eff6ff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.statusPillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.statusPill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid;
+  border-radius: 6px;
+  background: var(--white);
+  min-width: 7rem;
+}
+
+.statusPillCount {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statusPillLabel {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .header {
