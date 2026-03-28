@@ -424,6 +424,7 @@ export default function AttendancePage() {
 
     // Persist flags from check-in prep
     const hasData = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0 || !!options.noteForTeacher;
+    let flagSaveFailed = false;
     if (hasData) {
       const flags: Record<string, unknown> = {};
       options.selectedFlags.forEach((key) => { flags[key] = true; });
@@ -445,6 +446,7 @@ export default function AttendancePage() {
         await updateStudentFlags(options.studentId, flags, todayDate);
       } catch (err) {
         console.error('handleCheckInConfirm: failed to persist check-in flags', err);
+        flagSaveFailed = true;
       }
     }
 
@@ -452,7 +454,9 @@ export default function AttendancePage() {
     setAnnouncement(`${studentName} checked in`);
     setUndoToast({
       id: ++toastIdRef.current,
-      message: `${studentName} checked in`,
+      message: flagSaveFailed
+        ? `${studentName} checked in — class prep may not have saved`
+        : `${studentName} checked in`,
       onUndo: async () => {
         await deleteAttendance(result.id);
         try { await removeStudentFromRow(options.studentId); } catch { /* noop */ }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { mutate as globalMutate } from 'swr';
 import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Square, CheckSquare, Circle, CheckCircle2, Clock, Lightbulb, CircleHelp, Star, Zap, ClipboardList } from 'lucide-react';
 import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClockDisplay from '@/components/ClockDisplay';
@@ -104,6 +105,7 @@ export default function RowsPage() {
   const [taskNoteText, setTaskNoteText] = useState('');
   // Local optimistic flag overrides (cleared on SWR revalidation)
   const [optimisticFlags, setOptimisticFlags] = useState<Record<number, RowAssignmentFlags>>({});
+  const [flagSaveError, setFlagSaveError] = useState<string | null>(null);
   const { optimistic: sessionOptimistic, persistAdjustment } = useSessionAdjust();
   const [sessionPopoverStudent, setSessionPopoverStudent] = useState<number | null>(null);
   const [expandedNoteStudent, setExpandedNoteStudent] = useState<number | null>(null);
@@ -219,6 +221,15 @@ export default function RowsPage() {
       .map((fc) => ({ key: fc.key, active: !!(f as Record<string, unknown>)[fc.key] }));
   }, [getStudentFlags, flagConfig]);
 
+  // Revert an optimistic flag update and surface an error toast
+  const handleFlagError = useCallback((studentId: number, err: unknown) => {
+    console.error('Flag update failed:', err);
+    setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
+    globalMutate(`classroom-assignments-${today}`);
+    setFlagSaveError('Failed to save — please try again.');
+    setTimeout(() => setFlagSaveError(null), 4000);
+  }, [today]);
+
   const toggleFlag = useCallback((studentId: number, flag: string) => {
     const current = getStudentFlags(studentId);
     const key = flag as keyof RowAssignmentFlags;
@@ -229,8 +240,8 @@ export default function RowsPage() {
     updateStudentFlags(studentId, updated, today).then(() => {
       // Clear optimistic on success (SWR will have fresh data)
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
-    });
-  }, [getStudentFlags, today]);
+    }).catch((err) => handleFlagError(studentId, err));
+  }, [getStudentFlags, today, handleFlagError]);
 
   // Helper: toggle task — 3-state: missing → assigned(false) → done(true) → missing
   const toggleTask = useCallback((studentId: number, taskKey: string) => {
@@ -248,8 +259,8 @@ export default function RowsPage() {
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     updateStudentFlags(studentId, updated, today).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
-    });
-  }, [getStudentFlags, today]);
+    }).catch((err) => handleFlagError(studentId, err));
+  }, [getStudentFlags, today, handleFlagError]);
 
   // Helper: set custom task text
   const setCustomTask = useCallback((studentId: number, text: string) => {
@@ -259,8 +270,8 @@ export default function RowsPage() {
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     updateStudentFlags(studentId, updated, today).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
-    });
-  }, [getStudentFlags, today]);
+    }).catch((err) => handleFlagError(studentId, err));
+  }, [getStudentFlags, today, handleFlagError]);
 
   const setTeacherNote = useCallback((studentId: number, note: string | null) => {
     const current = getStudentFlags(studentId);
@@ -268,15 +279,15 @@ export default function RowsPage() {
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     updateStudentFlags(studentId, updated, today).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
-    });
-  }, [getStudentFlags, today]);
+    }).catch((err) => handleFlagError(studentId, err));
+  }, [getStudentFlags, today, handleFlagError]);
 
   const bulkUpdateFlags = useCallback((studentId: number, updated: RowAssignmentFlags) => {
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     updateStudentFlags(studentId, updated, today).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
-    });
-  }, [today]);
+    }).catch((err) => handleFlagError(studentId, err));
+  }, [today, handleFlagError]);
 
   const dismissTaskNote = useCallback(() => {
     setTaskNoteInput(null);
@@ -841,6 +852,13 @@ export default function RowsPage() {
             onSetTeacherNote={(n) => setTeacherNote(selectedStudent.id, n)}
             onClose={() => setSelectedStudentId(null)}
           />
+        )}
+
+        {flagSaveError && (
+          <div className={styles.flagErrorToast} role="alert">
+            <AlertCircle size={14} />
+            {flagSaveError}
+          </div>
         )}
       </div>
     </div>
