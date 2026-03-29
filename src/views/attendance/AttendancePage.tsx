@@ -162,7 +162,6 @@ export default function AttendancePage() {
 
   const today = getToday();
   const todayDay = today;
-  console.log('ATTENDANCE DATE DEBUG: today used for fetch =', new Date().toISOString().split('T')[0]);
 
   /* ── Live clock ── */
   useEffect(() => {
@@ -193,7 +192,6 @@ export default function AttendancePage() {
 
   // All attendance IDs for today (including checked out)
   const allAttendanceMap = useMemo(() => {
-    console.log('ATTENDANCE DEBUG: raw allAttendance count =', allAttendance?.length, 'first 3 =', allAttendance?.slice(0, 3));
     const map = new Map<number, Attendance>();
     if (allAttendance) {
       for (const a of allAttendance) map.set(a.student_id, a);
@@ -219,7 +217,6 @@ export default function AttendancePage() {
   // Column 1: Expected — scheduled today, no attendance record at all
   const expectedStudents = useMemo(() => {
     const result = scheduledToday.filter((s) => !allAttendanceMap.has(s.id) && !isNoShow(s));
-    console.log('ATTENDANCE DEBUG: today day of week =', new Date().toLocaleDateString('en-US', { weekday: 'long' }), 'expected count =', result.length);
     return result;
   }, [scheduledToday, allAttendanceMap]);
 
@@ -234,7 +231,6 @@ export default function AttendancePage() {
       }))
       .filter((x) => !!x.student)
       .sort((a, b) => (a.attendance.check_in || '').localeCompare(b.attendance.check_in || ''));
-    console.log('ATTENDANCE DEBUG: checkedIn filter applied, result count =', result.length);
     return result;
   }, [checkedIn, allStudents]);
 
@@ -406,21 +402,18 @@ export default function AttendancePage() {
       return;
     }
 
-    console.log('handleCheckInConfirm called', options.studentId);
     const studentName = checkInPopupStudent
       ? `${checkInPopupStudent.first_name} ${checkInPopupStudent.last_name}`
       : 'Student';
 
     let result: Awaited<ReturnType<typeof checkInStudent>>;
     try {
-      console.log('handleCheckInConfirm: calling checkInStudent');
       result = await checkInStudent({
         student_id: options.studentId,
         source: 'kiosk',
         checked_in_by: 'kiosk',
         session_duration_minutes: options.sessionMinutes,
       });
-      console.log('handleCheckInConfirm: checkInStudent returned', result?.id);
     } catch (err) {
       console.error('handleCheckInConfirm: checkInStudent failed', err);
       setCheckInPopupStudent(null);
