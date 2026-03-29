@@ -330,13 +330,15 @@ export default function StudentDetailPanel({
             );
           })()}
 
-          {/* 6c. Assigned checklist items only */}
+          {/* 6c. Assigned checklist items (standard + custom) */}
           {(() => {
             const assignedChecklist = checklistConfig.filter((ci) => {
               const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
               return val !== undefined && val !== null;
             });
-            if (assignedChecklist.length === 0) return null;
+            const configKeys = new Set(checklistConfig.map((c) => c.key));
+            const customTaskKeys = Object.keys(flags?.tasks || {}).filter((k) => !configKeys.has(k));
+            if (assignedChecklist.length === 0 && customTaskKeys.length === 0) return null;
             return (
               <div className={styles.checklistGrid}>
                 {assignedChecklist.map((ci) => {
@@ -357,6 +359,28 @@ export default function StudentDetailPanel({
                     </button>
                   );
                 })}
+                {customTaskKeys.map((key) => {
+                  const val = (flags?.tasks as Record<string, unknown>)?.[key];
+                  const isDone = val === true;
+                  const label = typeof val === 'string' && val.length > 0
+                    ? val
+                    : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                  return (
+                    <button
+                      key={key}
+                      className={`${styles.checklistRow} ${isDone ? styles.checklistRowDone : styles.checklistRowAssigned}`}
+                      onClick={() => onToggleTask?.(key)}
+                      disabled={!onToggleTask}
+                    >
+                      <span className={`${styles.checkBox} ${isDone ? styles.checkBoxChecked : styles.checkBoxAssigned}`}>
+                        {isDone && <Check size={9} color="var(--white)" />}
+                      </span>
+                      <span className={`${styles.checklistLabel} ${isDone ? styles.checklistLabelDone : ''}`}>
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             );
           })()}
@@ -364,7 +388,9 @@ export default function StudentDetailPanel({
           {/* 6d. Empty state — when no flags and no checklist assigned */}
           {(() => {
             const hasFlags = flagConfig.some((fc) => !!(flags && (flags as Record<string, unknown>)[fc.key]));
-            const hasTasks = checklistConfig.some((ci) => {
+            const configKeys = new Set(checklistConfig.map((c) => c.key));
+            const customTaskKeys = Object.keys(flags?.tasks || {}).filter((k) => !configKeys.has(k));
+            const hasTasks = customTaskKeys.length > 0 || checklistConfig.some((ci) => {
               const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
               return val !== undefined && val !== null;
             });
