@@ -915,10 +915,10 @@ export default function AttendancePage() {
                             </button>
                             {moveMenuOpen === menuKey && moveMenuPos && createPortal(
                               <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveToExpected(att.student_id, att.id)}>
+                                <button className={styles.moveMenuItem} onClick={(e) => { e.stopPropagation(); handleMoveToExpected(att.student_id, att.id); }}>
                                   Expected
                                 </button>
-                                <button className={styles.moveMenuItem} onClick={() => { closeMoveMenu(); handleCheckOut(att.student_id); }}>
+                                <button className={styles.moveMenuItem} onClick={(e) => { e.stopPropagation(); closeMoveMenu(); handleCheckOut(att.student_id); }}>
                                   Checked Out
                                 </button>
                               </div>,
@@ -973,7 +973,7 @@ export default function AttendancePage() {
                             </button>
                             {moveMenuOpen === menuKey && moveMenuPos && createPortal(
                               <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveToCheckedIn(att.student_id, att.id)}>
+                                <button className={styles.moveMenuItem} onClick={(e) => { e.stopPropagation(); handleMoveToCheckedIn(att.student_id, att.id); }}>
                                   Checked In
                                 </button>
                               </div>,
