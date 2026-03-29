@@ -189,7 +189,7 @@ function fmtMonth(ym: string): string {
 
 function AttTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
-  const row = payload[0]?.payload as { attended: number; expected: number; rate: number; isToday: boolean } | undefined;
+  const row = (payload[0] as any)?.payload as { attended: number; expected: number; rate: number; isToday: boolean } | undefined;
   return (
     <div className={styles.chartTooltip}>
       <div className={styles.tooltipLabel}>{label}{row?.isToday ? ' (Today)' : ''}</div>
