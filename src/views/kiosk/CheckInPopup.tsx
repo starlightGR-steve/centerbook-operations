@@ -12,6 +12,7 @@ import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
 import { createNote } from '@/hooks/useNotes';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
+import { useVisitPlan } from '@/hooks/useVisitPlan';
 import styles from './CheckInPopup.module.css';
 
 export interface CheckInOptions {
@@ -73,6 +74,9 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   const todayDetail = student.schedule_detail?.[todayDay];
   const isScheduledToday = scheduleDays.includes(todayDay) || !!todayDetail;
 
+  // Visit plan — pre-populate Class Prep from planned items
+  const { activeItems: visitPlanItems } = useVisitPlan(isEditMode ? null : student.id);
+
   // State — use schedule_detail duration if available, else default 60
   const defaultMinutes = todayDetail?.duration ?? (subjects.length > 1 ? 60 : 30);
   const [sessionMinutes, setSessionMinutes] = useState(defaultMinutes);
@@ -86,6 +90,24 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   const [confirming, setConfirming] = useState(false);
   const [showEndTime, setShowEndTime] = useState(false);
   const [endTime, setEndTime] = useState('');
+  const [visitPlanApplied, setVisitPlanApplied] = useState(false);
+
+  // Apply visit plan items once when they load (only for new check-ins, not edits)
+  useEffect(() => {
+    if (visitPlanApplied || !visitPlanItems || visitPlanItems.length === 0) return;
+    setVisitPlanApplied(true);
+
+    const planFlags = visitPlanItems.filter((i) => i.item_type === 'flag').map((i) => i.item_key);
+    const planChecklist = visitPlanItems.filter((i) => i.item_type === 'checklist').map((i) => i.item_key);
+    const planCustoms = visitPlanItems.filter((i) => i.item_type === 'custom').map((i) => `__custom__:${i.item_label || i.item_key}`);
+    const planNote = visitPlanItems.find((i) => i.item_type === 'teacher_note')?.notes || '';
+
+    if (planFlags.length) setSelectedFlags((prev) => [...new Set([...prev, ...planFlags])]);
+    if (planChecklist.length || planCustoms.length) {
+      setSelectedChecklist((prev) => [...new Set([...prev, ...planChecklist, ...planCustoms])]);
+    }
+    if (planNote && !teacherNote) setTeacherNote(planNote);
+  }, [visitPlanItems, visitPlanApplied, teacherNote]);
 
   // Default pickup contact to primary
   useEffect(() => {

@@ -488,6 +488,23 @@ export interface LevelHistoryEntry {
   changed_at: string;
 }
 
+// ── Visit Plan ────────────────────────────
+
+export interface VisitPlanItem {
+  id: number;
+  student_id: number;
+  item_key: string;
+  item_type: string;
+  item_label: string | null;
+  notes: string | null;
+  planned_by: number | null;
+  planned_by_name: string | null;
+  completed_by: number | null;
+  completed_by_name: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
 // ── Row Assignments ────────────────────────
 
 export interface RowAssignmentFlags {

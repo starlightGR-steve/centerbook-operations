@@ -47,6 +47,7 @@ import type {
   CreateFamilyRequest,
   CenterSettings,
   ScheduleOverride,
+  VisitPlanItem,
 } from './types';
 
 // ── Configuration ──────────────────────────
@@ -636,6 +637,28 @@ export const api = {
       }),
     remove: (studentId: number, itemKey: string) =>
       directFetch(`/students/${studentId}/persistent-items/${itemKey}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  // ── Visit Plan ──
+  visitPlan: {
+    list: (studentId: number, status?: string) => {
+      const params = status ? `?status=${status}` : '';
+      return directFetch<VisitPlanItem[]>(`/students/${studentId}/visit-plan${params}`);
+    },
+    create: (studentId: number, items: Array<{ item_key: string; item_type: string; item_label?: string; notes?: string }>) =>
+      directFetch(`/students/${studentId}/visit-plan`, {
+        method: 'POST',
+        body: JSON.stringify({ items }),
+      }),
+    update: (studentId: number, itemId: number, data: { completed?: boolean; notes?: string; item_label?: string }) =>
+      directFetch(`/students/${studentId}/visit-plan/${itemId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    remove: (studentId: number, itemId: number) =>
+      directFetch(`/students/${studentId}/visit-plan/${itemId}`, {
         method: 'DELETE',
       }),
   },

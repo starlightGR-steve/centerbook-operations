@@ -44,6 +44,7 @@ import { useStudentTasks, completeTask, createTask } from '@/hooks/useStudentTas
 import { useActiveStaff } from '@/hooks/useStaff';
 import { usePersistentItems } from '@/hooks/usePersistentItems';
 import { useChecklistConfig } from '@/hooks/useFlagConfig';
+import NextClassPlanning from '@/components/students/NextClassPlanning';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import type { CbTaskType, Contact, Absence } from '@/lib/types';
 import styles from './StudentProfilePage.module.css';
@@ -1020,6 +1021,11 @@ export default function StudentProfilePage({ studentId }: Props) {
               </div>
             )}
           </div>
+
+          <hr className={styles.groupDivider} />
+
+          {/* ── Next Class Planning ── */}
+          <NextClassPlanning studentId={studentId} />
 
           <hr className={styles.groupDivider} />
 
