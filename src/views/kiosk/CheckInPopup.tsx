@@ -10,7 +10,6 @@ import {
 import { api } from '@/lib/api';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
-import { createNote } from '@/hooks/useNotes';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
 import { useVisitPlan } from '@/hooks/useVisitPlan';
 import styles from './CheckInPopup.module.css';
@@ -84,15 +83,15 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   const [selectedChecklist, setSelectedChecklist] = useState<string[]>(existingPrep?.checklist ?? []);
   const [selectedFlags, setSelectedFlags] = useState<string[]>(existingPrep?.flags ?? []);
   const [customTask, setCustomTask] = useState('');
-  const [teacherNote, setTeacherNote] = useState(existingPrep?.teacherNote ?? '');
-  const [noteSending, setNoteSending] = useState(false);
-  const [noteSent, setNoteSent] = useState(false);
+  const [notesList, setNotesList] = useState<string[]>([]);
+  const [currentNote, setCurrentNote] = useState(existingPrep?.teacherNote ?? '');
   const [confirming, setConfirming] = useState(false);
   const [showEndTime, setShowEndTime] = useState(false);
   const [endTime, setEndTime] = useState('');
   const [visitPlanApplied, setVisitPlanApplied] = useState(false);
 
   // Apply visit plan items once when they load (only for new check-ins, not edits)
+  // Note: teacher_note is NOT pre-filled into the input — it auto-applies in flags on confirm
   useEffect(() => {
     if (visitPlanApplied || !visitPlanItems || visitPlanItems.length === 0) return;
     setVisitPlanApplied(true);
@@ -100,14 +99,12 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
     const planFlags = visitPlanItems.filter((i) => i.item_type === 'flag').map((i) => i.item_key);
     const planChecklist = visitPlanItems.filter((i) => i.item_type === 'checklist').map((i) => i.item_key);
     const planCustoms = visitPlanItems.filter((i) => i.item_type === 'custom').map((i) => `__custom__:${i.item_label || i.item_key}`);
-    const planNote = visitPlanItems.find((i) => i.item_type === 'teacher_note')?.notes || '';
 
     if (planFlags.length) setSelectedFlags((prev) => [...new Set([...prev, ...planFlags])]);
     if (planChecklist.length || planCustoms.length) {
       setSelectedChecklist((prev) => [...new Set([...prev, ...planChecklist, ...planCustoms])]);
     }
-    if (planNote && !teacherNote) setTeacherNote(planNote);
-  }, [visitPlanItems, visitPlanApplied, teacherNote]);
+  }, [visitPlanItems, visitPlanApplied]);
 
   // Default pickup contact to primary
   useEffect(() => {
@@ -155,38 +152,27 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
     );
   };
 
-  const handleSendNote = async () => {
-    if (!teacherNote.trim() || noteSending) return;
-    setNoteSending(true);
-    try {
-      await createNote({
-        student_id: student.id,
-        content: teacherNote.trim(),
-        author_type: 'staff',
-        author_name: session?.user?.name || 'Staff',
-        author_id: staffId,
-        note_date: new Date().toISOString().split('T')[0],
-        visibility: 'staff',
-      });
-      setTeacherNote('');
-      setNoteSent(true);
-      setTimeout(() => setNoteSent(false), 2000);
-    } catch {
-      // silent fail for note
-    } finally {
-      setNoteSending(false);
-    }
+  const handleSendNote = () => {
+    if (!currentNote.trim()) return;
+    setNotesList((prev) => [...prev, currentNote.trim()]);
+    setCurrentNote('');
   };
 
   const handleConfirm = () => {
     setConfirming(true);
+    // Build combined teacher note: visit plan note + submitted notes + unsent input
+    const allNotes: string[] = [];
+    const visitPlanNote = visitPlanItems?.find((i) => i.item_type === 'teacher_note')?.notes;
+    if (visitPlanNote) allNotes.push(visitPlanNote);
+    allNotes.push(...notesList);
+    if (currentNote.trim()) allNotes.push(currentNote.trim());
     onConfirm({
       studentId: student.id,
       sessionMinutes,
       pickupContactId,
       selectedChecklist,
       selectedFlags,
-      noteForTeacher: teacherNote.trim() || null,
+      noteForTeacher: allNotes.length > 0 ? allNotes.join('\n---\n') : null,
     });
   };
 
@@ -344,23 +330,38 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
           {/* ── Class Prep ── */}
           <h3 className={styles.sectionHeading}>Class Prep</h3>
 
-          {/* Note for Teacher — first */}
+          {/* Note for Teacher — multi-entry */}
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Note for Teacher</span>
+            {notesList.length > 0 && (
+              <div className={styles.noteChipList}>
+                {notesList.map((note, i) => (
+                  <div key={i} className={styles.noteChip}>
+                    <span className={styles.noteChipText}>{note}</span>
+                    <button
+                      className={styles.noteChipRemove}
+                      onClick={() => setNotesList((prev) => prev.filter((_, idx) => idx !== i))}
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className={styles.noteInputRow}>
               <input
                 className={styles.noteInput}
                 placeholder="Add a note..."
-                value={teacherNote}
-                onChange={(e) => setTeacherNote(e.target.value)}
+                value={currentNote}
+                onChange={(e) => setCurrentNote(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendNote()}
               />
               <button
                 className={styles.sendBtn}
                 onClick={handleSendNote}
-                disabled={noteSending || !teacherNote.trim()}
+                disabled={!currentNote.trim()}
               >
-                {noteSent ? <Check size={14} /> : <Send size={14} />}
+                <Send size={14} />
               </button>
             </div>
           </div>
