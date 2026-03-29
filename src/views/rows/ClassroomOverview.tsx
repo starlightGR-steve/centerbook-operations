@@ -240,6 +240,7 @@ export default function ClassroomOverview({
                 data-small={sectionRows.length <= 3 && sectionRows[0]?.tables === 1 ? '' : undefined}
               >
                 {sectionRows.map((row) => {
+                  console.log('ROW RENDER:', row.label, 'seats=', row.seats, 'testingSeats=', row.testingSeats, 'testing_seats=', row.testing_seats, 'total=', row.seats + (row.testingSeats || 0));
                   const rs = assignments[row.id] || [];
                   // Split students: those with taking_test go to testing slots
                   const regularStudents = rs.filter((s) => !flagsMap[s.id]?.taking_test);

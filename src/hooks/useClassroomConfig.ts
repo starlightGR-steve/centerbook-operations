@@ -26,9 +26,10 @@ export function useClassroomConfig() {
     'classroom-config',
     async () => {
       const data = await api.classroomConfig.get();
+      console.log('CLASSROOM CONFIG: raw API data =', JSON.stringify(data));
       const { sections, rows } = data;
 
-      return sections
+      const result = sections
         .sort((a, b) => a.order - b.order)
         .map((sec) => ({
           id: sec.id,
@@ -47,6 +48,8 @@ export function useClassroomConfig() {
               testing_seats: r.testing_seats ?? 0,
             })),
         }));
+      console.log('CLASSROOM CONFIG: transformed sections =', JSON.stringify(result));
+      return result;
     },
     { dedupingInterval: 30000 }
   );
