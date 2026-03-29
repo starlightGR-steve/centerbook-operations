@@ -88,7 +88,7 @@ export default function SeatSlot({
 
   const subjects = parseSubjects(student.subjects);
   const isKC = student.program_type === 'Kumon Connect';
-  const hasMedical = !!student.medical_notes;
+  const hasMedical = !!student.medical_notes && student.medical_notes !== 'None' && student.medical_notes.trim() !== '';
   const variant = isOver ? styles.over : isWarn ? styles.warn : '';
 
   // Active flags for the second-line navy circles (from dynamic config)

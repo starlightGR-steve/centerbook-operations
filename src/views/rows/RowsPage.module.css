@@ -115,6 +115,7 @@
 
 /* Student Card */
 .studentCard {
+  position: relative;
   border-radius: var(--radius-card);
   padding: 20px;
   display: flex;
@@ -125,6 +126,14 @@
   border: 1px solid var(--border);
   transition: all 0.15s;
   min-height: 180px;
+}
+
+.teacherNoteIcon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #d97706;
+  z-index: 1;
 }
 
 .studentCard:hover {

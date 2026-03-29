@@ -584,6 +584,7 @@ export default function RowsPage() {
               const flags = getFlags(s);
               const studentFlagsObj = getStudentFlags(s.id);
               const isTestingStudent = !!studentFlagsObj.taking_test;
+              const hasTeacherNote = !!studentFlagsObj.teacher_note;
               const hasPertinentNote = !!s.pertinent_note;
               const flagTasks = studentFlagsObj.tasks || {};
               const _scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
@@ -601,6 +602,11 @@ export default function RowsPage() {
                     setSelectedStudentId(isSel ? null : s.id)
                   }
                 >
+                  {/* Teacher note indicator — top-right amber icon */}
+                  {hasTeacherNote && (
+                    <AlertCircle size={14} className={styles.teacherNoteIcon} />
+                  )}
+
                   {/* 1. Pertinent note alert banner */}
                   {hasPertinentNote && (
                     <div
@@ -678,7 +684,7 @@ export default function RowsPage() {
 
                     {/* Medical + position badges */}
                     <div className={styles.cardBadges}>
-                      {s.medical_notes && (
+                      {s.medical_notes && s.medical_notes !== 'None' && s.medical_notes.trim() !== '' && (
                         <span className={styles.medicalBadge}>
                           <Heart size={8} /> Medical
                         </span>

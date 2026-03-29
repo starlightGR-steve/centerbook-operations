@@ -231,7 +231,7 @@ export default function StudentDetailPanel({
         </div>
 
         {/* 3. Medical / Allergies */}
-        {student.medical_notes && (
+        {student.medical_notes && student.medical_notes !== 'None' && student.medical_notes.trim() !== '' && (
           <div className={styles.medicalAlert}>
             <Heart size={16} color="var(--red)" />
             <div>
