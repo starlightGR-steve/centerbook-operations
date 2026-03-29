@@ -86,11 +86,19 @@ function parseExistingFlags(flags: unknown): { flags: string[]; checklist: strin
         if (tk === 'custom' && typeof tv === 'string') checklist.push(`__custom__:${tv}`);
         else if (tv === true) checklist.push(tk);
       }
-    } else if (key !== 'teacher_note' && val === true) {
+    } else if (key !== 'teacher_note' && key !== 'teacher_notes' && val === true) {
       flagKeys.push(key);
     }
   }
-  return { flags: flagKeys, checklist, teacherNote: typeof f.teacher_note === 'string' ? f.teacher_note : '' };
+  // Extract teacher note: prefer new array, fall back to legacy string
+  let teacherNote = '';
+  if (Array.isArray(f.teacher_notes)) {
+    const undone = (f.teacher_notes as Array<{ text: string; done: boolean }>).filter((n) => !n.done);
+    teacherNote = undone.map((n) => n.text).join('\n');
+  } else if (typeof f.teacher_note === 'string') {
+    teacherNote = f.teacher_note;
+  }
+  return { flags: flagKeys, checklist, teacherNote };
 }
 
 /* ── Mobile tab names ── */
@@ -391,7 +399,11 @@ export default function AttendancePage() {
         else tasks[key] = false;
       });
       if (Object.keys(tasks).length > 0) flags.tasks = tasks;
-      if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
+      if (options.teacherNotes && options.teacherNotes.length > 0) {
+        flags.teacher_notes = options.teacherNotes;
+      } else if (options.noteForTeacher) {
+        flags.teacher_note = options.noteForTeacher;
+      }
       try {
         await updateStudentFlags(options.studentId, flags);
       } catch (err) {
@@ -421,7 +433,7 @@ export default function AttendancePage() {
     }
 
     // Persist flags from check-in prep
-    const hasData = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0 || !!options.noteForTeacher;
+    const hasData = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0 || !!options.noteForTeacher || (options.teacherNotes && options.teacherNotes.length > 0);
     let flagSaveFailed = false;
     if (hasData) {
       const flags: Record<string, unknown> = {};
@@ -432,7 +444,11 @@ export default function AttendancePage() {
         else tasks[key] = false;
       });
       if (Object.keys(tasks).length > 0) flags.tasks = tasks;
-      if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
+      if (options.teacherNotes && options.teacherNotes.length > 0) {
+        flags.teacher_notes = options.teacherNotes;
+      } else if (options.noteForTeacher) {
+        flags.teacher_note = options.noteForTeacher;
+      }
       try {
         const todayDate = new Date().toISOString().split('T')[0];
         await assignStudentToRow({

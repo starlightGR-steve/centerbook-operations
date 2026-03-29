@@ -13,6 +13,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
+import { getTeacherNotes } from '@/lib/types';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
 import { useOutstandingLoans } from '@/hooks/useLibrary';
@@ -90,7 +91,8 @@ export default function StudentDetailPanel({
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteSuccess, setNoteSuccess] = useState(false);
-  const [teacherNoteInput, setTeacherNoteInput] = useState(flags?.teacher_note ?? '');
+  const [teacherNoteInput, setTeacherNoteInput] = useState('');
+  const [showDoneNotes, setShowDoneNotes] = useState(false);
   const [showAddItems, setShowAddItems] = useState(false);
 
   // Test Result form state
@@ -126,10 +128,11 @@ export default function StudentDetailPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync teacher note input when student changes
+  // Reset note input when student changes
   useEffect(() => {
-    setTeacherNoteInput(flags?.teacher_note ?? '');
-  }, [student.id, flags?.teacher_note]);
+    setTeacherNoteInput('');
+    setShowDoneNotes(false);
+  }, [student.id]);
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
@@ -137,7 +140,7 @@ export default function StudentDetailPanel({
   const scheduleDetail = student.schedule_detail;
 
   const handleOpenAddItems = () => {
-    setTeacherNoteInput(flags?.teacher_note ?? '');
+    setTeacherNoteInput('');
     setShowAddItems(true);
   };
 
@@ -288,21 +291,52 @@ export default function StudentDetailPanel({
             )}
           </div>
 
-          {/* 6a. Teacher note amber banner */}
-          {flags?.teacher_note && (
-            <div className={styles.teacherNoteBanner}>
-              <AlertTriangle size={14} className={styles.teacherNoteBannerIcon} />
-              <p className={styles.teacherNoteBannerText}>{flags.teacher_note}</p>
-              {isAdmin && (
-                <button
-                  className={styles.teacherNoteBannerDone}
-                  onClick={() => onSetTeacherNote?.(null)}
-                >
-                  Mark done
-                </button>
-              )}
-            </div>
-          )}
+          {/* 6a. Teacher notes — individual amber alerts */}
+          {(() => {
+            const allNotes = getTeacherNotes(flags);
+            const undone = allNotes.filter((n) => !n.done);
+            const done = allNotes.filter((n) => n.done);
+            const markNoteDone = (idx: number) => {
+              if (!onBulkUpdate || !flags) return;
+              const updated = [...allNotes];
+              updated[idx] = { ...updated[idx], done: true };
+              onBulkUpdate({ ...flags, teacher_notes: updated, teacher_note: undefined } as RowAssignmentFlags);
+            };
+            return (
+              <>
+                {undone.map((note, i) => {
+                  const realIdx = allNotes.indexOf(note);
+                  return (
+                    <div key={`tn-${realIdx}`} className={styles.teacherNoteBanner}>
+                      <AlertTriangle size={14} className={styles.teacherNoteBannerIcon} />
+                      <p className={styles.teacherNoteBannerText}>{note.text}</p>
+                      <button
+                        className={styles.teacherNoteBannerDone}
+                        onClick={() => markNoteDone(realIdx)}
+                      >
+                        Mark done
+                      </button>
+                    </div>
+                  );
+                })}
+                {done.length > 0 && (
+                  <button
+                    className={styles.doneNotesToggle}
+                    onClick={() => setShowDoneNotes(!showDoneNotes)}
+                  >
+                    {showDoneNotes ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    {done.length} completed note{done.length !== 1 ? 's' : ''}
+                  </button>
+                )}
+                {showDoneNotes && done.map((note, i) => (
+                  <div key={`tnd-${i}`} className={styles.teacherNoteDone}>
+                    <Check size={12} className={styles.teacherNoteDoneIcon} />
+                    <span className={styles.teacherNoteDoneText}>{note.text}</span>
+                  </div>
+                ))}
+              </>
+            );
+          })()}
 
           {/* 6b. Assigned flags only */}
           {(() => {
@@ -626,20 +660,26 @@ export default function StudentDetailPanel({
                   })}
                 </div>
 
-                {/* Note for teacher — pre-filled with existing note */}
+                {/* Note for teacher — appends to the notes array */}
                 <label className={styles.addItemsSectionLabel}>Note for Teacher</label>
                 <textarea
                   className={styles.teacherNoteModalInput}
                   value={teacherNoteInput}
                   onChange={(e) => setTeacherNoteInput(e.target.value)}
                   rows={3}
-                  placeholder="Instruction note for this student..."
+                  placeholder="Add a new note for the classroom teacher..."
                 />
 
                 <button
                   className={styles.addItemsDone}
                   onClick={() => {
-                    onSetTeacherNote?.(teacherNoteInput.trim() || null);
+                    if (onBulkUpdate && flags) {
+                      const existing = getTeacherNotes(flags);
+                      const newNotes = teacherNoteInput.trim()
+                        ? [...existing, { text: teacherNoteInput.trim(), done: false }]
+                        : existing;
+                      onBulkUpdate({ ...flags, teacher_notes: newNotes, teacher_note: undefined } as RowAssignmentFlags);
+                    }
                     setShowAddItems(false);
                   }}
                 >

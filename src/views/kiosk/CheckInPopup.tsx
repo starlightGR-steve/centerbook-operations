@@ -21,6 +21,7 @@ export interface CheckInOptions {
   selectedChecklist: string[];
   selectedFlags: string[];
   noteForTeacher: string | null;
+  teacherNotes?: Array<{ text: string; done: false }>;
 }
 
 interface CheckInPopupProps {
@@ -160,19 +161,20 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
 
   const handleConfirm = () => {
     setConfirming(true);
-    // Build combined teacher note: visit plan note + submitted notes + unsent input
-    const allNotes: string[] = [];
+    // Build teacher_notes array: visit plan note + submitted notes + unsent input
+    const teacherNotes: Array<{ text: string; done: false }> = [];
     const visitPlanNote = visitPlanItems?.find((i) => i.item_type === 'teacher_note')?.notes;
-    if (visitPlanNote) allNotes.push(visitPlanNote);
-    allNotes.push(...notesList);
-    if (currentNote.trim()) allNotes.push(currentNote.trim());
+    if (visitPlanNote) teacherNotes.push({ text: visitPlanNote, done: false });
+    notesList.forEach((n) => teacherNotes.push({ text: n, done: false }));
+    if (currentNote.trim()) teacherNotes.push({ text: currentNote.trim(), done: false });
     onConfirm({
       studentId: student.id,
       sessionMinutes,
       pickupContactId,
       selectedChecklist,
       selectedFlags,
-      noteForTeacher: allNotes.length > 0 ? allNotes.join('\n---\n') : null,
+      noteForTeacher: null,
+      teacherNotes: teacherNotes.length > 0 ? teacherNotes : undefined,
     });
   };
 

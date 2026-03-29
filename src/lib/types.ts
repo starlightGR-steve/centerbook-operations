@@ -514,7 +514,19 @@ export interface RowAssignmentFlags {
   needs_homework?: boolean;
   taking_test?: boolean;
   teacher_note?: string | null;
+  teacher_notes?: Array<{ text: string; done: boolean }>;
   tasks?: Record<string, boolean | string | null | undefined>;
+}
+
+/** Read teacher notes from flags, handling both new array and legacy string formats */
+export function getTeacherNotes(flags: RowAssignmentFlags | null | undefined): Array<{ text: string; done: boolean }> {
+  if (flags?.teacher_notes && Array.isArray(flags.teacher_notes)) {
+    return flags.teacher_notes;
+  }
+  if (flags?.teacher_note && typeof flags.teacher_note === 'string') {
+    return flags.teacher_note.split('\n---\n').map((t) => ({ text: t.trim(), done: false }));
+  }
+  return [];
 }
 
 export interface RowAssignment {

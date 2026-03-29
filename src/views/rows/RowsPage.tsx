@@ -23,7 +23,7 @@ import { FLAG_CONFIG, CHECKLIST_CONFIG } from '@/lib/flags';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
 import { api } from '@/lib/api';
 import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
-import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
+import { getTimeRemaining, getSessionDuration, parseSubjects, getTeacherNotes } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
 import ClassroomSetup from './ClassroomSetup';
 import AddStudentPicker from './AddStudentPicker';
@@ -601,7 +601,7 @@ export default function RowsPage() {
               const flags = getFlags(s);
               const studentFlagsObj = getStudentFlags(s.id);
               const isTestingStudent = !!studentFlagsObj.taking_test;
-              const hasTeacherNote = !!studentFlagsObj.teacher_note;
+              const hasTeacherNote = getTeacherNotes(studentFlagsObj).some((n) => !n.done);
               const hasPertinentNote = !!s.pertinent_note;
               const flagTasks = studentFlagsObj.tasks || {};
               const _scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });

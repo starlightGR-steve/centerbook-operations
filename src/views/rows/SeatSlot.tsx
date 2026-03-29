@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { Heart, Flag, Lightbulb, CircleHelp, BookOpen, Star, AlertCircle, Zap, UserCheck, Sparkles, ClipboardList } from 'lucide-react';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
-import { getTimeRemaining, parseSubjects } from '@/lib/types';
+import { getTimeRemaining, parseSubjects, getTeacherNotes } from '@/lib/types';
 import { useFlagConfig } from '@/hooks/useFlagConfig';
 import styles from './SeatSlot.module.css';
 
@@ -96,10 +96,11 @@ export default function SeatSlot({
     ? flagConfig.filter((fc) => (flags as Record<string, unknown>)[fc.key])
     : [];
 
-  // Outstanding tasks indicator: shows when any task is assigned-not-done (false) OR teacher note exists
+  // Outstanding tasks indicator: shows when any task is assigned-not-done (false) OR any undone teacher notes exist
+  const hasActiveNotes = getTeacherNotes(flags).some((n) => !n.done);
   const hasOutstandingTasks = !!(
     (flags?.tasks && Object.values(flags.tasks).some((v) => v === false || (typeof v === 'string' && v.length > 0)))
-    || flags?.teacher_note
+    || hasActiveNotes
   );
 
   return (
