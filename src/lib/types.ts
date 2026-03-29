@@ -244,6 +244,7 @@ export interface ClassroomRow {
   teacher: string;          // assigned teacher name
   ratio?: string;           // e.g. "1:2" for EL rows
   advanced?: boolean;       // Upper Classroom flag
+  testing_seats?: number;   // number of testing table seats (0 = none)
 }
 
 export interface ClassroomSection {
@@ -494,6 +495,7 @@ export interface RowAssignmentFlags {
   needs_help?: boolean;
   work_with_amy?: boolean;
   needs_homework?: boolean;
+  taking_test?: boolean;
   teacher_note?: string | null;
   tasks?: Record<string, boolean | string | null | undefined>;
 }

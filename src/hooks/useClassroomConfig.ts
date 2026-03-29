@@ -44,6 +44,7 @@ export function useClassroomConfig() {
               tables: Math.ceil(r.seats / 2),
               seatsPerTable: 2,
               teacher: '',
+              testing_seats: r.testing_seats ?? 0,
             })),
         }));
     },

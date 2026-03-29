@@ -16,6 +16,7 @@ interface SeatSlotProps {
   onTouchDragStart?: () => void;
   onSelect?: () => void;
   isDragging?: boolean;
+  isTesting?: boolean;
 }
 
 const DRAG_THRESHOLD = 8;
@@ -52,6 +53,7 @@ export default function SeatSlot({
   onTouchDragStart,
   onSelect,
   isDragging,
+  isTesting,
 }: SeatSlotProps) {
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const dragFiredRef = useRef(false);
@@ -59,6 +61,13 @@ export default function SeatSlot({
   const { flags: flagConfig } = useFlagConfig();
 
   if (!student) {
+    if (isTesting) {
+      return (
+        <div className={styles.testingSeatEmpty}>
+          <span className={styles.testingSeatEmptyLabel}>Testing table</span>
+        </div>
+      );
+    }
     return <div className={styles.empty} />;
   }
 
@@ -95,7 +104,7 @@ export default function SeatSlot({
 
   return (
     <div
-      className={`${styles.slot} ${variant} ${isKC ? styles.slotKC : ''}`}
+      className={`${styles.slot} ${variant} ${isKC ? styles.slotKC : ''} ${isTesting ? styles.testingSeat : ''}`}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -130,6 +139,11 @@ export default function SeatSlot({
       style={{ opacity: isDragging ? 0.5 : 1 }}
       title={`${student.first_name} ${student.last_name} — ${timeStr || 'not checked in'}`}
     >
+      {/* Amber TEST badge for testing table seats */}
+      {isTesting && (
+        <span className={styles.testingSeatBadge}>TEST</span>
+      )}
+
       {/* Red flag icon for outstanding tasks — top-right corner */}
       {hasOutstandingTasks && (
         <Flag size={12} className={styles.taskFlag} />

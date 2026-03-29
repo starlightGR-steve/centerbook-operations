@@ -54,6 +54,7 @@ function FlagPillIcon({ icon }: { icon: string | undefined }) {
 interface FlatRow extends ClassroomRow {
   section: string;
   seats: number;
+  testingSeats: number;
 }
 
 function buildRows(sections: ClassroomSection[]): FlatRow[] {
@@ -62,6 +63,7 @@ function buildRows(sections: ClassroomSection[]): FlatRow[] {
       ...r,
       section: sec.name,
       seats: r.tables * r.seatsPerTable,
+      testingSeats: r.testing_seats ?? 0,
     }))
   );
 }
@@ -95,6 +97,7 @@ export default function RowsPage() {
   const [dragStudent, setDragStudent] = useState<Student | null>(null);
   const [overviewStudent, setOverviewStudent] = useState<Student | null>(null);
   const [addToRowLabel, setAddToRowLabel] = useState<string | null>(null);
+  const [addToTestingRowLabel, setAddToTestingRowLabel] = useState<string | null>(null);
   const [rowCompleteIds, setRowCompleteIds] = useState<Set<number>>(new Set());
   const [assigningToRow, setAssigningToRow] = useState(false);
   const [movingStudent, setMovingStudent] = useState<number | null>(null);
@@ -166,17 +169,6 @@ export default function RowsPage() {
     return allStudents.filter((s) => ids.has(s.id) && !rowCompleteIds.has(s.id));
   }, [allStudents, checkedIn, rowCompleteIds]);
 
-  const moveStudentToRow = useCallback(async (studentId: number, rowId: string) => {
-    const label = rowIdToLabel[rowId];
-    if (!label) return;
-    await assignStudentToRow({
-      student_id: studentId,
-      row_label: label,
-      session_date: today,
-      assigned_by: 'Staff',
-    });
-  }, [rowIdToLabel, today]);
-
   const handleRowCheckout = useCallback(async (studentId: number) => {
     setRowCompleteIds((prev) => new Set(prev).add(studentId));
     await removeStudentFromRow(studentId, today);
@@ -206,6 +198,26 @@ export default function RowsPage() {
   const getStudentFlags = useCallback((studentId: number): RowAssignmentFlags => {
     return optimisticFlags[studentId] || flagsMap[studentId] || {};
   }, [optimisticFlags, flagsMap]);
+
+  const moveStudentToRow = useCallback(async (studentId: number, rowId: string, isTesting?: boolean) => {
+    const label = rowIdToLabel[rowId];
+    if (!label) return;
+    await assignStudentToRow({
+      student_id: studentId,
+      row_label: label,
+      session_date: today,
+      assigned_by: 'Staff',
+    });
+    // Auto-flag: set taking_test when moved to testing seat, clear when moved to regular
+    const currentFlags = getStudentFlags(studentId);
+    if (isTesting && !currentFlags.taking_test) {
+      await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today);
+    } else if (!isTesting && currentFlags.taking_test) {
+      const updated = { ...currentFlags };
+      delete updated.taking_test;
+      await updateStudentFlags(studentId, updated, today);
+    }
+  }, [rowIdToLabel, today, getStudentFlags]);
 
   // Helper: get flag keys array for display (active flags only)
   const getFlags = useCallback((s: Student): string[] => {
@@ -377,6 +389,7 @@ export default function RowsPage() {
             }
           }}
           onAddToRow={setAddToRowLabel}
+          onAddToTestingRow={setAddToTestingRowLabel}
           onSetup={handleSetup}
           onMoveStudent={moveStudentToRow}
           rowOverrides={rowOverrides}
@@ -411,6 +424,27 @@ export default function RowsPage() {
               setAddToRowLabel(null);
             }}
             onClose={() => setAddToRowLabel(null)}
+          />
+        )}
+
+        {addToTestingRowLabel && (
+          <AddStudentPicker
+            rowLabel={`${addToTestingRowLabel} — Testing Table`}
+            unassignedStudents={unassignedStudents}
+            onAssign={async (studentId) => {
+              await assignStudentToRow({
+                student_id: studentId,
+                row_label: addToTestingRowLabel,
+                session_date: today,
+              });
+              // Auto-flag as taking_test
+              const currentFlags = getStudentFlags(studentId);
+              if (!currentFlags.taking_test) {
+                await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today);
+              }
+              setAddToTestingRowLabel(null);
+            }}
+            onClose={() => setAddToTestingRowLabel(null)}
           />
         )}
       </>
@@ -478,8 +512,8 @@ export default function RowsPage() {
             className={styles.cardGrid}
             data-compact={selectedStudent ? '' : undefined}
           >
-            {/* Assign Student card — hidden at capacity */}
-            {currentRow && rowStudents.length < currentRow.seats && (
+            {/* Assign Student card — hidden at capacity (regular + testing seats) */}
+            {currentRow && rowStudents.length < (currentRow.seats + (currentRow.testingSeats ?? 0)) && (
             <div
               className={styles.assignCard}
               onClick={() => setAssigningToRow(!assigningToRow)}
@@ -549,6 +583,7 @@ export default function RowsPage() {
               const isMoveOpen = movingStudent === s.id;
               const flags = getFlags(s);
               const studentFlagsObj = getStudentFlags(s.id);
+              const isTestingStudent = !!studentFlagsObj.taking_test;
               const hasPertinentNote = !!s.pertinent_note;
               const flagTasks = studentFlagsObj.tasks || {};
               const _scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
@@ -561,7 +596,7 @@ export default function RowsPage() {
                   key={s.id}
                   className={`${styles.studentCard} ${
                     isOver ? styles.cardOver : isWarn ? styles.cardWarn : ''
-                  } ${isSel ? styles.cardSelected : ''}`}
+                  } ${isSel ? styles.cardSelected : ''} ${isTestingStudent ? styles.cardTesting : ''}`}
                   onClick={() =>
                     setSelectedStudentId(isSel ? null : s.id)
                   }
@@ -584,6 +619,12 @@ export default function RowsPage() {
                   )}
 
                   <div>
+                    {/* Testing table badge */}
+                    {isTestingStudent && (
+                      <div className={styles.testingBadgeRow}>
+                        <span className={styles.testingBadge}>Testing Table</span>
+                      </div>
+                    )}
                     {/* 2. Name + time remaining */}
                     <div className={styles.cardTop}>
                       <h3
@@ -812,7 +853,8 @@ export default function RowsPage() {
                             .filter((r) => r.id !== selectedRowId)
                             .map((r) => {
                               const count = (assignments[r.id] || []).length;
-                              const isFull = count >= r.seats;
+                              const totalCapacity = r.seats + (r.testingSeats ?? 0);
+                              const isFull = count >= totalCapacity;
                               return (
                                 <button
                                   key={r.id}
@@ -825,7 +867,7 @@ export default function RowsPage() {
                                 >
                                   <span>{r.label}</span>
                                   <span className={styles.moveSeatCount}>
-                                    {count}/{r.seats}
+                                    {count}/{totalCapacity}
                                   </span>
                                 </button>
                               );

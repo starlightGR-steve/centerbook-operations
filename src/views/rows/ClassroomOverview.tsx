@@ -13,6 +13,7 @@ import styles from './ClassroomOverview.module.css';
 interface FlatRow extends ClassroomRow {
   section: string;
   seats: number;
+  testingSeats: number;
 }
 
 interface ClassroomOverviewProps {
@@ -24,8 +25,9 @@ interface ClassroomOverviewProps {
   onSelectRow: (rowId: string) => void;
   onSelectStudent: (student: Student) => void;
   onAddToRow: (rowLabel: string) => void;
+  onAddToTestingRow: (rowLabel: string) => void;
   onSetup: () => void;
-  onMoveStudent: (studentId: number, targetRowId: string) => void;
+  onMoveStudent: (studentId: number, targetRowId: string, isTesting?: boolean) => void;
   rowOverrides: Record<string, string>;
   dragStudent: Student | null;
   onDragStart: (student: Student) => void;
@@ -38,6 +40,7 @@ function buildRows(sections: ClassroomSection[]): FlatRow[] {
       ...r,
       section: sec.name,
       seats: r.tables * r.seatsPerTable,
+      testingSeats: r.testing_seats ?? 0,
     }))
   );
 }
@@ -68,6 +71,7 @@ export default function ClassroomOverview({
   onSelectRow,
   onSelectStudent,
   onAddToRow,
+  onAddToTestingRow,
   onSetup,
   onMoveStudent,
   rowOverrides,
@@ -137,9 +141,9 @@ export default function ClassroomOverview({
     return 'Staff';
   };
 
-  const handleDrop = useCallback((rowId: string) => {
+  const handleDrop = useCallback((rowId: string, isTesting?: boolean) => {
     if (dragStudent) {
-      onMoveStudent(dragStudent.id, rowId);
+      onMoveStudent(dragStudent.id, rowId, isTesting);
       onDragEnd();
     }
   }, [dragStudent, onMoveStudent, onDragEnd]);
@@ -172,13 +176,14 @@ export default function ClassroomOverview({
       const touch = e.changedTouches[0];
       const target = findRowCard(touch.clientX, touch.clientY);
       const rowId = target?.getAttribute('data-row-id');
+      const isTesting = target?.getAttribute('data-testing') === 'true';
 
       // Clean up hover highlight
       touchHoverRef.current?.classList.remove(styles.rowCardDragOver);
       touchHoverRef.current = null;
 
       if (rowId) {
-        handleDrop(rowId);
+        handleDrop(rowId, isTesting);
       } else {
         onDragEnd();
       }
@@ -236,12 +241,24 @@ export default function ClassroomOverview({
               >
                 {sectionRows.map((row) => {
                   const rs = assignments[row.id] || [];
-                  const tables: { s1: Student | null; s2: Student | null }[] =
-                    [];
+                  // Split students: those with taking_test go to testing slots
+                  const regularStudents = rs.filter((s) => !flagsMap[s.id]?.taking_test);
+                  const testingStudents = rs.filter((s) => !!flagsMap[s.id]?.taking_test);
+
+                  const tables: { s1: Student | null; s2: Student | null }[] = [];
                   for (let t = 0; t < row.tables; t++) {
                     tables.push({
-                      s1: rs[t * 2] || null,
-                      s2: rs[t * 2 + 1] || null,
+                      s1: regularStudents[t * 2] || null,
+                      s2: regularStudents[t * 2 + 1] || null,
+                    });
+                  }
+
+                  const testingTableCount = Math.ceil(row.testingSeats / 2);
+                  const testingTables: { s1: Student | null; s2: Student | null }[] = [];
+                  for (let t = 0; t < testingTableCount; t++) {
+                    testingTables.push({
+                      s1: testingStudents[t * 2] || null,
+                      s2: testingStudents[t * 2 + 1] || null,
                     });
                   }
 
@@ -263,7 +280,7 @@ export default function ClassroomOverview({
                       onDrop={(e) => {
                         e.preventDefault();
                         e.currentTarget.classList.remove(styles.rowCardDragOver);
-                        handleDrop(row.id);
+                        handleDrop(row.id, false);
                       }}
                     >
                       <div className={styles.rowCardHeader}>
@@ -288,7 +305,7 @@ export default function ClassroomOverview({
                           </div>
                         </div>
                         <span className={styles.rowCount}>
-                          {rs.length}/{row.seats}
+                          {rs.length}/{row.seats + row.testingSeats}
                         </span>
                       </div>
 
@@ -303,49 +320,25 @@ export default function ClassroomOverview({
                               <div className={!table.s1 ? styles.mobileHideEmpty : undefined}>
                                 <SeatSlot
                                   student={table.s1}
-                                  attendance={
-                                    table.s1
-                                      ? attendanceMap.get(table.s1.id)
-                                      : undefined
-                                  }
+                                  attendance={table.s1 ? attendanceMap.get(table.s1.id) : undefined}
                                   flags={table.s1 ? flagsMap[table.s1.id] : undefined}
-                                  onDragStart={() =>
-                                    table.s1 && onDragStart(table.s1)
-                                  }
+                                  onDragStart={() => table.s1 && onDragStart(table.s1)}
                                   onDragEnd={onDragEnd}
-                                  onTouchDragStart={() =>
-                                    table.s1 && onDragStart(table.s1)
-                                  }
-                                  onSelect={() =>
-                                    table.s1 && onSelectStudent(table.s1)
-                                  }
-                                  isDragging={
-                                    dragStudent?.id === table.s1?.id
-                                  }
+                                  onTouchDragStart={() => table.s1 && onDragStart(table.s1)}
+                                  onSelect={() => table.s1 && onSelectStudent(table.s1)}
+                                  isDragging={dragStudent?.id === table.s1?.id}
                                 />
                               </div>
                               <div className={!table.s2 ? styles.mobileHideEmpty : undefined}>
                                 <SeatSlot
                                   student={table.s2}
-                                  attendance={
-                                    table.s2
-                                      ? attendanceMap.get(table.s2.id)
-                                      : undefined
-                                  }
+                                  attendance={table.s2 ? attendanceMap.get(table.s2.id) : undefined}
                                   flags={table.s2 ? flagsMap[table.s2.id] : undefined}
-                                  onDragStart={() =>
-                                    table.s2 && onDragStart(table.s2)
-                                  }
+                                  onDragStart={() => table.s2 && onDragStart(table.s2)}
                                   onDragEnd={onDragEnd}
-                                  onTouchDragStart={() =>
-                                    table.s2 && onDragStart(table.s2)
-                                  }
-                                  onSelect={() =>
-                                    table.s2 && onSelectStudent(table.s2)
-                                  }
-                                  isDragging={
-                                    dragStudent?.id === table.s2?.id
-                                  }
+                                  onTouchDragStart={() => table.s2 && onDragStart(table.s2)}
+                                  onSelect={() => table.s2 && onSelectStudent(table.s2)}
+                                  isDragging={dragStudent?.id === table.s2?.id}
                                 />
                               </div>
                             </div>
@@ -359,7 +352,75 @@ export default function ClassroomOverview({
                           onClick={(e) => { e.stopPropagation(); onAddToRow(row.label); }}
                         >
                           <Plus size={14} />
-                          <span>Add Student ({row.seats - rs.length} open)</span>
+                          <span>Add Student ({row.seats - regularStudents.length} open)</span>
+                        </div>
+                      )}
+
+                      {/* Testing table section */}
+                      {row.testingSeats > 0 && (
+                        <div
+                          className={`${styles.testingSection} ${dragStudent ? styles.testingSectionDropTarget : ''}`}
+                          data-row-id={row.id}
+                          data-testing="true"
+                          onClick={(e) => e.stopPropagation()}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.currentTarget.classList.add(styles.rowCardDragOver);
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.classList.remove(styles.rowCardDragOver);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.currentTarget.classList.remove(styles.rowCardDragOver);
+                            handleDrop(row.id, true);
+                          }}
+                        >
+                          <div className={styles.testingSectionHeader}>
+                            <span className={styles.testingSectionLabel}>Testing Table</span>
+                            <span className={styles.testingSectionCount}>
+                              {testingStudents.length}/{row.testingSeats}
+                            </span>
+                          </div>
+                          <div className={styles.tables}>
+                            {testingTables.map((table, ti) => (
+                              <div key={ti} className={styles.tablePair}>
+                                <SeatSlot
+                                  student={table.s1}
+                                  attendance={table.s1 ? attendanceMap.get(table.s1.id) : undefined}
+                                  flags={table.s1 ? flagsMap[table.s1.id] : undefined}
+                                  onDragStart={() => table.s1 && onDragStart(table.s1)}
+                                  onDragEnd={onDragEnd}
+                                  onTouchDragStart={() => table.s1 && onDragStart(table.s1)}
+                                  onSelect={() => table.s1 && onSelectStudent(table.s1)}
+                                  isDragging={dragStudent?.id === table.s1?.id}
+                                  isTesting
+                                />
+                                <SeatSlot
+                                  student={table.s2}
+                                  attendance={table.s2 ? attendanceMap.get(table.s2.id) : undefined}
+                                  flags={table.s2 ? flagsMap[table.s2.id] : undefined}
+                                  onDragStart={() => table.s2 && onDragStart(table.s2)}
+                                  onDragEnd={onDragEnd}
+                                  onTouchDragStart={() => table.s2 && onDragStart(table.s2)}
+                                  onSelect={() => table.s2 && onSelectStudent(table.s2)}
+                                  isDragging={dragStudent?.id === table.s2?.id}
+                                  isTesting
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          {testingStudents.length < row.testingSeats && (
+                            <div
+                              className={styles.mobileAddStudent}
+                              onClick={(e) => { e.stopPropagation(); onAddToTestingRow(row.label); }}
+                            >
+                              <Plus size={14} />
+                              <span>Add to test table</span>
+                            </div>
+                          )}
                         </div>
                       )}
 

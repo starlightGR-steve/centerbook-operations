@@ -264,6 +264,15 @@
   border-color: var(--secondary);
 }
 
+.testingNumInput {
+  border-color: #eab308;
+  color: #92400e;
+}
+
+.testingNumInput:focus {
+  border-color: #ca8a04;
+}
+
 .seatCount {
   font-family: var(--font-primary);
   font-size: 12px;

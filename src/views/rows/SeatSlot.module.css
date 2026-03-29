@@ -194,6 +194,48 @@
   line-height: 1;
 }
 
+/* ── Testing table seat styling ── */
+.testingSeat {
+  border-left: 3px solid #eab308;
+  background: rgba(234, 179, 8, 0.06);
+  position: relative;
+}
+
+.testingSeatBadge {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  background: #eab308;
+  color: #92400e;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+  z-index: 1;
+}
+
+.testingSeatEmpty {
+  height: 3.25rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid #eab308;
+  border-top: 1px dashed #eab308;
+  border-right: 1px dashed #eab308;
+  border-bottom: 1px dashed #eab308;
+  background: rgba(234, 179, 8, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.testingSeatEmptyLabel {
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
 /* ── Tablet portrait: tighter spacing ── */
 @media (max-width: 1024px) {
   .slot {

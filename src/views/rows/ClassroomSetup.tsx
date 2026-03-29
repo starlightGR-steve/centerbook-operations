@@ -17,6 +17,7 @@ interface ConfigRow {
   section_id: string;
   name: string;
   seats: number;
+  testing_seats: number;
   order: number;
 }
 
@@ -44,7 +45,7 @@ export default function ClassroomSetup({ onBack }: ClassroomSetupProps) {
       try {
         const data = await api.classroomConfig.get();
         setSections(data.sections || []);
-        setRows(data.rows || []);
+        setRows((data.rows || []).map((r) => ({ ...r, testing_seats: r.testing_seats ?? 0 })));
       } catch {
         setSections([]);
         setRows([]);
@@ -89,6 +90,7 @@ export default function ClassroomSetup({ onBack }: ClassroomSetupProps) {
         section_id: sectionId,
         name: '',
         seats: 2,
+        testing_seats: 0,
         order: sectionRows.length + 1,
       },
     ]);
@@ -220,7 +222,7 @@ export default function ClassroomSetup({ onBack }: ClassroomSetupProps) {
                 <div className={styles.rowHeader}>
                   <span className={styles.rowHeaderLabel} style={{ flex: 2 }}>Row Label</span>
                   <span className={styles.rowHeaderLabel} style={{ width: 80 }}>Seats</span>
-                  <span className={styles.rowHeaderLabel} style={{ width: 60 }}></span>
+                  <span className={styles.rowHeaderLabel} style={{ width: 80 }}>Testing</span>
                   <span className={styles.rowHeaderLabel} style={{ width: 28 }}></span>
                 </div>
               )}
@@ -244,9 +246,16 @@ export default function ClassroomSetup({ onBack }: ClassroomSetupProps) {
                     onChange={(e) => updateRow(row.id, 'seats', Number(e.target.value) || 0)}
                     style={{ width: 80 }}
                   />
-                  <span className={styles.seatCount} style={{ width: 60 }}>
-                    {row.seats} seats
-                  </span>
+                  <input
+                    className={`${styles.rowNumInput} ${styles.testingNumInput}`}
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={row.testing_seats}
+                    onChange={(e) => updateRow(row.id, 'testing_seats' as keyof ConfigRow, Number(e.target.value) || 0)}
+                    style={{ width: 80 }}
+                    title="Testing table seats"
+                  />
                   <button
                     className={styles.removeRowBtn}
                     onClick={() => removeRow(row.id)}
