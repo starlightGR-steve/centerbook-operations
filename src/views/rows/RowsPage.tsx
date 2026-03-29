@@ -21,6 +21,7 @@ import { useClassroomConfig } from '@/hooks/useClassroomConfig';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
 import { FLAG_CONFIG, CHECKLIST_CONFIG } from '@/lib/flags';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
+import { api } from '@/lib/api';
 import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, getSessionDuration, parseSubjects } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
@@ -245,13 +246,20 @@ export default function RowsPage() {
   const toggleFlag = useCallback((studentId: number, flag: string) => {
     const current = getStudentFlags(studentId);
     const key = flag as keyof RowAssignmentFlags;
+    const wasOn = !!current[key];
     const updated: RowAssignmentFlags = { ...current, [key]: !current[key] };
     // Optimistic update
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     // Persist
     updateStudentFlags(studentId, updated, today).then(() => {
-      // Clear optimistic on success (SWR will have fresh data)
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
+      // Flag toggled OFF → mark matching visit plan item done (fire-and-forget)
+      if (wasOn) {
+        api.visitPlan.list(studentId, 'active').then((items) => {
+          const match = items.find((i) => i.item_key === flag && !i.completed_at);
+          if (match) api.visitPlan.update(studentId, match.id, { completed: true }).catch(console.error);
+        }).catch(console.error);
+      }
     }).catch((err) => handleFlagError(studentId, err));
   }, [getStudentFlags, today, handleFlagError]);
 
@@ -260,10 +268,12 @@ export default function RowsPage() {
     const current = getStudentFlags(studentId);
     const tasks = { ...(current.tasks || {}) } as Record<string, boolean | string | null | undefined>;
     const val = tasks[taskKey];
+    let markedDone = false;
     if (val === undefined || val === null) {
       tasks[taskKey] = false; // first click: assign (not yet done)
     } else if (val === false) {
       tasks[taskKey] = true; // second click: mark done
+      markedDone = true;
     } else {
       delete tasks[taskKey]; // third click: remove
     }
@@ -271,6 +281,13 @@ export default function RowsPage() {
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     updateStudentFlags(studentId, updated, today).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
+      // Task checked off → mark matching visit plan item done (fire-and-forget)
+      if (markedDone) {
+        api.visitPlan.list(studentId, 'active').then((items) => {
+          const match = items.find((i) => i.item_key === taskKey && !i.completed_at);
+          if (match) api.visitPlan.update(studentId, match.id, { completed: true }).catch(console.error);
+        }).catch(console.error);
+      }
     }).catch((err) => handleFlagError(studentId, err));
   }, [getStudentFlags, today, handleFlagError]);
 
