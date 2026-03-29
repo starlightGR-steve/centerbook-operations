@@ -256,7 +256,7 @@ export default function StudentDetailPanel({
                 .map(([day, info]) => (
                   <div key={day} className={styles.scheduleRow}>
                     <span className={styles.scheduleDay}>{day.slice(0, 3)}</span>
-                    <span className={styles.scheduleTime}>{formatTimeKey(info.start)}</span>
+                    <span className={styles.scheduleTime}>{info.start}</span>
                     {info.is_zoom && <span className={styles.scheduleZoom}>Zoom</span>}
                   </div>
                 ))}
