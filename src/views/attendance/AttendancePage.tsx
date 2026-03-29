@@ -381,8 +381,15 @@ export default function AttendancePage() {
 
   /* ── Check-in confirm from popup ── */
   const handleCheckInConfirm = async (options: CheckInOptions) => {
+    console.log('=== handleCheckInConfirm START ===');
+    console.log('selectedFlags:', JSON.stringify(options.selectedFlags));
+    console.log('selectedChecklist:', JSON.stringify(options.selectedChecklist));
+    console.log('noteForTeacher:', options.noteForTeacher);
+    console.log('studentId:', options.studentId, 'sessionMinutes:', options.sessionMinutes);
+    console.log('checkInEditPrep (edit mode?):', checkInEditPrep);
     // Edit mode: only update flags, don't create a new check-in record
     if (checkInEditPrep) {
+      console.log('=== EDIT MODE: skipping check-in, only updating flags ===');
       const flags: Record<string, unknown> = {};
       options.selectedFlags.forEach((key) => { flags[key] = true; });
       const tasks: Record<string, unknown> = {};
@@ -392,13 +399,17 @@ export default function AttendancePage() {
       });
       if (Object.keys(tasks).length > 0) flags.tasks = tasks;
       if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
+      console.log('=== EDIT MODE: calling updateStudentFlags with:', JSON.stringify(flags));
       try {
         await updateStudentFlags(options.studentId, flags);
+        console.log('=== EDIT MODE: updateStudentFlags succeeded ===');
       } catch (err) {
+        console.error('=== handleCheckInConfirm CATCH (edit mode updateFlags) ===', err);
         console.error('handleEditPrep: failed to update flags', err);
       }
       setCheckInPopupStudent(null);
       setCheckInEditPrep(null);
+      console.log('=== handleCheckInConfirm END (edit mode) ===');
       return;
     }
 
@@ -406,6 +417,7 @@ export default function AttendancePage() {
       ? `${checkInPopupStudent.first_name} ${checkInPopupStudent.last_name}`
       : 'Student';
 
+    console.log('=== STEP 1: About to call checkInStudent ===');
     let result: Awaited<ReturnType<typeof checkInStudent>>;
     try {
       result = await checkInStudent({
@@ -414,7 +426,9 @@ export default function AttendancePage() {
         checked_in_by: 'kiosk',
         session_duration_minutes: options.sessionMinutes,
       });
+      console.log('=== STEP 2: checkInStudent returned, result:', result);
     } catch (err) {
+      console.error('=== handleCheckInConfirm CATCH (checkInStudent) ===', err);
       console.error('handleCheckInConfirm: checkInStudent failed', err);
       setCheckInPopupStudent(null);
       return;
@@ -422,6 +436,7 @@ export default function AttendancePage() {
 
     // Persist flags from check-in prep
     const hasData = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0 || !!options.noteForTeacher;
+    console.log('=== STEP 3 condition check:', { hasData, flagsLen: options.selectedFlags.length, checklistLen: options.selectedChecklist.length, hasNote: !!options.noteForTeacher });
     let flagSaveFailed = false;
     if (hasData) {
       const flags: Record<string, unknown> = {};
@@ -435,17 +450,24 @@ export default function AttendancePage() {
       if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
       try {
         const todayDate = new Date().toISOString().split('T')[0];
+        console.log('=== STEP 3: About to create row assignment, todayDate:', todayDate);
         await assignStudentToRow({
           student_id: options.studentId,
           row_label: 'Unassigned',
           session_date: todayDate,
           assigned_by: 'kiosk',
         });
+        console.log('=== STEP 3: row assignment succeeded ===');
+        console.log('=== STEP 4: About to PATCH flags ===', JSON.stringify(flags));
         await updateStudentFlags(options.studentId, flags, todayDate);
+        console.log('=== STEP 4: updateStudentFlags succeeded ===');
       } catch (err) {
+        console.error('=== handleCheckInConfirm CATCH (assignRow/updateFlags) ===', err);
         console.error('handleCheckInConfirm: failed to persist check-in flags', err);
         flagSaveFailed = true;
       }
+    } else {
+      console.log('=== STEP 3: hasData is false — skipping row assignment and flags PATCH ===');
     }
 
     setCheckInPopupStudent(null);
@@ -460,6 +482,7 @@ export default function AttendancePage() {
         try { await removeStudentFromRow(options.studentId); } catch { /* noop */ }
       },
     });
+    console.log('=== handleCheckInConfirm END ===');
   };
 
   /* ── Check out from checked-in card ── */
