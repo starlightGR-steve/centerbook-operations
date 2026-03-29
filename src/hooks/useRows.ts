@@ -24,7 +24,14 @@ export function useClassroomAssignments(date?: string) {
   return useSWR<RowAssignment[]>(
     assignmentsKey(d),
     async () => {
-      return api.classroom.assignments(d);
+      const data = await api.classroom.assignments(d);
+      // The API may return flags as a JSON string rather than a parsed object
+      return data.map((a) => ({
+        ...a,
+        flags: typeof a.flags === 'string'
+          ? (() => { try { return JSON.parse(a.flags as unknown as string); } catch { return null; } })()
+          : (a.flags ?? null),
+      }));
     },
     {
       dedupingInterval: 5000,
