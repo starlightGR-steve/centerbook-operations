@@ -19,6 +19,7 @@ function formatTimestamp(iso: string): string {
 export default function NextClassPlanning({ studentId }: NextClassPlanningProps) {
   const { activeItems, completedItems, addItems, markDone, reopen, removeItem } = useVisitPlan(studentId);
   const { flags: flagConfig } = useFlagConfig();
+  const { items: checklistConfig } = useChecklistConfig();
   const [showModal, setShowModal] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -26,9 +27,12 @@ export default function NextClassPlanning({ studentId }: NextClassPlanningProps)
     flagConfig.find((f) => f.key === key)?.color || 'var(--neutral)';
   const getFlagLabel = (key: string) =>
     flagConfig.find((f) => f.key === key)?.label || key;
+  const getChecklistLabel = (key: string) =>
+    checklistConfig.find((c) => c.key === key)?.label || key;
 
   const getDisplayLabel = (item: VisitPlanItem): string => {
     if (item.item_type === 'flag') return getFlagLabel(item.item_key);
+    if (item.item_type === 'checklist') return item.item_label || getChecklistLabel(item.item_key);
     if (item.item_type === 'custom') return item.item_label || item.item_key;
     if (item.item_type === 'teacher_note') return 'Note for Teacher';
     return item.item_label || item.item_key;
@@ -179,14 +183,16 @@ function PlanNextVisitModal({ existingActiveItems, onSave, onClose }: PlanModalP
     // Flags — only add new ones (not already in active plan)
     selectedFlags.forEach((key) => {
       if (!existingFlagKeys.has(key)) {
-        items.push({ item_key: key, item_type: 'flag' });
+        const label = flagConfigItems.find((f) => f.key === key)?.label;
+        items.push({ item_key: key, item_type: 'flag', item_label: label });
       }
     });
 
     // Checklist — only add new ones
     selectedChecklist.forEach((key) => {
       if (!existingChecklistKeys.has(key)) {
-        items.push({ item_key: key, item_type: 'checklist' });
+        const label = checklistConfigItems.find((c) => c.key === key)?.label;
+        items.push({ item_key: key, item_type: 'checklist', item_label: label });
       }
     });
 

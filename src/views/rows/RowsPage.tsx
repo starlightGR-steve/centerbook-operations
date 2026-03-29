@@ -344,7 +344,6 @@ export default function RowsPage() {
 
   // currentRow is needed both for teacher dropdown and for the row detail view
   const currentRow = rows.find((r) => r.id === selectedRowId);
-  if (currentRow) console.log('ROW DETAIL:', currentRow.label, 'seats=', currentRow.seats, 'testingSeats=', currentRow.testingSeats, 'testing_seats=', currentRow.testing_seats);
 
   const teacherForRow = useMemo(() => {
     if (!teacherAssignments || !currentRow) return 0;

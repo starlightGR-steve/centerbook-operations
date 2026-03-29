@@ -388,7 +388,7 @@ export default function AttendancePage() {
       const tasks: Record<string, unknown> = {};
       options.selectedChecklist.forEach((key) => {
         if (key.startsWith('__custom__:')) tasks.custom = key.slice(11);
-        else tasks[key] = true;
+        else tasks[key] = false;
       });
       if (Object.keys(tasks).length > 0) flags.tasks = tasks;
       if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
@@ -429,7 +429,7 @@ export default function AttendancePage() {
       const tasks: Record<string, unknown> = {};
       options.selectedChecklist.forEach((key) => {
         if (key.startsWith('__custom__:')) tasks.custom = key.slice(11);
-        else tasks[key] = true;
+        else tasks[key] = false;
       });
       if (Object.keys(tasks).length > 0) flags.tasks = tasks;
       if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
