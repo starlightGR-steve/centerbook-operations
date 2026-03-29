@@ -162,6 +162,7 @@ export default function AttendancePage() {
 
   const today = getToday();
   const todayDay = today;
+  console.log('ATTENDANCE DATE DEBUG: today used for fetch =', new Date().toISOString().split('T')[0]);
 
   /* ── Live clock ── */
   useEffect(() => {
@@ -192,6 +193,7 @@ export default function AttendancePage() {
 
   // All attendance IDs for today (including checked out)
   const allAttendanceMap = useMemo(() => {
+    console.log('ATTENDANCE DEBUG: raw allAttendance count =', allAttendance?.length, 'first 3 =', allAttendance?.slice(0, 3));
     const map = new Map<number, Attendance>();
     if (allAttendance) {
       for (const a of allAttendance) map.set(a.student_id, a);
@@ -215,15 +217,16 @@ export default function AttendancePage() {
   }, [allStudents, todayDay]);
 
   // Column 1: Expected — scheduled today, no attendance record at all
-  const expectedStudents = useMemo(
-    () => scheduledToday.filter((s) => !allAttendanceMap.has(s.id) && !isNoShow(s)),
-    [scheduledToday, allAttendanceMap]
-  );
+  const expectedStudents = useMemo(() => {
+    const result = scheduledToday.filter((s) => !allAttendanceMap.has(s.id) && !isNoShow(s));
+    console.log('ATTENDANCE DEBUG: today day of week =', new Date().toLocaleDateString('en-US', { weekday: 'long' }), 'expected count =', result.length);
+    return result;
+  }, [scheduledToday, allAttendanceMap]);
 
   // Column 2: Checked In — has check_in and no check_out
   const checkedInStudents = useMemo(() => {
     if (!checkedIn || !allStudents) return [];
-    return checkedIn
+    const result = checkedIn
       .filter((a) => a.check_out === null)
       .map((a) => ({
         attendance: a,
@@ -231,6 +234,8 @@ export default function AttendancePage() {
       }))
       .filter((x) => !!x.student)
       .sort((a, b) => (a.attendance.check_in || '').localeCompare(b.attendance.check_in || ''));
+    console.log('ATTENDANCE DEBUG: checkedIn filter applied, result count =', result.length);
+    return result;
   }, [checkedIn, allStudents]);
 
   // Column 3: Checked Out — has check_in AND check_out

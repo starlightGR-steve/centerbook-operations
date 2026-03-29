@@ -5,6 +5,7 @@ import type { Attendance, CheckInRequest, CheckOutRequest } from '@/lib/types';
 /** Fetch today's attendance records */
 export function useAttendance(date?: string, refreshInterval = 10000) {
   const d = date || new Date().toISOString().split('T')[0];
+  console.log('useAttendance: fetching date =', d, 'full URL =', `/attendance?date=${d}`);
 
   return useSWR<Attendance[]>(
     `attendance-${d}`,
