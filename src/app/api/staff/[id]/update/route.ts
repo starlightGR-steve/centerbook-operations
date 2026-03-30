@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const body = await req.json();
 
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+  const apiBase = `${process.env.WP_API_URL}/cb/v1`;
   const apiUser = process.env.WP_API_USER;
   const apiPass = process.env.WP_API_PASSWORD;
 

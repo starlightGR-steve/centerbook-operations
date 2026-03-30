@@ -51,13 +51,10 @@ import type {
 } from './types';
 
 // ── Configuration ──────────────────────────
+// All requests go through the Next.js proxy at /api/cb/...
+// Credentials are injected server-side; never exposed to the browser.
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ||
-  'https://thecenterbook1.wpenginepowered.com/wp-json/cb/v1';
-
-const API_USER = process.env.NEXT_PUBLIC_API_USER || '';
-const API_PASS = process.env.NEXT_PUBLIC_API_PASS || '';
+const API_BASE = '/api/cb';
 
 // ── Rate Limiter ───────────────────────────
 // WP Engine Cloudflare WAF: batch 2 requests, 2s between batches
@@ -130,13 +127,10 @@ async function baseFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const auth = btoa(`${API_USER}:${API_PASS}`);
-
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Basic ${auth}`,
       ...options.headers,
     },
   });

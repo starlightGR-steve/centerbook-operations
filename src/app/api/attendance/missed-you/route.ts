@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'studentId is required' }, { status: 400 });
   }
 
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+  const apiBase = `${process.env.WP_API_URL}/cb/v1`;
   const apiUser = process.env.WP_API_USER;
   const apiPass = process.env.WP_API_PASSWORD;
 

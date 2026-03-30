@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+        const apiBase = `${process.env.WP_API_URL}/cb/v1`;
         const apiUser = process.env.WP_API_USER;
         const apiPass = process.env.WP_API_PASSWORD;
 
