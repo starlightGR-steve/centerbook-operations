@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-6);
 }
 
 .modal {
@@ -16,11 +16,11 @@
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 580px;
+  max-width: var(--panel-width-lg);
 }
 
 .header {
-  padding: 24px 28px;
+  padding: var(--space-6) 1.75rem;
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
@@ -29,14 +29,14 @@
 
 .headerTitle {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--text-xl);
   font-weight: 500;
   color: var(--primary);
 }
 
 .headerSub {
-  margin: 2px 0 0;
-  font-size: 12px;
+  margin: var(--space-0_5) 0 0;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--accent);
 }
@@ -46,18 +46,18 @@
   border: none;
   cursor: pointer;
   color: var(--neutral);
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .body {
-  padding: 24px 28px;
-  max-height: 400px;
+  padding: var(--space-6) 1.75rem;
+  max-height: 25rem;
   overflow-y: auto;
 }
 
 @media (max-width: 768px) {
   .overlay {
-    padding: 12px;
+    padding: var(--space-3);
   }
 
   .modal {
@@ -68,11 +68,11 @@
   }
 
   .header {
-    padding: 16px 20px;
+    padding: var(--space-4) var(--space-5);
   }
 
   .body {
-    padding: 16px 20px;
+    padding: var(--space-4) var(--space-5);
     max-height: none;
     flex: 1;
     overflow-y: auto;

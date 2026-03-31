@@ -2,5 +2,5 @@
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: 28px;
+  padding: 1.75rem;
 }
