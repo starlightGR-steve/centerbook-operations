@@ -139,8 +139,8 @@
 
 /* ── Medical heart (filled, inline with badges) ── */
 .medicalHeart {
-  color: #ef4444;
-  fill: #ef4444;
+  color: #b91c1c;
+  fill: #b91c1c;
   flex-shrink: 0;
 }
 
@@ -149,7 +149,7 @@
   position: absolute;
   top: -3px;
   right: -3px;
-  color: #ef4444;
+  color: #b91c1c;
   z-index: 1;
 }
 

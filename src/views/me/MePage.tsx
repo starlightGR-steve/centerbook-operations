@@ -45,7 +45,7 @@ function timeAgo(dateStr: string): string {
 function dueDateColor(dateStr: string): string {
   const today = new Date().toISOString().slice(0, 10);
   if (dateStr < today) return 'var(--red)';
-  if (dateStr === today) return '#d97706';
+  if (dateStr === today) return '#92400e';
   return 'var(--neutral)';
 }
 

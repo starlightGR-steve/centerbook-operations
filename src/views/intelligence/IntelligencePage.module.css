@@ -477,7 +477,7 @@
 
 .pillGood { background: #dcfce7; color: #16a34a; }
 .pillOk   { background: #f0fdf4; color: #166534; }
-.pillWarn { background: #fff7ed; color: #d97706; }
+.pillWarn { background: #fff7ed; color: #92400e; }
 .pillBad  { background: #fee2e2; color: #dc2626; }
 
 .legendRow {
@@ -870,7 +870,7 @@
 
 .legendDotGreen { background: #22c55e; }
 .legendDotAmber { background: #eab308; }
-.legendDotRed   { background: #ef4444; }
+.legendDotRed   { background: #b91c1c; }
 
 /* Attendance table */
 .attTable {
@@ -914,10 +914,10 @@
 
 .attTdGreen     { color: #16a34a; font-weight: 600; }
 .attTdTeal      { color: var(--secondary); }
-.attTdRed       { color: #ef4444; }
-.attTdRedBold   { color: #ef4444; font-weight: 700; }
+.attTdRed       { color: #b91c1c; }
+.attTdRedBold   { color: #b91c1c; font-weight: 700; }
 .attTdGreenBold { color: #16a34a; font-weight: 700; }
-.attTdAmber     { color: #d97706; }
+.attTdAmber     { color: #92400e; }
 
 .attEmpty {
   padding: 24px;

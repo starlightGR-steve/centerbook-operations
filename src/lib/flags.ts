@@ -12,7 +12,7 @@ import type { FlagConfigItem, ChecklistConfigItem } from './types';
 
 export const DEFAULT_FLAGS: FlagConfigItem[] = [
   { key: 'new_concept', label: 'New Concept', icon: 'Lightbulb', color: '#8b5cf6', enabled: true, sort_order: 0 },
-  { key: 'needs_help', label: 'Needs Help', icon: 'CircleHelp', color: '#ef4444', enabled: true, sort_order: 1 },
+  { key: 'needs_help', label: 'Needs Help', icon: 'CircleHelp', color: '#b91c1c', enabled: true, sort_order: 1 },
   { key: 'work_with_amy', label: 'Work with Amy', icon: 'text:A', color: '#f59e0b', enabled: true, sort_order: 2 },
   { key: 'needs_homework', label: 'Needs Homework', icon: 'BookOpen', color: '#3b82f6', enabled: true, sort_order: 3 },
   { key: 'taking_test', label: 'Taking Test', icon: 'ClipboardList', color: '#10b981', enabled: true, sort_order: 4 },
@@ -34,7 +34,7 @@ export const DEFAULT_CHECKLIST: ChecklistConfigItem[] = [
 
 export const FLAG_CONFIG = {
   new_concept: { label: 'New Concept', icon: 'Sparkles', color: '#8b5cf6' },
-  needs_help: { label: 'Needs Help', icon: 'HelpCircle', color: '#ef4444' },
+  needs_help: { label: 'Needs Help', icon: 'HelpCircle', color: '#b91c1c' },
   work_with_amy: { label: 'Work with Amy', icon: 'UserCheck', color: '#f59e0b' },
   needs_homework: { label: 'Needs Homework', icon: 'BookOpen', color: '#3b82f6' },
 } as const;

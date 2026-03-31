@@ -16,7 +16,7 @@ import styles from './ProgressPage.module.css';
    ASHR COLORS & LABELS
    ═══════════════════════════════════════════ */
 const ASHR_COLORS: Record<number, string> = {
-  3: '#d97706', // Gold
+  3: '#92400e', // Gold
   2: '#64748b', // Silver
   1: '#b8860b', // Bronze
   0: '#ea580c', // At Grade

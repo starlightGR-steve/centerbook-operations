@@ -18,7 +18,7 @@ import styles from './PipelinePage.module.css';
 
 const PIPELINE_COLUMNS: { status: FamilyPipelineStatus; label: string; color: string }[] = [
   { status: 'prospect',             label: 'Prospect',   color: '#6b7280' },
-  { status: 'assessment_scheduled', label: 'Assessment',  color: '#d97706' },
+  { status: 'assessment_scheduled', label: 'Assessment',  color: '#92400e' },
   { status: 'lead',                 label: 'Lead',        color: '#3b82f6' },
   { status: 'trial',                label: 'Trial',       color: '#009AAB' },
   { status: 'enrolled',             label: 'Enrolled',    color: '#22c55e' },
@@ -29,8 +29,8 @@ const PIPELINE_COLUMNS: { status: FamilyPipelineStatus; label: string; color: st
 const STATUS_CARDS = [
   { key: 'Active',    label: 'Active',    color: '#22c55e', icon: CheckCircle2 },
   { key: 'Trial',     label: 'Trial',     color: '#3b82f6', icon: Clock },
-  { key: 'On Hold',   label: 'On Hold',   color: '#d97706', icon: Pause },
-  { key: 'Withdrawn', label: 'Withdrawn', color: '#ef4444', icon: XCircle },
+  { key: 'On Hold',   label: 'On Hold',   color: '#92400e', icon: Pause },
+  { key: 'Withdrawn', label: 'Withdrawn', color: '#b91c1c', icon: XCircle },
 ] as const;
 
 /* ── Helpers ─────────────────────────────────────────────── */

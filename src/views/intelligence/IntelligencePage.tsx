@@ -14,12 +14,12 @@ import styles from './IntelligencePage.module.css';
 
 /* ── Brand constants (non-token colors) ───────────────────── */
 const C = {
-  gold:    '#d97706',
+  gold:    '#92400e',
   silver:  '#64748b',
   bronze:  '#b8860b',
   red:     '#dc2626',
   green:   '#16a34a',
-  amber:   '#d97706',
+  amber:   '#92400e',
   dark:    '#1a2744',
   muted:   '#6b7280',
 };
@@ -153,8 +153,8 @@ type AttPreset = 'month' | 'q3' | 'year';
 
 const STATUS_COLORS: Record<string, string> = {
   Active: '#22c55e', Trial: '#355caa', 'Month Off': '#eab308',
-  Paused: '#9ca3af', 'On Hold': '#6b7280', Withdrawn: '#ef4444',
-  Cancel: '#ef4444', Inactive: '#9ca3af',
+  Paused: '#9ca3af', 'On Hold': '#6b7280', Withdrawn: '#b91c1c',
+  Cancel: '#b91c1c', Inactive: '#9ca3af',
 };
 
 function toYMD(d: Date): string { return d.toISOString().split('T')[0]; }
@@ -858,7 +858,7 @@ export default function IntelligencePage() {
             <div className={styles.statStrip}>
               {[
                 { label: 'Total Attended', value: String(attTotalAttended), color: 'var(--primary)' },
-                { label: 'Total No-Shows', value: String(attTotalNoShow),   color: '#ef4444' },
+                { label: 'Total No-Shows', value: String(attTotalNoShow),   color: '#b91c1c' },
                 { label: 'Total Excused',  value: String(attTotalExcused),  color: 'var(--secondary)' },
                 { label: 'Attendance Rate', value: `${attOverallRate}%`,    color: 'var(--accent)' },
               ].map(c => (
@@ -943,8 +943,8 @@ export default function IntelligencePage() {
             <div className={styles.statStrip}>
               {[
                 { label: 'New Enrollments (this month)', value: String(enGained), color: '#22c55e' },
-                { label: 'Cancellations (this month)',   value: String(enLost),   color: '#ef4444' },
-                { label: 'Net Change', value: `${enNet >= 0 ? '+' : ''}${enNet}`, color: enNet >= 0 ? '#22c55e' : '#ef4444' },
+                { label: 'Cancellations (this month)',   value: String(enLost),   color: '#b91c1c' },
+                { label: 'Net Change', value: `${enNet >= 0 ? '+' : ''}${enNet}`, color: enNet >= 0 ? '#22c55e' : '#b91c1c' },
                 { label: 'Total Active', value: String(enTotal), color: 'var(--primary)' },
               ].map(c => (
                 <div key={c.label} className={styles.statCard}>
@@ -965,7 +965,7 @@ export default function IntelligencePage() {
                     <YAxis tick={{ fontSize: 10, fontFamily: 'Montserrat' }} />
                     <Tooltip content={<EnrollTooltip />} />
                     <Bar dataKey="gained" name="Gained" fill="#22c55e" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="lost"   name="Lost"   fill="#ef4444" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="lost"   name="Lost"   fill="#b91c1c" radius={[3, 3, 0, 0]} />
                     <Line type="monotone" dataKey="net" name="Net" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} />
                   </ComposedChart>
                 </ResponsiveContainer>

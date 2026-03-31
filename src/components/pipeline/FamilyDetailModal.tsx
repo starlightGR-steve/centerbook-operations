@@ -8,7 +8,7 @@ import styles from './FamilyDetailModal.module.css';
 
 const STATUS_COLORS: Record<string, string> = {
   prospect: '#6b7280',
-  assessment_scheduled: '#d97706',
+  assessment_scheduled: '#92400e',
   lead: '#3b82f6',
   trial: '#009AAB',
   enrolled: '#22c55e',

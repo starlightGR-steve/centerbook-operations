@@ -171,7 +171,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
               }}>
                 {dayTotals[d]} stu
                 {absenceCountByDay[d] > 0 && (
-                  <span style={{ color: i === selectedDayIdx ? 'rgba(255,200,200,0.9)' : '#ef4444', fontSize: 9 }}>
+                  <span style={{ color: i === selectedDayIdx ? 'rgba(255,200,200,0.9)' : '#b91c1c', fontSize: 9 }}>
                     {absenceCountByDay[d]} absent
                   </span>
                 )}
@@ -249,7 +249,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                             <span style={{ fontWeight: 500, color: absence ? 'var(--neutral)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4, opacity: absence ? 0.4 : 1, textDecoration: absence ? 'line-through' : 'none' }}>
                               {s.first_name} {s.last_name}
                               {absence && (
-                                <span style={{ fontSize: 9, fontWeight: 700, color: '#ef4444', textDecoration: 'none', opacity: 1 }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
                                   {absence.reason}
                                 </span>
                               )}
@@ -321,7 +321,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
               >
                 {DAY_SHORT[day]}
                 {absenceCountByDay[day] > 0 && (
-                  <div style={{ fontSize: 9, fontWeight: 600, color: '#ef4444', marginTop: 2 }}>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: '#b91c1c', marginTop: 2 }}>
                     {absenceCountByDay[day]} absent
                   </div>
                 )}
@@ -398,7 +398,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                                 <span style={{ fontWeight: 500, color: absence ? 'var(--neutral)' : '#355caa', display: 'flex', alignItems: 'center', gap: 4, opacity: absence ? 0.4 : 1, textDecoration: absence ? 'line-through' : 'none' }}>
                                   {s.first_name} {s.last_name}
                                   {absence && (
-                                    <span style={{ fontSize: 9, fontWeight: 700, color: '#ef4444', textDecoration: 'none', opacity: 1 }}>
+                                    <span style={{ fontSize: 9, fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
                                       {absence.reason}
                                     </span>
                                   )}
