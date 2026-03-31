@@ -565,10 +565,10 @@ export default function StudentProfilePage({ studentId }: Props) {
           </div>
 
           {editError && (
-            <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{editError}</p>
+            <p style={{ color: 'var(--red)', fontSize: 'var(--text-sm)', margin: '0 0 var(--space-3)', fontFamily: 'var(--font-primary)' }}>{editError}</p>
           )}
           {levelUpMessage && (
-            <p style={{ color: levelUpMessage.type === 'success' ? 'var(--green)' : 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{levelUpMessage.text}</p>
+            <p style={{ color: levelUpMessage.type === 'success' ? 'var(--green)' : 'var(--red)', fontSize: 'var(--text-sm)', margin: '0 0 var(--space-3)', fontFamily: 'var(--font-primary)' }}>{levelUpMessage.text}</p>
           )}
 
           {/* ── Personal Information ── */}
@@ -1191,7 +1191,7 @@ export default function StudentProfilePage({ studentId }: Props) {
           </div>
 
           {linkError && (
-            <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{linkError}</p>
+            <p style={{ color: 'var(--red)', fontSize: 'var(--text-sm)', margin: '0 0 var(--space-3)', fontFamily: 'var(--font-primary)' }}>{linkError}</p>
           )}
 
           {contactsLoading && (
@@ -1362,7 +1362,7 @@ export default function StudentProfilePage({ studentId }: Props) {
           )}
 
           {taskError && (
-            <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 12px', fontFamily: 'var(--font-primary)' }}>{taskError}</p>
+            <p style={{ color: 'var(--red)', fontSize: 'var(--text-sm)', margin: '0 0 var(--space-3)', fontFamily: 'var(--font-primary)' }}>{taskError}</p>
           )}
 
           <div className={styles.taskList}>
