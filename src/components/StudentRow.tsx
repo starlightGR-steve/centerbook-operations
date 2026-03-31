@@ -44,7 +44,7 @@ export default function StudentRow({
           {student.first_name} {student.last_name}
         </p>
         {showScheduledTime && student.class_time_sort_key && (
-          <p style={{ margin: '1px 0 0', fontSize: 11, fontWeight: 500, color: '#57727c' }}>
+          <p style={{ margin: '1px 0 0', fontSize: 'var(--text-xs)', fontWeight: 500, color: '#57727c' }}>
             {formatTimeKey(student.class_time_sort_key)}
           </p>
         )}

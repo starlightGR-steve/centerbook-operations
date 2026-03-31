@@ -139,7 +139,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
     return (
       <div>
         {/* Day pill selector */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 'var(--space-1_5)', marginBottom: '0.875rem' }}>
           {DAYS.map((d, i) => (
             <button
               key={d}
@@ -149,7 +149,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 2,
+                gap: 'var(--space-0_5)',
                 padding: '8px 4px',
                 border: '1px solid',
                 borderColor: i === selectedDayIdx ? 'var(--primary)' : 'var(--border)',
@@ -232,7 +232,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                 {isExpanded && count > 0 && (
                   <div style={{
                     borderTop: '1px solid var(--border)',
-                    padding: 10,
+                    padding: 'var(--space-2_5)',
                   }}>
                     {cellStudents.map((s) => (
                       <div
@@ -254,7 +254,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                                 </span>
                               )}
                               {s.schedule_detail?.[day]?.is_zoom && !absence && (
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 'var(--text-sm)', fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-0_5)', fontSize: 'var(--text-sm)', fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
                                   <Video size={9} /> Virtual
                                 </span>
                               )}
@@ -373,7 +373,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                           transform: 'translateX(-50%)', zIndex: 30,
                           background: '#fff', border: '1px solid #e8e8e8',
                           borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                          padding: 8, minWidth: 200, maxHeight: 220, overflowY: 'auto',
+                          padding: 'var(--space-2)', minWidth: '12.5rem', maxHeight: '13.75rem', overflowY: 'auto',
                         }}
                       >
                         <p style={{
@@ -403,7 +403,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                                     </span>
                                   )}
                                   {s.schedule_detail?.[day]?.is_zoom && !absence && (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 'var(--text-sm)', fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-0_5)', fontSize: 'var(--text-sm)', fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
                                       <Video size={9} /> Virtual
                                     </span>
                                   )}

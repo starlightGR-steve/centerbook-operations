@@ -61,14 +61,14 @@ export default function SessionTimeAdjust({ studentId, attendanceId, subjects, s
             borderRadius: 8,
             boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
             zIndex: 20,
-            padding: 10,
+            padding: 'var(--space-2_5)',
             minWidth: 160,
           }}
         >
           <p
             style={{
               margin: '0 0 8px',
-              fontSize: 11,
+              fontSize: 'var(--text-xs)',
               fontWeight: 600,
               color: 'var(--neutral)',
               textAlign: 'center',
@@ -82,7 +82,7 @@ export default function SessionTimeAdjust({ studentId, attendanceId, subjects, s
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
+              gap: 'var(--space-2)',
               marginBottom: 8,
             }}
           >
@@ -96,7 +96,7 @@ export default function SessionTimeAdjust({ studentId, attendanceId, subjects, s
                 border: '1px solid var(--border)',
                 background: 'var(--white)',
                 fontFamily: 'Montserrat, sans-serif',
-                fontSize: 11,
+                fontSize: 'var(--text-xs)',
                 fontWeight: 600,
                 color: 'var(--primary)',
                 cursor: attendanceId ? 'pointer' : 'not-allowed',
@@ -107,7 +107,7 @@ export default function SessionTimeAdjust({ studentId, attendanceId, subjects, s
             </button>
             <span
               style={{
-                fontSize: 16,
+                fontSize: 'var(--text-lg)',
                 fontWeight: 700,
                 color: 'var(--primary)',
                 minWidth: 40,
@@ -127,7 +127,7 @@ export default function SessionTimeAdjust({ studentId, attendanceId, subjects, s
                 border: '1px solid var(--border)',
                 background: 'var(--white)',
                 fontFamily: 'Montserrat, sans-serif',
-                fontSize: 11,
+                fontSize: 'var(--text-xs)',
                 fontWeight: 600,
                 color: 'var(--primary)',
                 cursor: attendanceId ? 'pointer' : 'not-allowed',
@@ -137,7 +137,7 @@ export default function SessionTimeAdjust({ studentId, attendanceId, subjects, s
               +15
             </button>
           </div>
-          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'center' }}>
             {[30, 45, 60, 75, 90].map((d) => (
               <button
                 key={d}
@@ -149,7 +149,7 @@ export default function SessionTimeAdjust({ studentId, attendanceId, subjects, s
                   border: '1px solid var(--border)',
                   background: 'var(--base)',
                   fontFamily: 'Montserrat, sans-serif',
-                  fontSize: 10,
+                  fontSize: 'var(--text-2xs)',
                   fontWeight: 600,
                   color: 'var(--neutral)',
                   cursor: attendanceId ? 'pointer' : 'not-allowed',

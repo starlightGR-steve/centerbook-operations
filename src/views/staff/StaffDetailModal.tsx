@@ -153,7 +153,7 @@ export default function StaffDetailModal({
               {staff.scheduled_shift || 'No schedule set'}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', position: 'relative' }}>
             <MapPin size={14} color="var(--neutral)" />
             {effectiveRow ? (
               <span
@@ -207,7 +207,7 @@ export default function StaffDetailModal({
                   boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
                   zIndex: 20,
                   minWidth: 160,
-                  padding: 4,
+                  padding: 'var(--space-1)',
                 }}
               >
                 {[
@@ -391,7 +391,7 @@ export default function StaffDetailModal({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 'var(--space-1_5)',
               background: 'none',
               border: 'none',
               color: 'var(--red)',

@@ -329,7 +329,7 @@ function EditStaffModal({ staff: s, onClose, onSuccess, clockedInIds }: EditModa
             <button
               onClick={() => { setError(''); setShowDeleteConfirm(true); }}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+                display: 'flex', alignItems: 'center', gap: 'var(--space-1_5)', background: 'none', border: 'none',
                 color: 'var(--red)', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)', fontWeight: 600,
                 cursor: 'pointer', padding: 0,
               }}

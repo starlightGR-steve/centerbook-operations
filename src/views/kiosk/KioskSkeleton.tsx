@@ -3,7 +3,7 @@ import styles from './KioskPage.module.css';
 
 function SkeletonRows({ count }: { count: number }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1_5)' }}>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 10px' }}>
           <div style={{ flex: 1 }}>
@@ -31,15 +31,15 @@ export default function KioskSkeleton() {
       <div className={styles.columns}>
         <div className={styles.card} style={{ padding: '16px 12px' }}>
           <Skeleton variant="text" width="140px" height="15px" />
-          <div style={{ marginTop: '16px' }}><SkeletonRows count={5} /></div>
+          <div style={{ marginTop: 'var(--space-4)' }}><SkeletonRows count={5} /></div>
         </div>
         <div className={styles.card} style={{ padding: '16px 12px' }}>
           <Skeleton variant="text" width="80px" height="15px" />
-          <div style={{ marginTop: '16px' }}><SkeletonRows count={4} /></div>
+          <div style={{ marginTop: 'var(--space-4)' }}><SkeletonRows count={4} /></div>
         </div>
         <div className={styles.card} style={{ padding: '16px 12px', background: 'var(--slate)' }}>
           <Skeleton variant="text" width="120px" height="15px" />
-          <div style={{ marginTop: '16px' }}><SkeletonRows count={6} /></div>
+          <div style={{ marginTop: 'var(--space-4)' }}><SkeletonRows count={6} /></div>
         </div>
       </div>
     </div>

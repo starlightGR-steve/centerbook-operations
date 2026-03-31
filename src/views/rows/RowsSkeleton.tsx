@@ -39,7 +39,7 @@ export default function RowsSkeleton() {
               }}>
                 <div>
                   <Skeleton variant="text" width="70%" height="16px" />
-                  <div style={{ marginTop: '8px', display: 'flex', gap: '6px' }}>
+                  <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: 'var(--space-1_5)' }}>
                     <Skeleton width="50px" height="20px" borderRadius="4px" />
                     <Skeleton width="40px" height="20px" borderRadius="4px" />
                   </div>
