@@ -10,7 +10,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 1050px;
+  width: 65.625rem;
   max-width: 95vw;
   max-height: 90vh;
   background: var(--white);
@@ -26,20 +26,20 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 24px 32px 16px;
+  padding: var(--space-6) var(--space-8) var(--space-4);
   border-bottom: 1px solid var(--border);
 }
 
 .headerLeft {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .studentName {
   margin: 0;
   font-family: var(--font-primary);
-  font-size: 24px;
+  font-size: var(--text-3xl);
   font-weight: 700;
   color: var(--primary);
 }
@@ -47,15 +47,15 @@
 .headerBadges {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1_5);
   flex-wrap: wrap;
 }
 
 .badgeMath {
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2_5);
   border-radius: 6px;
   background: var(--tertiary);
   color: var(--white);
@@ -63,9 +63,9 @@
 
 .badgeReading {
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2_5);
   border-radius: 6px;
   background: var(--accent);
   color: var(--white);
@@ -73,9 +73,9 @@
 
 .badgeNeutral {
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2_5);
   border-radius: 6px;
   background: var(--base);
   color: var(--neutral);
@@ -84,44 +84,44 @@
 
 .gradeText {
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 500;
   color: var(--neutral);
 }
 
 .unscheduledBadge {
   display: inline-block;
-  margin-top: 6px;
+  margin-top: var(--space-1_5);
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: #92400e;
   background: rgba(234, 179, 8, 0.1);
   border: 1px solid rgba(234, 179, 8, 0.25);
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: 6px;
 }
 
 .headerRight {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   flex-shrink: 0;
 }
 
 .medicalAlert {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: var(--space-1_5);
+  padding: var(--space-1_5) var(--space-3);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 6px;
   background: rgba(239, 68, 68, 0.04);
   color: var(--red);
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
-  max-width: 250px;
+  max-width: 15.625rem;
 }
 
 .medicalAlert span {
@@ -135,7 +135,7 @@
   border: none;
   color: var(--neutral);
   cursor: pointer;
-  padding: 4px;
+  padding: var(--space-1);
   display: flex;
 }
 
@@ -147,17 +147,17 @@
 .body {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
+  padding: var(--space-6) var(--space-8);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-6);
 }
 
 /* ── Section Headings & Dividers ── */
 .sectionHeading {
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   font-family: var(--font-primary);
-  font-size: 16px;
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--primary);
 }
@@ -172,25 +172,25 @@
 .colLabel {
   display: block;
   font-family: var(--font-primary);
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: var(--neutral);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-2_5);
 }
 
 /* ── Row layouts ── */
 .row3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 24px;
+  gap: var(--space-6);
 }
 
 .row2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: var(--space-6);
 }
 
 .col {
@@ -200,11 +200,11 @@
 
 /* ── Pickup Contact ── */
 .contactSelect {
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2_5);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
   background: var(--white);
   outline: none;
@@ -217,39 +217,39 @@
 
 .phoneText {
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 500;
   color: var(--secondary);
-  margin-top: 6px;
+  margin-top: var(--space-1_5);
 }
 
 /* ── Session Time ── */
 .timeDisplay {
   font-family: var(--font-primary);
-  font-size: 42px;
+  font-size: 2.625rem;
   font-weight: 700;
   color: var(--primary);
   text-align: center;
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .timeControls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: var(--space-1_5);
+  margin-bottom: var(--space-2_5);
 }
 
 .timeBtn {
-  min-width: 44px;
-  min-height: 44px;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
   border: 1px solid var(--border);
   border-radius: 4px;
   background: var(--white);
   font-family: var(--font-primary);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--neutral);
   cursor: pointer;
@@ -263,7 +263,7 @@
 
 .timeValue {
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text);
   min-width: var(--touch-min);
@@ -274,17 +274,17 @@
 .presets {
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .presetBtn {
-  padding: 0 12px;
-  min-height: 44px;
+  padding: 0 var(--space-3);
+  min-height: var(--touch-min);
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--white);
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--neutral);
   cursor: pointer;
@@ -304,16 +304,16 @@
 /* ── Schedule ── */
 .scheduleDays {
   display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: var(--space-1_5);
+  margin-bottom: var(--space-2);
 }
 
 .dayPill {
-  padding: 5px 10px;
+  padding: 0.3125rem var(--space-2_5);
   border: 1px solid var(--border);
   border-radius: 4px;
   font-family: var(--font-primary);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--neutral);
 }
@@ -326,7 +326,7 @@
 
 .scheduleTime {
   font-family: var(--font-primary);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--primary);
 }
@@ -337,25 +337,25 @@
   border-left: 4px solid #f59e0b;
   background: rgba(234, 179, 8, 0.04);
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 0.875rem var(--space-4);
 }
 
 .staffNotesHeader {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1_5);
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: #92400e;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-2_5);
 }
 
 .staffNoteItem {
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1_5);
   line-height: 1.5;
 }
 
@@ -365,7 +365,7 @@
 
 .noteAuthor {
   font-weight: 700;
-  margin-right: 4px;
+  margin-right: var(--space-1);
 }
 
 .noteContent {
@@ -381,20 +381,20 @@
 .pillGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: var(--space-1_5);
+  margin-bottom: var(--space-2_5);
 }
 
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 14px;
+  gap: var(--space-1);
+  padding: var(--space-1_5) 0.875rem;
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--white);
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--neutral);
   cursor: pointer;
@@ -415,16 +415,16 @@
 /* ── Add task row ── */
 .addTaskRow {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .addTaskInput {
   flex: 1;
-  padding: 7px 10px;
+  padding: 0.4375rem var(--space-2_5);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text);
   outline: none;
 }
@@ -434,13 +434,13 @@
 }
 
 .addTaskBtn {
-  padding: 7px 14px;
+  padding: 0.4375rem 0.875rem;
   border: none;
   border-radius: 6px;
   background: var(--accent);
   color: var(--white);
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.15s;
@@ -499,16 +499,16 @@
 /* ── Note input ── */
 .noteInputRow {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .noteInput {
   flex: 1;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2_5);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
   outline: none;
 }
@@ -518,7 +518,7 @@
 }
 
 .sendBtn {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   border-radius: 6px;
   background: var(--accent);
@@ -534,7 +534,7 @@
 
 .placeholder {
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--neutral);
   font-style: italic;
   margin: 0;
@@ -545,14 +545,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  margin-top: 8px;
-  padding: 6px 14px;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding: var(--space-1_5) 0.875rem;
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--white);
   font-family: var(--font-primary);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--neutral);
   cursor: pointer;
@@ -574,17 +574,17 @@
 .endTimeRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
   justify-content: center;
 }
 
 .endTimeInput {
-  padding: 6px 10px;
+  padding: var(--space-1_5) var(--space-2_5);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
   outline: none;
 }
@@ -595,7 +595,7 @@
 
 .endTimeDuration {
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--secondary);
 }
@@ -604,21 +604,21 @@
 .footer {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-  padding: 16px 32px;
+  padding: var(--space-4) var(--space-8);
   border-top: 1px solid var(--border);
 }
 
 .cancelBtn {
-  padding: 10px 24px;
-  min-height: 44px;
+  padding: var(--space-2_5) var(--space-6);
+  min-height: var(--touch-min);
   border: 1px solid var(--border);
   border-radius: var(--radius-btn);
   background: var(--white);
   color: var(--neutral);
   font-family: var(--font-primary);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
   cursor: pointer;
   margin-right: auto;
@@ -631,15 +631,15 @@
 .outlineBtn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  min-height: 44px;
+  gap: var(--space-1_5);
+  padding: var(--space-2_5) var(--space-5);
+  min-height: var(--touch-min);
   border: 1.5px solid var(--green);
   border-radius: var(--radius-btn);
   background: var(--white);
   color: var(--green);
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -657,15 +657,15 @@
 .confirmBtn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 12px 28px;
-  min-height: 44px;
+  gap: var(--space-1_5);
+  padding: var(--space-3) 1.75rem;
+  min-height: var(--touch-min);
   border: none;
   border-radius: var(--radius-btn);
   background: var(--green);
   color: var(--white);
   font-family: var(--font-primary);
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.15s;
@@ -685,15 +685,15 @@
   }
 
   .header {
-    padding: 20px 24px 14px;
+    padding: var(--space-5) var(--space-6) 0.875rem;
   }
 
   .body {
-    padding: 20px 24px;
+    padding: var(--space-5) var(--space-6);
   }
 
   .footer {
-    padding: 14px 24px;
+    padding: 0.875rem var(--space-6);
   }
 }
 
@@ -705,7 +705,7 @@
 
   .header {
     flex-direction: column;
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .headerRight {
@@ -713,11 +713,11 @@
   }
 
   .studentName {
-    font-size: 20px;
+    font-size: var(--text-2xl);
   }
 
   .body {
-    padding: 16px;
-    gap: 20px;
+    padding: var(--space-4);
+    gap: var(--space-5);
   }
 }

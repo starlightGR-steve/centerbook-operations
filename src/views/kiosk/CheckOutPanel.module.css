@@ -5,13 +5,13 @@
 }
 
 .header {
-  margin: 0 0 16px;
-  font-size: 15px;
+  margin: 0 0 var(--space-4);
+  font-size: 0.9375rem;
   font-weight: 500;
   color: var(--primary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .list {
@@ -19,7 +19,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .row {
@@ -27,10 +27,10 @@
   background: var(--base);
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 6px 10px 6px 0;
+  padding: var(--space-1_5) var(--space-2_5) var(--space-1_5) 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1_5);
   font-family: var(--font-primary);
   transition: all 0.15s;
 }
@@ -44,7 +44,7 @@
   flex: 1;
   background: none;
   border: none;
-  padding: 8px 6px 8px 16px;
+  padding: var(--space-2) var(--space-1_5) var(--space-2) var(--space-4);
   text-align: left;
   display: flex;
   justify-content: space-between;
@@ -55,20 +55,20 @@
 
 .name {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--primary);
 }
 
 .arrival {
-  margin: 2px 0 0;
-  font-size: 11px;
+  margin: var(--space-0_5) 0 0;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: var(--neutral);
 }
 
 .timeLeft {
-  font-size: 18px;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--primary);
   font-variant-numeric: tabular-nums;
@@ -79,8 +79,8 @@
 }
 
 .empty {
-  font-size: 14px;
+  font-size: var(--text-md);
   color: var(--neutral);
   font-style: italic;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
 }

@@ -5,13 +5,13 @@
 }
 
 .header {
-  margin: 0 0 16px;
-  font-size: 15px;
+  margin: 0 0 var(--space-4);
+  font-size: 0.9375rem;
   font-weight: 500;
   color: var(--primary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .list {
@@ -19,12 +19,12 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .empty {
-  font-size: 14px;
+  font-size: var(--text-md);
   color: var(--neutral);
   font-style: italic;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
 }

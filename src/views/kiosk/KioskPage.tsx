@@ -367,14 +367,14 @@ export default function KioskPage() {
                         </span>
                         <div className={styles.expectedBadges}>
                           <SubjectBadges subjects={s.subjects} />
-                          {isIn && <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--green)' }}>Checked in</span>}
+                          {isIn && <span style={{ fontSize: 'var(--text-2xs)', fontWeight: 600, color: 'var(--green)' }}>Checked in</span>}
                         </div>
                       </div>
                       <div className={styles.expectedRight}>
                         {detail ? (
                           <span className={styles.expectedTime}>{detail.start}</span>
                         ) : (
-                          <span style={{ fontSize: 10, fontWeight: 500, color: '#92400e', background: 'rgba(234,179,8,0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                          <span style={{ fontSize: 'var(--text-2xs)', fontWeight: 500, color: '#92400e', background: 'rgba(234,179,8,0.1)', padding: '2px 6px', borderRadius: 4 }}>
                             Not scheduled
                           </span>
                         )}
