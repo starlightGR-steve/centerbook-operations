@@ -1,6 +1,6 @@
 .grid {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .gridNormal {
