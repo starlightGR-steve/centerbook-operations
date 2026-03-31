@@ -23,6 +23,15 @@ In-center tablet/desktop app for Kumon educational centers. Next.js 14+ App Rout
 - State: React Context + useReducer per module
 - Data fetching: SWR hooks wrapping typed API client
 
+## Responsive Design Standard (Mandatory)
+No hardcoded px for layout. Use design tokens from styles/tokens.css:
+- Font sizes: --text-3xs through --text-3xl
+- Spacing: --space-0_5 through --space-20
+- Touch targets: --touch-min (44px)
+- Dimensions: --panel-width-sm/md/lg, --content-max
+Pixels allowed ONLY for: 1px borders, icon container sizes (16/20/24/32/48px), decorative elements.
+Any new CSS property using a px value for font-size, padding, margin, gap, width, or height must use a token or rem equivalent.
+
 ## DO NOT
 - Add Co-authored-by trailers to git commits
 - Use Tailwind or styled-components
