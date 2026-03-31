@@ -104,12 +104,12 @@ export default function MobileNav() {
         <span
           style={{
             color: '#fff',
-            fontFamily: 'Montserrat, sans-serif',
-            fontSize: 14,
+            fontFamily: 'var(--font-primary)',
+            fontSize: 'var(--text-md)',
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 'var(--space-2)',
           }}
         >
           {currentPage?.label || 'The Center Book'}
@@ -121,7 +121,7 @@ export default function MobileNav() {
             background: 'none',
             border: 'none',
             color: '#fff',
-            padding: 4,
+            padding: 'var(--space-1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -142,7 +142,7 @@ export default function MobileNav() {
                 padding: '0 3px',
                 background: '#e53e3e',
                 color: '#fff',
-                fontSize: 10,
+                fontSize: 'var(--text-2xs)',
                 fontWeight: 700,
                 borderRadius: 8,
                 display: 'flex',
@@ -150,7 +150,7 @@ export default function MobileNav() {
                 justifyContent: 'center',
                 lineHeight: 1,
                 boxSizing: 'border-box',
-                fontFamily: 'Montserrat, sans-serif',
+                fontFamily: 'var(--font-primary)',
               }}
             >
               {pendingCount > 9 ? '9+' : pendingCount}
@@ -185,7 +185,7 @@ export default function MobileNav() {
             right: 0,
             background: '#1e3a6e',
             zIndex: 960,
-            padding: '8px 0',
+            padding: 'var(--space-2) 0',
             boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
           }}
         >
@@ -199,13 +199,13 @@ export default function MobileNav() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 12,
-                  padding: '12px 20px',
-                  color: active ? '#009AAB' : 'rgba(255,255,255,0.8)',
+                  gap: 'var(--space-3)',
+                  padding: 'var(--space-3) var(--space-5)',
+                  color: active ? 'var(--secondary)' : 'rgba(255,255,255,0.8)',
                   background: active ? 'rgba(0,154,171,0.1)' : 'transparent',
                   textDecoration: 'none',
-                  fontFamily: 'Montserrat, sans-serif',
-                  fontSize: 14,
+                  fontFamily: 'var(--font-primary)',
+                  fontSize: 'var(--text-md)',
                   fontWeight: active ? 700 : 500,
                 }}
               >
