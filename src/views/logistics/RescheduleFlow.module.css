@@ -1,59 +1,59 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .studentInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-bottom: 12px;
+  gap: var(--space-1);
+  padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--border);
 }
 
 .name {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 500;
   color: var(--primary);
 }
 
 .meta {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   align-items: center;
 }
 
 .current {
-  margin: 4px 0 0;
-  font-size: 12px;
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
   color: var(--neutral);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .label {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--primary);
 }
 
 .row {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .select {
   flex: 1;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2_5);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
   background: var(--white);
 }
@@ -64,11 +64,11 @@
 }
 
 .input {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
 }
 
@@ -80,8 +80,8 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-top: 4px;
+  gap: var(--space-3);
+  padding-top: var(--space-1);
 }
 
 .cancel {
@@ -89,7 +89,7 @@
   background: transparent;
   color: var(--neutral);
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   cursor: pointer;
 }
 

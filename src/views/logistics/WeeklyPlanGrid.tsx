@@ -156,22 +156,22 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                 borderRadius: 8,
                 background: i === selectedDayIdx ? 'var(--primary)' : 'var(--white)',
                 cursor: 'pointer',
-                fontFamily: 'Montserrat, sans-serif',
+                fontFamily: 'var(--font-primary)',
               }}
             >
               <span style={{
-                fontSize: 12, fontWeight: 700,
+                fontSize: 'var(--text-sm)', fontWeight: 700,
                 color: i === selectedDayIdx ? '#fff' : 'var(--primary)',
               }}>
                 {DAY_SHORT[d]}
               </span>
               <span style={{
-                fontSize: 10, fontWeight: 600,
+                fontSize: 'var(--text-2xs)', fontWeight: 600,
                 color: i === selectedDayIdx ? 'rgba(255,255,255,0.7)' : 'var(--neutral)',
               }}>
                 {dayTotals[d]} stu
                 {absenceCountByDay[d] > 0 && (
-                  <span style={{ color: i === selectedDayIdx ? 'rgba(255,200,200,0.9)' : '#b91c1c', fontSize: 12 }}>
+                  <span style={{ color: i === selectedDayIdx ? 'rgba(255,200,200,0.9)' : '#b91c1c', fontSize: 'var(--text-sm)' }}>
                     {absenceCountByDay[d]} absent
                   </span>
                 )}
@@ -199,7 +199,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                   overflow: 'hidden',
                   background: 'var(--white)',
                   textAlign: 'left',
-                  fontFamily: 'Montserrat, sans-serif',
+                  fontFamily: 'var(--font-primary)',
                   cursor: count > 0 ? 'pointer' : 'default',
                   width: '100%',
                   flexDirection: 'column',
@@ -210,7 +210,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     minWidth: 80, padding: '12px 10px',
                     background: cellColor(count),
-                    fontWeight: 700, fontSize: 12, color: count === 0 ? '#d1d5db' : 'var(--primary)',
+                    fontWeight: 700, fontSize: 'var(--text-sm)', color: count === 0 ? '#d1d5db' : 'var(--primary)',
                     whiteSpace: 'nowrap',
                   }}>
                     {formatTimeSortKey(slot)}
@@ -219,11 +219,11 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                     flex: 1, padding: '10px 14px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
-                    <span style={{ fontSize: 20, fontWeight: 700, color: count === 0 ? '#d1d5db' : 'var(--primary)' }}>
+                    <span style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: count === 0 ? '#d1d5db' : 'var(--primary)' }}>
                       {count > 0 ? count : '—'}
                     </span>
                     {count > 0 && (
-                      <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--neutral)' }}>
+                      <span style={{ fontSize: 'var(--text-xs)', fontWeight: 500, color: 'var(--neutral)' }}>
                         {count === 1 ? '1 student' : `${count} students`}
                       </span>
                     )}
@@ -239,7 +239,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                         key={s.id}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          gap: 8, padding: '5px 6px', fontSize: 12,
+                          gap: 8, padding: '5px 6px', fontSize: 'var(--text-sm)',
                         }}
                       >
                         {(() => {
@@ -249,12 +249,12 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                             <span style={{ fontWeight: 500, color: absence ? 'var(--neutral)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4, opacity: absence ? 0.4 : 1, textDecoration: absence ? 'line-through' : 'none' }}>
                               {s.first_name} {s.last_name}
                               {absence && (
-                                <span style={{ fontSize: 12, fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
+                                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
                                   {absence.reason}
                                 </span>
                               )}
                               {s.schedule_detail?.[day]?.is_zoom && !absence && (
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 'var(--text-sm)', fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
                                   <Video size={9} /> Virtual
                                 </span>
                               )}
@@ -277,12 +277,12 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
           background: 'var(--white)', borderRadius: 10,
           border: '1px solid var(--border)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          fontFamily: 'Montserrat, sans-serif',
+          fontFamily: 'var(--font-primary)',
         }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>
+          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary)' }}>
             {DAY_SHORT[day]} Total
           </span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--primary)' }}>
+          <span style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--primary)' }}>
             {dayTotals[day]} students
           </span>
         </div>
@@ -297,8 +297,8 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
         style={{
           width: '100%',
           borderCollapse: 'collapse',
-          fontFamily: 'Montserrat, sans-serif',
-          fontSize: 12,
+          fontFamily: 'var(--font-primary)',
+          fontSize: 'var(--text-sm)',
         }}
       >
         <thead>
@@ -306,7 +306,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
             <th
               style={{
                 padding: '10px 12px', textAlign: 'left', fontWeight: 600,
-                fontSize: 11, color: '#57727c', borderBottom: '2px solid #e8e8e8', width: 80,
+                fontSize: 'var(--text-xs)', color: '#57727c', borderBottom: '2px solid #e8e8e8', width: 80,
               }}
             >
               Time
@@ -316,12 +316,12 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                 key={day}
                 style={{
                   padding: '10px 12px', textAlign: 'center', fontWeight: 600,
-                  fontSize: 11, color: '#355caa', borderBottom: '2px solid #e8e8e8',
+                  fontSize: 'var(--text-xs)', color: '#355caa', borderBottom: '2px solid #e8e8e8',
                 }}
               >
                 {DAY_SHORT[day]}
                 {absenceCountByDay[day] > 0 && (
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#b91c1c', marginTop: 2 }}>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: '#b91c1c', marginTop: 2 }}>
                     {absenceCountByDay[day]} absent
                   </div>
                 )}
@@ -334,7 +334,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
             <tr key={slot}>
               <td
                 style={{
-                  padding: '8px 12px', fontWeight: 600, fontSize: 11,
+                  padding: '8px 12px', fontWeight: 600, fontSize: 'var(--text-xs)',
                   color: '#57727c', borderBottom: '1px solid #e8e8e8', whiteSpace: 'nowrap',
                 }}
               >
@@ -359,7 +359,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                         display: 'block', width: '100%', padding: '10px 8px',
                         border: 'none', background: cellColor(count),
                         cursor: count > 0 ? 'pointer' : 'default',
-                        fontFamily: 'Montserrat, sans-serif', fontSize: 13, fontWeight: 700,
+                        fontFamily: 'var(--font-primary)', fontSize: 'var(--text-base)', fontWeight: 700,
                         color: count === 0 ? '#d1d5db' : '#303030', textAlign: 'center',
                         transition: 'background 0.15s',
                       }}
@@ -377,7 +377,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                         }}
                       >
                         <p style={{
-                          margin: '0 0 6px', fontSize: 10, fontWeight: 600,
+                          margin: '0 0 6px', fontSize: 'var(--text-2xs)', fontWeight: 600,
                           color: '#57727c', textTransform: 'uppercase',
                         }}>
                           {DAY_SHORT[day]} {formatTimeSortKey(slot)} ({count})
@@ -388,7 +388,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                             style={{
                               display: 'flex', alignItems: 'center',
                               justifyContent: 'space-between', gap: 8,
-                              padding: '4px 6px', borderRadius: 4, fontSize: 11,
+                              padding: '4px 6px', borderRadius: 4, fontSize: 'var(--text-xs)',
                             }}
                           >
                             {(() => {
@@ -398,12 +398,12 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                                 <span style={{ fontWeight: 500, color: absence ? 'var(--neutral)' : '#355caa', display: 'flex', alignItems: 'center', gap: 4, opacity: absence ? 0.4 : 1, textDecoration: absence ? 'line-through' : 'none' }}>
                                   {s.first_name} {s.last_name}
                                   {absence && (
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
+                                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
                                       {absence.reason}
                                     </span>
                                   )}
                                   {s.schedule_detail?.[day]?.is_zoom && !absence && (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 'var(--text-sm)', fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
                                       <Video size={9} /> Virtual
                                     </span>
                                   )}
@@ -422,7 +422,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
           ))}
           <tr>
             <td style={{
-              padding: '10px 12px', fontWeight: 700, fontSize: 11,
+              padding: '10px 12px', fontWeight: 700, fontSize: 'var(--text-xs)',
               color: '#355caa', borderTop: '2px solid #e8e8e8',
             }}>
               Total
@@ -432,7 +432,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                 key={day}
                 style={{
                   padding: '10px 12px', textAlign: 'center', fontWeight: 700,
-                  fontSize: 13, color: '#355caa', borderTop: '2px solid #e8e8e8',
+                  fontSize: 'var(--text-base)', color: '#355caa', borderTop: '2px solid #e8e8e8',
                   borderLeft: '1px solid #e8e8e8',
                 }}
               >

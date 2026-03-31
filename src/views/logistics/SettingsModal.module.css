@@ -1,29 +1,29 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .label {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--primary);
 }
 
 .input {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
-  width: 120px;
+  width: 7.5rem;
 }
 
 .input:focus {
@@ -33,21 +33,21 @@
 
 .helper {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--neutral);
 }
 
 .dayChecks {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-2_5);
 }
 
 .dayCheck {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: var(--space-1_5);
+  font-size: var(--text-sm);
   color: var(--text);
   cursor: pointer;
 }
@@ -59,28 +59,28 @@
 .hoursRows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .hoursRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .dayName {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--primary);
-  width: 90px;
+  width: 5.625rem;
 }
 
 .select {
-  padding: 6px 8px;
+  padding: var(--space-1_5) var(--space-2);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text);
   background: var(--white);
 }
@@ -91,6 +91,6 @@
 }
 
 .to {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--neutral);
 }
