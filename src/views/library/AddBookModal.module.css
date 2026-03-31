@@ -1,33 +1,33 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0.875rem;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   flex: 1;
 }
 
 .row {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .label {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--primary);
 }
 
 .input {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
 }
 
@@ -37,11 +37,11 @@
 }
 
 .select {
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2_5);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
   background: var(--white);
 }
