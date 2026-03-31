@@ -1,5 +1,5 @@
 .wrapper {
-  margin-bottom: 28px;
+  margin-bottom: 1.75rem;
 }
 
 .wrapperCenter {
@@ -34,12 +34,12 @@
 
 .subtitle {
   margin: 8px 0 0;
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--text);
   line-height: 1.7;
 }
 
 .subtitleLarge {
-  font-size: 15px;
+  font-size: 0.9375rem;
 }

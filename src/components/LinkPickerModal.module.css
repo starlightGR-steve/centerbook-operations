@@ -25,14 +25,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--border);
 }
 
 .title {
   margin: 0;
   font-family: var(--font-primary);
-  font-size: 16px;
+  font-size: var(--text-lg);
   font-weight: 700;
   color: var(--primary);
 }
@@ -42,7 +42,7 @@
   border: none;
   color: var(--neutral);
   cursor: pointer;
-  padding: 4px;
+  padding: var(--space-1);
   display: flex;
 }
 
@@ -52,7 +52,7 @@
 
 .searchWrap {
   position: relative;
-  padding: 12px 20px;
+  padding: var(--space-3) 20px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -66,11 +66,11 @@
 
 .searchInput {
   width: 100%;
-  padding: 8px 10px 8px 32px;
+  padding: var(--space-2) var(--space-2_5) 8px 32px;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text);
   outline: none;
 }
@@ -82,15 +82,15 @@
 .list {
   flex: 1;
   overflow-y: auto;
-  max-height: 300px;
-  padding: 8px 0;
+  max-height: 18.75rem;
+  padding: var(--space-2) 0;
 }
 
 .empty {
   text-align: center;
-  padding: 24px;
+  padding: var(--space-6);
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--neutral);
   margin: 0;
 }
@@ -100,7 +100,7 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 10px 20px;
+  padding: var(--space-2_5) 20px;
   background: none;
   border: none;
   cursor: pointer;
@@ -126,33 +126,33 @@
 .itemInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0_5);
 }
 
 .itemLabel {
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text);
 }
 
 .itemSub {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--neutral);
 }
 
 .linkedBadge {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 600;
   color: var(--neutral);
   background: var(--base);
-  padding: 2px 8px;
+  padding: var(--space-0_5) var(--space-2);
   border-radius: 4px;
 }
 
 .footer {
   display: flex;
-  gap: 8px;
-  padding: 12px 20px;
+  gap: var(--space-2);
+  padding: var(--space-3) 20px;
   border-top: 1px solid var(--border);
   align-items: center;
 }
@@ -163,7 +163,7 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text);
   background: var(--white);
   outline: none;
@@ -174,13 +174,13 @@
 }
 
 .linkBtn {
-  padding: 8px 20px;
+  padding: var(--space-2) 20px;
   border: none;
   border-radius: var(--radius-btn);
   background: var(--accent);
   color: var(--white);
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.15s;
@@ -191,7 +191,7 @@
 
 .error {
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--red);
   padding: 0 20px 12px;
   margin: 0;

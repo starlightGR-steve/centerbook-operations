@@ -1,26 +1,26 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .label {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--neutral);
 }
 
 .input {
   font-family: var(--font-primary);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
@@ -34,10 +34,10 @@
 }
 
 .duration {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--neutral);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--base);
   border-radius: 6px;
 }
@@ -45,15 +45,15 @@
 .actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 .cancelBtn {
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--white);
@@ -63,9 +63,9 @@
 
 .saveBtn {
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-radius: 6px;
   border: none;
   background: var(--secondary);
@@ -80,10 +80,10 @@
 
 .errorMsg {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--red);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: rgba(239, 68, 68, 0.06);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 6px;

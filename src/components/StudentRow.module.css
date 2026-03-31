@@ -3,7 +3,7 @@
   background: var(--base);
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 0.875rem var(--space-4);
   text-align: left;
   display: flex;
   justify-content: space-between;
@@ -15,16 +15,16 @@
 
 .name {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--primary);
 }
 
 .badges {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   align-items: center;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .left {

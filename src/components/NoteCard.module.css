@@ -1,5 +1,5 @@
 .card {
-  padding: 14px 16px;
+  padding: 0.875rem var(--space-4);
   border-radius: 8px;
 }
 
@@ -22,19 +22,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1_5);
 }
 
 .headerLeft {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1_5);
   align-items: center;
 }
 
 .sourceBadge {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 600;
-  padding: 2px 8px;
+  padding: var(--space-0_5) var(--space-2);
   border-radius: 4px;
   color: var(--white);
 }
@@ -52,20 +52,20 @@
 }
 
 .author {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 500;
   color: var(--neutral);
 }
 
 .timestamp {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 500;
   color: var(--neutral);
 }
 
 .content {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--text);
   line-height: 1.7;

@@ -1119,7 +1119,7 @@
 .zenRipple {
   position: absolute;
   width: 200px;
-  height: 200px;
+  height: 12.5rem;
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.03);
   animation: zenRippleExpand 12s ease-in-out infinite;
@@ -1150,8 +1150,8 @@
 }
 
 .zenLogo {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 8px;
   background: var(--primary);
   color: #fff;

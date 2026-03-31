@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   background: var(--base);
-  padding: 20px;
+  padding: var(--space-5);
 }
 
 .card {
@@ -34,51 +34,51 @@
   font-weight: 800;
   color: var(--primary);
   text-align: center;
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
 }
 
 .subtitle {
   font-family: var(--font-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 500;
   color: var(--neutral);
   text-align: center;
-  margin: 0 0 28px;
+  margin: 0 0 1.75rem;
 }
 
 .error {
   background: #fee2e2;
   color: #dc2626;
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  padding: 10px 14px;
+  padding: var(--space-2_5) 0.875rem;
   border-radius: var(--radius-md);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   text-align: center;
 }
 
 .field {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .label {
   display: block;
   font-family: var(--font-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1_5);
 }
 
 .input {
   width: 100%;
   box-sizing: border-box;
-  padding: 10px 14px;
+  padding: var(--space-2_5) 0.875rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-btn);
   font-family: var(--font-primary);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--text);
   background: var(--white);
@@ -97,14 +97,14 @@
 
 .button {
   width: 100%;
-  padding: 12px;
-  margin-top: 8px;
+  padding: var(--space-3);
+  margin-top: var(--space-2);
   border: none;
   border-radius: var(--radius-btn);
   background: var(--accent);
   color: var(--white);
   font-family: var(--font-primary);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.15s;

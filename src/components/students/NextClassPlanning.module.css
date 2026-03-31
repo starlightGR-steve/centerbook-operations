@@ -223,13 +223,13 @@
   border: none;
   color: var(--neutral);
   cursor: pointer;
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .sectionLabel {
   display: block;
   font-family: var(--font-primary);
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: var(--neutral);
   text-transform: uppercase;
@@ -244,14 +244,14 @@
 .pillGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-1_5);
   margin-bottom: 0.625rem;
 }
 
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 0.375rem 0.875rem;
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -278,7 +278,7 @@
 
 .addTaskRow {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .addTaskInput {
