@@ -149,7 +149,7 @@ export default function StaffDetailModal({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Calendar size={14} color="var(--neutral)" />
-            <span style={{ fontSize: 13, fontWeight: 500, color: staff.scheduled_shift ? 'var(--text)' : 'var(--neutral)' }}>
+            <span style={{ fontSize: 'var(--text-base)', fontWeight: 500, color: staff.scheduled_shift ? 'var(--text)' : 'var(--neutral)' }}>
               {staff.scheduled_shift || 'No schedule set'}
             </span>
           </div>
@@ -158,7 +158,7 @@ export default function StaffDetailModal({
             {effectiveRow ? (
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 'var(--text-xs)',
                   fontWeight: 600,
                   padding: '2px 8px',
                   borderRadius: 4,
@@ -175,7 +175,7 @@ export default function StaffDetailModal({
                   'UC (Upper Classroom)'}
               </span>
             ) : (
-              <span style={{ fontSize: 13, color: 'var(--neutral)' }}>Not assigned to a row</span>
+              <span style={{ fontSize: 'var(--text-base)', color: 'var(--neutral)' }}>Not assigned to a row</span>
             )}
             <button
               onClick={() => setShowRowDropdown(!showRowDropdown)}
@@ -187,7 +187,7 @@ export default function StaffDetailModal({
                 background: 'var(--white)',
                 color: 'var(--neutral)',
                 fontFamily: 'Montserrat, sans-serif',
-                fontSize: 11,
+                fontSize: 'var(--text-xs)',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
@@ -231,7 +231,7 @@ export default function StaffDetailModal({
                       background: effectiveRow === opt.value ? 'var(--base)' : 'transparent',
                       textAlign: 'left',
                       fontFamily: 'Montserrat, sans-serif',
-                      fontSize: 12,
+                      fontSize: 'var(--text-sm)',
                       fontWeight: effectiveRow === opt.value ? 700 : 500,
                       color: opt.color,
                       cursor: 'pointer',
@@ -323,11 +323,11 @@ export default function StaffDetailModal({
       {/* Delete Staff */}
       <div className={styles.section} style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
         {deleteError && (
-          <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 10px', fontFamily: 'var(--font-primary)' }}>{deleteError}</p>
+          <p style={{ color: 'var(--red)', fontSize: 'var(--text-sm)', margin: '0 0 10px', fontFamily: 'var(--font-primary)' }}>{deleteError}</p>
         )}
         {showDeleteConfirm ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p style={{ margin: 0, fontFamily: 'var(--font-primary)', fontSize: 13, color: 'var(--text)' }}>
+            <p style={{ margin: 0, fontFamily: 'var(--font-primary)', fontSize: 'var(--text-base)', color: 'var(--text)' }}>
               Are you sure you want to delete <strong>{staffName}</strong>? This action cannot be undone.
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -359,7 +359,7 @@ export default function StaffDetailModal({
                   background: 'var(--red)',
                   color: 'var(--white)',
                   fontFamily: 'var(--font-primary)',
-                  fontSize: 12,
+                  fontSize: 'var(--text-sm)',
                   fontWeight: 600,
                   cursor: deleting ? 'not-allowed' : 'pointer',
                   opacity: deleting ? 0.5 : 1,
@@ -376,7 +376,7 @@ export default function StaffDetailModal({
                   background: 'var(--white)',
                   color: 'var(--neutral)',
                   fontFamily: 'var(--font-primary)',
-                  fontSize: 12,
+                  fontSize: 'var(--text-sm)',
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
@@ -396,7 +396,7 @@ export default function StaffDetailModal({
               border: 'none',
               color: 'var(--red)',
               fontFamily: 'var(--font-primary)',
-              fontSize: 12,
+              fontSize: 'var(--text-sm)',
               fontWeight: 600,
               cursor: 'pointer',
               padding: 0,

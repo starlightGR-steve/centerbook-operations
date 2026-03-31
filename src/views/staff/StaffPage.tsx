@@ -278,7 +278,7 @@ function EditStaffModal({ staff: s, onClose, onSuccess, clockedInIds }: EditModa
         <div style={{ borderTop: '1px solid var(--border)', padding: '16px 28px' }}>
           {showDeleteConfirm ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <p style={{ margin: 0, fontFamily: 'var(--font-primary)', fontSize: 13, color: 'var(--text)' }}>
+              <p style={{ margin: 0, fontFamily: 'var(--font-primary)', fontSize: 'var(--text-base)', color: 'var(--text)' }}>
                 Are you sure you want to delete <strong>{staffName}</strong>? This cannot be undone.
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -307,7 +307,7 @@ function EditStaffModal({ staff: s, onClose, onSuccess, clockedInIds }: EditModa
                   style={{
                     padding: '6px 16px', border: '1px solid var(--red)', borderRadius: 6,
                     background: 'var(--red)', color: 'var(--white)', fontFamily: 'var(--font-primary)',
-                    fontSize: 12, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer',
+                    fontSize: 'var(--text-sm)', fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer',
                     opacity: deleting ? 0.5 : 1,
                   }}
                 >
@@ -318,7 +318,7 @@ function EditStaffModal({ staff: s, onClose, onSuccess, clockedInIds }: EditModa
                   style={{
                     padding: '6px 16px', border: '1px solid var(--border)', borderRadius: 6,
                     background: 'var(--white)', color: 'var(--neutral)', fontFamily: 'var(--font-primary)',
-                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
                   }}
                 >
                   Cancel
@@ -330,7 +330,7 @@ function EditStaffModal({ staff: s, onClose, onSuccess, clockedInIds }: EditModa
               onClick={() => { setError(''); setShowDeleteConfirm(true); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
-                color: 'var(--red)', fontFamily: 'var(--font-primary)', fontSize: 12, fontWeight: 600,
+                color: 'var(--red)', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)', fontWeight: 600,
                 cursor: 'pointer', padding: 0,
               }}
             >
@@ -544,7 +544,7 @@ function StaffManagement({ staff, clockedInIds }: MgmtProps) {
           ))}
           {filteredStaff.length === 0 && (
             <tr>
-              <td colSpan={5} style={{ textAlign: 'center', padding: '16px', fontFamily: 'var(--font-primary)', fontSize: 13, color: 'var(--neutral)' }}>
+              <td colSpan={5} style={{ textAlign: 'center', padding: '16px', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-base)', color: 'var(--neutral)' }}>
                 No staff members match your search.
               </td>
             </tr>

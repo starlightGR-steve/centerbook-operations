@@ -1,7 +1,7 @@
 .panel {
   background: var(--slate);
   border-radius: 10px;
-  padding: 28px;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -10,13 +10,13 @@
 }
 
 .header {
-  margin: 0 0 16px;
-  font-size: 15px;
+  margin: 0 0 var(--space-4);
+  font-size: 0.9375rem;
   font-weight: 500;
   color: var(--white);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .list {
@@ -24,14 +24,14 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1_5);
 }
 
 .row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
+  padding: var(--space-3) 0.875rem;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: background 0.15s;
@@ -47,23 +47,23 @@
 
 .staffName {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--white);
 }
 
 .staffRole {
   margin: 1px 0 0;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .clockBtn {
-  padding: 6px 14px;
+  padding: var(--space-1_5) 0.875rem;
   border-radius: 6px;
   border: none;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   font-family: var(--font-primary);
   cursor: pointer;
@@ -88,26 +88,26 @@
 
 @media (max-width: 767px) {
   .panel {
-    padding: 16px;
+    padding: var(--space-4);
     border-radius: 10px;
   }
 
   .header {
-    font-size: 13px;
-    margin-bottom: 10px;
+    font-size: var(--text-base);
+    margin-bottom: var(--space-2_5);
   }
 
   .row {
-    padding: 10px 12px;
+    padding: var(--space-2_5) var(--space-3);
   }
 
   .staffName {
-    font-size: 13px;
+    font-size: var(--text-base);
   }
 
   .clockBtn {
-    font-size: 11px;
-    padding: 5px 10px;
+    font-size: var(--text-xs);
+    padding: 0.3125rem var(--space-2_5);
     min-width: 70px;
   }
 }
