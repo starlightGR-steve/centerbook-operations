@@ -171,7 +171,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
               }}>
                 {dayTotals[d]} stu
                 {absenceCountByDay[d] > 0 && (
-                  <span style={{ color: i === selectedDayIdx ? 'rgba(255,200,200,0.9)' : '#b91c1c', fontSize: 9 }}>
+                  <span style={{ color: i === selectedDayIdx ? 'rgba(255,200,200,0.9)' : '#b91c1c', fontSize: 12 }}>
                     {absenceCountByDay[d]} absent
                   </span>
                 )}
@@ -249,12 +249,12 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                             <span style={{ fontWeight: 500, color: absence ? 'var(--neutral)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4, opacity: absence ? 0.4 : 1, textDecoration: absence ? 'line-through' : 'none' }}>
                               {s.first_name} {s.last_name}
                               {absence && (
-                                <span style={{ fontSize: 9, fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
                                   {absence.reason}
                                 </span>
                               )}
                               {s.schedule_detail?.[day]?.is_zoom && !absence && (
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 9, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
                                   <Video size={9} /> Virtual
                                 </span>
                               )}
@@ -321,7 +321,7 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
               >
                 {DAY_SHORT[day]}
                 {absenceCountByDay[day] > 0 && (
-                  <div style={{ fontSize: 9, fontWeight: 600, color: '#b91c1c', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#b91c1c', marginTop: 2 }}>
                     {absenceCountByDay[day]} absent
                   </div>
                 )}
@@ -398,12 +398,12 @@ export default function WeeklyPlanGrid({ weekReferenceDate }: WeeklyPlanGridProp
                                 <span style={{ fontWeight: 500, color: absence ? 'var(--neutral)' : '#355caa', display: 'flex', alignItems: 'center', gap: 4, opacity: absence ? 0.4 : 1, textDecoration: absence ? 'line-through' : 'none' }}>
                                   {s.first_name} {s.last_name}
                                   {absence && (
-                                    <span style={{ fontSize: 9, fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#b91c1c', textDecoration: 'none', opacity: 1 }}>
                                       {absence.reason}
                                     </span>
                                   )}
                                   {s.schedule_detail?.[day]?.is_zoom && !absence && (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 9, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 700, color: '#7c3aed', background: 'rgba(124,58,237,0.1)', padding: '1px 4px', borderRadius: 3 }}>
                                       <Video size={9} /> Virtual
                                     </span>
                                   )}

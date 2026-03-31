@@ -266,7 +266,8 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
-  min-width: 32px;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
   text-align: center;
 }
 

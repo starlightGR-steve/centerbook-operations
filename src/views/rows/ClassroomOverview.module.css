@@ -227,7 +227,7 @@
 }
 
 .testingSectionLabel {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -238,7 +238,7 @@
 }
 
 .testingSectionCount {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
   color: #92400e;
 }

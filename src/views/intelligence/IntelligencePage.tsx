@@ -527,7 +527,7 @@ export default function IntelligencePage() {
                       {s.ashr}%
                     </text>
                     <text x={85} y={97} textAnchor="middle" fill={C.muted}
-                      style={{ fontFamily: 'Montserrat', fontSize: 9 }}>
+                      style={{ fontFamily: 'Montserrat', fontSize: 12 }}>
                       ASHR
                     </text>
                   </PieChart>
@@ -569,7 +569,7 @@ export default function IntelligencePage() {
                 <YAxis tick={{ fontSize: 10, fontFamily: 'Montserrat' }} domain={[10, 80]} unit="%" />
                 <Tooltip content={<CustomChartTooltip />} />
                 <ReferenceLine y={50} stroke="var(--border)" strokeDasharray="4 4"
-                  label={{ value: '50%', fontSize: 9, fill: C.muted }} />
+                  label={{ value: '50%', fontSize: 12, fill: C.muted }} />
                 <Area type="monotone" dataKey="mathKIS" name="Math KIS%" fill="rgba(53,92,170,0.08)"
                   stroke="var(--primary)" strokeWidth={2.5} dot={false} />
                 <Area type="monotone" dataKey="readKIS" name="Reading KIS%" fill="rgba(0,154,171,0.08)"
@@ -880,7 +880,7 @@ export default function IntelligencePage() {
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={attChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fontSize: 9, fontFamily: 'Montserrat' }} interval="preserveStartEnd" />
+                    <XAxis dataKey="label" tick={{ fontSize: 12, fontFamily: 'Montserrat' }} interval="preserveStartEnd" />
                     <YAxis tick={{ fontSize: 10, fontFamily: 'Montserrat' }} allowDecimals={false} />
                     <Tooltip content={<AttTooltip />} />
                     <Bar dataKey="attended" name="Attended" radius={[3, 3, 0, 0]}>

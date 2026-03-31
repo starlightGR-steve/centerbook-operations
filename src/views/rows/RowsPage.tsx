@@ -33,7 +33,7 @@ import styles from './RowsPage.module.css';
 function FlagPillIcon({ icon }: { icon: string | undefined }) {
   if (!icon) return <Flag size={10} />;
   if (icon.startsWith('text:')) {
-    return <span style={{ fontSize: 9, fontWeight: 700, lineHeight: 1 }}>{icon.slice(5)}</span>;
+    return <span style={{ fontSize: 12, fontWeight: 700, lineHeight: 1 }}>{icon.slice(5)}</span>;
   }
   const p = { size: 10 };
   switch (icon) {

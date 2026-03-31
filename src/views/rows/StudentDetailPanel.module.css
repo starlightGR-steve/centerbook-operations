@@ -1045,7 +1045,7 @@
 
 .trToggleBtn {
   padding: 6px 12px;
-  min-height: 32px;
+  min-height: var(--touch-min);
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--white);
@@ -1130,7 +1130,7 @@
   font-weight: 500;
   color: var(--text);
   cursor: pointer;
-  min-height: 28px;
+  min-height: var(--touch-min);
 }
 
 .trManagerCheckbox {
@@ -1209,7 +1209,7 @@
   font-family: var(--font-primary);
   font-size: 12px;
   font-weight: 500;
-  min-height: 34px;
+  min-height: var(--touch-min);
   transition: background 0.15s;
 }
 
@@ -1227,7 +1227,7 @@
   font-family: var(--font-primary);
   font-size: 12px;
   font-weight: 600;
-  min-height: 34px;
+  min-height: var(--touch-min);
   min-width: 7rem;
   transition: opacity 0.15s;
 }
