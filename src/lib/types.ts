@@ -25,6 +25,7 @@ export interface Student {
   first_name: string;
   last_name: string;
   student_id: string | null;
+  folder_barcode: string | null;
   kc_username: string | null;
   kc_password: string | null;
   date_of_birth: string | null;

@@ -188,6 +188,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    byBarcode: (code: string) => directFetch<Student>(`/students/barcode/${encodeURIComponent(code)}`),
     contacts: (id: number) =>
       directFetch<StudentContact[]>(`/students/${id}/contacts`),
   },

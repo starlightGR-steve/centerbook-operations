@@ -21,6 +21,7 @@ import {
   checkInStudent, checkOutStudent, deleteAttendance, updateAttendance,
 } from '@/hooks/useAttendance';
 import { useCenterSettings } from '@/hooks/useCenterSettings';
+import { api } from '@/lib/api';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { useClassroomAssignments, assignStudentToRow, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
@@ -364,13 +365,30 @@ export default function AttendancePage() {
     e.preventDefault();
     if (!scan.trim() || !allStudents) return;
 
-    const query = scan.trim().toLowerCase();
-    const student = allStudents.find(
-      (s) =>
-        s.student_id?.toLowerCase() === query ||
-        s.first_name.toLowerCase() === query ||
-        `${s.first_name} ${s.last_name}`.toLowerCase() === query
-    );
+    // If a popup is already open, ignore scan
+    if (checkInPopupStudent || checkOutPopupStudent) return;
+
+    const query = scan.trim();
+    const queryLower = query.toLowerCase();
+
+    // 1. Try API barcode lookup first
+    let student: Student | undefined;
+    try {
+      student = await api.students.byBarcode(query);
+    } catch {
+      // 404 or error — fall through to local search
+    }
+
+    // 2. Fall back to local search (student_id, folder_barcode, name)
+    if (!student) {
+      student = allStudents.find(
+        (s) =>
+          s.folder_barcode?.toLowerCase() === queryLower ||
+          s.student_id?.toLowerCase() === queryLower ||
+          s.first_name.toLowerCase() === queryLower ||
+          `${s.first_name} ${s.last_name}`.toLowerCase() === queryLower
+      );
+    }
 
     if (!student) {
       setAnnouncement('Student not found');
@@ -380,9 +398,6 @@ export default function AttendancePage() {
       setTimeout(() => inputRef.current?.focus(), 0);
       return;
     }
-
-    // If a popup is already open, ignore scan
-    if (checkInPopupStudent || checkOutPopupStudent) return;
 
     const activeRecord = activeAttendanceMap.get(student.id);
     if (activeRecord) {
