@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { formatTime } from '@/lib/types';
 import type { Attendance, Absence } from '@/lib/types';
+import { useCenterSettings } from '@/hooks/useCenterSettings';
 import styles from './StudentAttendanceLog.module.css';
 
 interface StudentAttendanceLogProps {
@@ -20,6 +21,24 @@ type LogEntry =
   | { type: 'excused'; date: string; reason: string }
   | { type: 'missed'; date: string };
 
+/** Extract YYYY-MM-DD from a datetime string like "2026-03-31 15:30:00" or "2026-03-31T15:30:00" */
+function extractDate(datetime: string): string {
+  return datetime.split(/[T ]/)[0];
+}
+
+/** Get today as YYYY-MM-DD in the center timezone */
+function localToday(tz: string): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: tz });
+}
+
+/** Get YYYY-MM-DD for a Date in local representation (avoids UTC shift) */
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function getScheduledDatesInRange(from: string, to: string, scheduleDays: string[]): string[] {
   const dates: string[] = [];
   const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -28,7 +47,7 @@ function getScheduledDatesInRange(from: string, to: string, scheduleDays: string
   const d = new Date(start);
   while (d <= end) {
     if (scheduleDays.includes(DAY_NAMES[d.getDay()])) {
-      dates.push(d.toISOString().split('T')[0]);
+      dates.push(localDateStr(d));
     }
     d.setDate(d.getDate() + 1);
   }
@@ -40,30 +59,29 @@ function formatDateLabel(dateStr: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function toISODate(d: Date): string {
-  return d.toISOString().split('T')[0];
-}
-
 export default function StudentAttendanceLog({ studentId, scheduleDays = [] }: StudentAttendanceLogProps) {
   const [dateRange, setDateRange] = useState<DateRange>('last3months');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [expanded, setExpanded] = useState(false);
 
+  const { data: centerSettings } = useCenterSettings();
+  const centerTz = centerSettings?.timezone || 'America/Detroit';
+
   // Calculate date boundaries
   const { from, to } = useMemo(() => {
     const today = new Date();
-    const todayStr = toISODate(today);
+    const todayStr = localToday(centerTz);
     switch (dateRange) {
       case 'last30': {
         const d = new Date(today);
         d.setDate(d.getDate() - 30);
-        return { from: toISODate(d), to: todayStr };
+        return { from: localDateStr(d), to: todayStr };
       }
       case 'last3months': {
         const d = new Date(today);
         d.setDate(d.getDate() - 90);
-        return { from: toISODate(d), to: todayStr };
+        return { from: localDateStr(d), to: todayStr };
       }
       case 'thisYear':
         return { from: `${today.getFullYear()}-01-01`, to: todayStr };
@@ -72,7 +90,7 @@ export default function StudentAttendanceLog({ studentId, scheduleDays = [] }: S
       case 'custom':
         return { from: customFrom || todayStr, to: customTo || todayStr };
     }
-  }, [dateRange, customFrom, customTo]);
+  }, [dateRange, customFrom, customTo, centerTz]);
 
   // Fetch attendance for student
   const { data: attendanceData } = useSWR<Attendance[]>(
@@ -104,7 +122,7 @@ export default function StudentAttendanceLog({ studentId, scheduleDays = [] }: S
     const attendanceDates = new Set<string>();
     if (attendanceData) {
       for (const a of attendanceData) {
-        const date = a.check_in.split('T')[0];
+        const date = extractDate(a.check_in);
         if (date >= from && date <= to) {
           attendanceDates.add(date);
           list.push({
@@ -128,7 +146,7 @@ export default function StudentAttendanceLog({ studentId, scheduleDays = [] }: S
     // Missed days: scheduled days in range with neither attendance nor absence
     if (scheduleDays.length > 0) {
       const scheduledDates = getScheduledDatesInRange(from, to, scheduleDays);
-      const today = toISODate(new Date());
+      const today = localToday(centerTz);
       for (const date of scheduledDates) {
         if (date > today) continue; // Don't mark future dates as missed
         if (!attendanceDates.has(date) && !absenceDates.has(date)) {
@@ -140,7 +158,7 @@ export default function StudentAttendanceLog({ studentId, scheduleDays = [] }: S
     // Sort by date DESC
     list.sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0));
     return list;
-  }, [attendanceData, absencesInRange, scheduleDays, from, to]);
+  }, [attendanceData, absencesInRange, scheduleDays, from, to, centerTz]);
 
   // Stats
   const attended = entries.filter(e => e.type === 'present').length;
