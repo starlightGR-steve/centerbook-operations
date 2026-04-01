@@ -1,0 +1,129 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(95vw, 28rem);
+  background: var(--white);
+  border-radius: var(--radius-card);
+  z-index: 1001;
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.studentName {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-primary);
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.badgeMath {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  background: var(--tertiary);
+  color: var(--white);
+}
+
+.badgeReading {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--white);
+}
+
+.infoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.infoLabel {
+  font-family: var(--font-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.infoValue {
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.overtime {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.remaining {
+  color: var(--secondary);
+}
+
+.confirmBtn {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  min-height: 2.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.confirmBtn:hover { opacity: 0.85; }
+.confirmBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cancelBtn {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--neutral);
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 2.75rem;
+}
+
+.cancelBtn:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}

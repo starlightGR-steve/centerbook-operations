@@ -12,13 +12,15 @@ import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
 import SubjectBadges from '@/components/SubjectBadges';
 import CheckInPopup from '@/views/kiosk/CheckInPopup';
 import type { CheckInOptions } from '@/views/kiosk/CheckInPopup';
+import CheckOutConfirmPopup from '@/views/kiosk/CheckOutConfirmPopup';
 import UndoToast from '@/components/ui/UndoToast';
 import type { UndoToastItem } from '@/components/ui/UndoToast';
 import { useStudents } from '@/hooks/useStudents';
 import {
-  useAttendance, useCheckedInStudents,
+  useAttendance, useActiveAttendance,
   checkInStudent, checkOutStudent, deleteAttendance, updateAttendance,
 } from '@/hooks/useAttendance';
+import { useCenterSettings } from '@/hooks/useCenterSettings';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { useClassroomAssignments, assignStudentToRow, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
@@ -144,6 +146,10 @@ export default function AttendancePage() {
   // Excused absence modal
   const [excuseModalStudent, setExcuseModalStudent] = useState<Student | null>(null);
 
+  // Check-out confirm popup (scanner-triggered)
+  const [checkOutPopupStudent, setCheckOutPopupStudent] = useState<Student | null>(null);
+  const [checkOutPopupAttendance, setCheckOutPopupAttendance] = useState<Attendance | null>(null);
+
   // Move dropdown + time prompt
   const [moveMenuOpen, setMoveMenuOpen] = useState<string | null>(null);
   const [moveMenuPos, setMoveMenuPos] = useState<{ top: number; right: number } | null>(null);
@@ -161,8 +167,11 @@ export default function AttendancePage() {
 
   /* ── Data hooks ── */
   const { data: allStudents } = useStudents();
-  const { data: allAttendance } = useAttendance();
-  const { data: checkedIn } = useCheckedInStudents(undefined, 5000);
+  const { data: centerSettings } = useCenterSettings();
+  const centerTz = centerSettings?.timezone || 'America/Detroit';
+  const centerToday = new Date().toLocaleDateString('en-CA', { timeZone: centerTz });
+  const { data: allAttendance } = useAttendance(centerToday);
+  const { data: activeAttendance } = useActiveAttendance();
   const { data: activeStaff } = useActiveStaff();
   const { data: timeEntries } = useTimeclock();
   const { data: todayAbsences, mutate: mutateAbsences } = useAbsences();
@@ -198,18 +207,33 @@ export default function AttendancePage() {
 
   /* ── Derived data ── */
 
+  // Active check-in IDs (currently checked in, regardless of date)
+  const activeAttendanceMap = useMemo(() => {
+    const map = new Map<number, Attendance>();
+    if (activeAttendance) {
+      for (const a of activeAttendance) map.set(a.student_id, a);
+    }
+    return map;
+  }, [activeAttendance]);
+
   // All attendance IDs for today (including checked out)
   const allAttendanceMap = useMemo(() => {
     const map = new Map<number, Attendance>();
     if (allAttendance) {
       for (const a of allAttendance) map.set(a.student_id, a);
     }
+    // Also include active check-ins (may be from a previous day)
+    if (activeAttendance) {
+      for (const a of activeAttendance) {
+        if (!map.has(a.student_id)) map.set(a.student_id, a);
+      }
+    }
     return map;
-  }, [allAttendance]);
+  }, [allAttendance, activeAttendance]);
 
   const checkedInIds = useMemo(
-    () => new Set(checkedIn?.map((a) => a.student_id) ?? []),
-    [checkedIn]
+    () => new Set(activeAttendance?.map((a) => a.student_id) ?? []),
+    [activeAttendance]
   );
 
   // Students scheduled today
@@ -228,10 +252,10 @@ export default function AttendancePage() {
     return result;
   }, [scheduledToday, allAttendanceMap]);
 
-  // Column 2: Checked In — has check_in and no check_out
+  // Column 2: Checked In — all active check-ins (check_out IS NULL) regardless of date
   const checkedInStudents = useMemo(() => {
-    if (!checkedIn || !allStudents) return [];
-    const result = checkedIn
+    if (!activeAttendance || !allStudents) return [];
+    return activeAttendance
       .filter((a) => a.check_out === null)
       .map((a) => ({
         attendance: a,
@@ -239,20 +263,19 @@ export default function AttendancePage() {
       }))
       .filter((x) => !!x.student)
       .sort((a, b) => (a.attendance.check_in || '').localeCompare(b.attendance.check_in || ''));
-    return result;
-  }, [checkedIn, allStudents]);
+  }, [activeAttendance, allStudents]);
 
-  // Column 3: Checked Out — has check_in AND check_out
+  // Column 3: Checked Out — today's records with check_out set, excluding active check-ins
   const checkedOutStudents = useMemo(() => {
     if (!allAttendance || !allStudents) return [];
     return allAttendance
-      .filter((a) => a.check_in && a.check_out)
+      .filter((a) => a.check_in && a.check_out && !activeAttendanceMap.has(a.student_id))
       .map((a) => ({
         attendance: a,
         student: a.student || allStudents.find((s) => s.id === a.student_id),
       }))
       .filter((x) => !!x.student);
-  }, [allAttendance, allStudents]);
+  }, [allAttendance, allStudents, activeAttendanceMap]);
 
   // Excused student IDs from absence records
   const excusedIds = useMemo(() => {
@@ -358,21 +381,14 @@ export default function AttendancePage() {
       return;
     }
 
-    const isIn = checkedIn?.some((a) => a.student_id === student.id);
-    if (isIn) {
-      const existing = checkedIn?.find((a) => a.student_id === student.id);
-      await checkOutStudent({ student_id: student.id });
-      try { await removeStudentFromRow(student.id); } catch { /* noop */ }
-      setAnnouncement(`${student.first_name} ${student.last_name} checked out`);
-      if (existing) {
-        setUndoToast({
-          id: ++toastIdRef.current,
-          message: `${student.first_name} ${student.last_name} checked out`,
-          onUndo: async () => {
-            await updateAttendance(existing.id, { check_out: null });
-          },
-        });
-      }
+    // If a popup is already open, ignore scan
+    if (checkInPopupStudent || checkOutPopupStudent) return;
+
+    const activeRecord = activeAttendanceMap.get(student.id);
+    if (activeRecord) {
+      // Student is currently checked in — open checkout confirm popup
+      setCheckOutPopupStudent(student);
+      setCheckOutPopupAttendance(activeRecord);
     } else {
       setCheckInPopupStudent(student);
     }
@@ -478,11 +494,11 @@ export default function AttendancePage() {
     });
   };
 
-  /* ── Check out from checked-in card ── */
+  /* ── Shared checkout handler (green arrow + scanner popup) ── */
   const handleCheckOut = async (studentId: number) => {
     const student = allStudents?.find((s) => s.id === studentId);
-    const existing = checkedIn?.find((a) => a.student_id === studentId);
-    await checkOutStudent({ student_id: studentId });
+    const existing = activeAttendanceMap.get(studentId);
+    await checkOutStudent({ student_id: studentId }, centerToday);
     try { await removeStudentFromRow(studentId); } catch { /* noop */ }
     if (student && existing) {
       const name = `${student.first_name} ${student.last_name}`;
@@ -491,7 +507,7 @@ export default function AttendancePage() {
         id: ++toastIdRef.current,
         message: `${name} checked out`,
         onUndo: async () => {
-          await updateAttendance(existing.id, { check_out: null });
+          await updateAttendance(existing.id, { check_out: null }, centerToday);
         },
       });
     }
@@ -1147,6 +1163,27 @@ export default function AttendancePage() {
           onClose={() => { setCheckInPopupStudent(null); setCheckInEditPrep(null); }}
           onConfirm={handleCheckInConfirm}
           existingPrep={checkInEditPrep ?? undefined}
+        />
+      )}
+
+      {/* ── CheckOut Confirm Popup (scanner-triggered) ── */}
+      {checkOutPopupStudent && checkOutPopupAttendance && (
+        <CheckOutConfirmPopup
+          student={checkOutPopupStudent}
+          attendance={checkOutPopupAttendance}
+          onConfirm={async () => {
+            await handleCheckOut(checkOutPopupStudent.id);
+            setCheckOutPopupStudent(null);
+            setCheckOutPopupAttendance(null);
+            setScan('');
+            setTimeout(() => inputRef.current?.focus(), 0);
+          }}
+          onClose={() => {
+            setCheckOutPopupStudent(null);
+            setCheckOutPopupAttendance(null);
+            setScan('');
+            setTimeout(() => inputRef.current?.focus(), 0);
+          }}
         />
       )}
 

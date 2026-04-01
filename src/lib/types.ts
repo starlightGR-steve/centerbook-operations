@@ -628,6 +628,7 @@ export interface CenterSettings {
   default_session_minutes?: number;
   operating_hours?: Record<string, { open: string; close: string }>;
   session_duration_default?: number;
+  timezone?: string;
   _source?: string;
 }
 

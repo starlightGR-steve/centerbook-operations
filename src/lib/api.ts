@@ -265,6 +265,7 @@ export const api = {
       const d = date || new Date().toISOString().split('T')[0];
       return directFetch<Attendance[]>(`/attendance?date=${d}`);
     },
+    active: () => directFetch<Attendance[]>('/attendance?active=1'),
     forStudent: (studentId: number, from?: string, to?: string) => {
       const params = new URLSearchParams();
       if (from) params.set('from', from);
