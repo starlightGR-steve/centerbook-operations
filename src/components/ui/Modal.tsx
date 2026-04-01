@@ -28,15 +28,21 @@ export default function Modal({
   if (!open) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div
+      className={styles.overlay}
+      onMouseDown={(e) => {
+        // Only close if the click target is the overlay itself (not a child or native picker)
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
         ref={containerRef}
         className={styles.modal}
         style={maxWidth ? { maxWidth } : undefined}
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
       >
         <div className={styles.header}>
           <div>

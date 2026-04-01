@@ -26,6 +26,7 @@
   color: var(--text);
   background: var(--white);
   outline: none;
+  min-height: 2.75rem;
 }
 
 .input:focus {
@@ -59,6 +60,7 @@
   background: var(--white);
   color: var(--neutral);
   cursor: pointer;
+  min-height: 2.75rem;
 }
 
 .saveBtn {
@@ -71,6 +73,7 @@
   background: var(--secondary);
   color: var(--white);
   cursor: pointer;
+  min-height: 2.75rem;
 }
 
 .saveBtn:disabled {
