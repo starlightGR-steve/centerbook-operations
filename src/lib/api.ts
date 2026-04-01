@@ -268,13 +268,10 @@ export const api = {
     },
     active: () => directFetch<Attendance[]>('/attendance?active=1'),
     forStudent: (studentId: number, from?: string, to?: string) => {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ student_id: String(studentId) });
       if (from) params.set('from', from);
       if (to) params.set('to', to);
-      const qs = params.toString();
-      return directFetch<Attendance[]>(
-        `/attendance/student/${studentId}${qs ? `?${qs}` : ''}`
-      );
+      return directFetch<Attendance[]>(`/attendance?${params.toString()}`);
     },
     checkIn: (data: CheckInRequest) =>
       directFetch<Attendance>('/attendance/checkin', {
