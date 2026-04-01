@@ -18,7 +18,8 @@ export default function SessionTimeAdjust({ studentId, attendanceId, subjects, s
   const { getOptimistic, persistAdjustment } = useSessionAdjust();
 
   const optimistic = getOptimistic(studentId);
-  const current = optimistic ?? sessionDurationMinutes ?? getSessionDuration(subjects || '', scheduleDetail ? { scheduleDetail } : undefined);
+  const rawDuration = sessionDurationMinutes != null ? (typeof sessionDurationMinutes === 'string' ? parseInt(sessionDurationMinutes as unknown as string, 10) : sessionDurationMinutes) : null;
+  const current = optimistic ?? rawDuration ?? getSessionDuration(subjects || '', scheduleDetail ? { scheduleDetail } : undefined);
 
   const handleSet = (duration: number) => {
     if (!attendanceId) return;

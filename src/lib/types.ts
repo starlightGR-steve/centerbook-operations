@@ -763,7 +763,8 @@ export function getSessionDuration(
   }
 ): number {
   // 1. Attendance record's session_duration_minutes (explicitly set or adjusted per-session)
-  if (options?.sessionDurationMinutes) return options.sessionDurationMinutes;
+  // parseInt guards against API returning a numeric string (e.g., "30")
+  if (options?.sessionDurationMinutes) return typeof options.sessionDurationMinutes === 'string' ? parseInt(options.sessionDurationMinutes, 10) || 60 : options.sessionDurationMinutes;
   // 2. schedule_detail for today (scheduled default for this day)
   if (options?.scheduleDetail) {
     const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
@@ -794,7 +795,7 @@ export function getTimeRemaining(
   const checkIn = new Date(checkInTime);
   const now = new Date();
   const elapsed = Math.floor((now.getTime() - checkIn.getTime()) / 60000);
-  return Math.max(0, duration - elapsed);
+  return duration - elapsed;
 }
 
 /** Format time as "3:10 PM" from ISO string */

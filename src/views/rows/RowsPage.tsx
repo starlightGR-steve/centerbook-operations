@@ -605,7 +605,8 @@ export default function RowsPage() {
               const hasPertinentNote = !!s.pertinent_note;
               const flagTasks = studentFlagsObj.tasks || {};
               const _scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-              const currentDuration = sessionOptimistic[s.id] ?? s.schedule_detail?.[_scheduleDay]?.duration ?? att?.session_duration_minutes ?? 60;
+              const rawSessionDuration = att?.session_duration_minutes != null ? Number(att.session_duration_minutes) : null;
+              const currentDuration = sessionOptimistic[s.id] ?? s.schedule_detail?.[_scheduleDay]?.duration ?? rawSessionDuration ?? 60;
               const isSessionOpen = sessionPopoverStudent === s.id;
               const isNoteExpanded = expandedNoteStudent === s.id;
 
