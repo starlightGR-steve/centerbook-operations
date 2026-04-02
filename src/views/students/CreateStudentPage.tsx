@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import styles from './CreateStudentPage.module.css';
 
 const GRADE_LEVELS = ['PK2', 'PK1', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'];
-const ENROLLMENT_STATUSES = ['Active', 'On Hold', 'Withdrawn'];
+const ENROLLMENT_STATUSES = ['Active', 'On Break', 'Inactive'];
 const PROGRAM_TYPES = ['Paper', 'Kumon Connect'];
 const CLASSROOM_POSITIONS = ['Early Learners', 'Main Classroom', 'Upper Classroom'];
 const SCHEDULE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];

@@ -103,7 +103,7 @@ const MATH_LEVELS = ['6A', '5A', '4A', '3A', '2A', 'A', 'B', 'C', 'D', 'E', 'F',
 const READING_LEVELS = ['7A', '6A', '5A', '4A', '3A', '2A', 'AI', 'AII', 'BI', 'BII', 'CI', 'CII', 'DI', 'DII', 'EI', 'EII', 'FI', 'FII', 'GI', 'GII', 'HI', 'HII', 'II', 'III', 'J', 'K', 'L'];
 const ASHR_STATUSES = ['Not Yet ASHR', 'Bronze', 'Silver', 'Gold', 'Platinum'];
 const CLASSROOM_POSITIONS = ['Early Learners', 'Main Classroom', 'Upper Classroom'];
-const ENROLLMENT_STATUSES = ['Active', 'Trial', 'On Hold', 'Month Off', 'Paused', 'Cancel', 'Withdrawn', 'Returning'];
+const ENROLLMENT_STATUSES = ['Active', 'On Break', 'Inactive'];
 const PROGRAM_TYPES = ['Paper', 'Kumon Connect'];
 const SUBJECT_OPTIONS = [
   { label: 'Math', value: 'Math' },
@@ -167,8 +167,8 @@ type EditableFields = {
 function statusVariant(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
   switch (status) {
     case 'Active': return 'success';
-    case 'On Hold': return 'warning';
-    case 'Withdrawn': return 'danger';
+    case 'On Break': case 'On Hold': return 'warning';
+    case 'Inactive': case 'Withdrawn': case 'Cancel': return 'danger';
     default: return 'neutral';
   }
 }
@@ -670,33 +670,20 @@ export default function StudentProfilePage({ studentId }: Props) {
                   <span className={styles.detailLabel}>Enrollment Status</span>
                   <select className={styles.editSelect} value={getField('enrollment_status')} onChange={(e) => {
                     const newStatus = e.target.value;
-                    const exitStatuses = ['Cancel', 'Month Off', 'Paused', 'Withdrawn'];
+                    const exitStatuses = ['On Break', 'Inactive'];
                     if (student.enrollment_status === 'Active' && exitStatuses.includes(newStatus)) {
                       setStatusConfirm(newStatus);
                     } else {
                       setField('enrollment_status', newStatus);
                     }
                   }}>
-                    <optgroup label="Enrollment">
-                      <option value="Active">Active</option>
-                      <option value="Trial">Trial</option>
-                    </optgroup>
-                    <optgroup label="Exit">
-                      <option value="Cancel">Cancel</option>
-                      <option value="Month Off">Month Off</option>
-                      <option value="Paused">Paused</option>
-                      <option value="Withdrawn">Withdrawn</option>
-                    </optgroup>
-                    <optgroup label="Return">
-                      <option value="Returning">Returning</option>
-                    </optgroup>
-                    <optgroup label="Hold">
-                      <option value="On Hold">On Hold</option>
-                    </optgroup>
+                    <option value="Active">Active</option>
+                    <option value="On Break">On Break</option>
+                    <option value="Inactive">Inactive</option>
                   </select>
                 </div>
-                {/* Exit fields (Cancel, Month Off, Paused, Withdrawn) */}
-                {['Cancel', 'Month Off', 'Paused', 'Withdrawn'].includes(getField('enrollment_status')) && (
+                {/* Exit fields (On Break, Inactive) */}
+                {['On Break', 'Inactive'].includes(getField('enrollment_status')) && (
                   <div className={`${styles.detailItem} ${styles.detailFull}`}>
                     <div className={styles.detailsGrid}>
                       <div className={styles.detailItem}>
@@ -707,7 +694,7 @@ export default function StudentProfilePage({ studentId }: Props) {
                         <span className={styles.detailLabel}>Last Class Date</span>
                         <input type="date" className={styles.editInput} value={getField('last_class_date')} onChange={(e) => setField('last_class_date', e.target.value || null)} />
                       </div>
-                      {['Month Off', 'Paused'].includes(getField('enrollment_status')) && (
+                      {getField('enrollment_status') === 'On Break' && (
                         <div className={styles.detailItem}>
                           <span className={styles.detailLabel}>Expected Return Date</span>
                           <input type="date" className={styles.editInput} value={getField('expected_return_date')} onChange={(e) => setField('expected_return_date', e.target.value || null)} />
@@ -748,7 +735,7 @@ export default function StudentProfilePage({ studentId }: Props) {
                     Change {student.first_name}&apos;s status from {student.enrollment_status} to {statusConfirm}?
                   </p>
                   <p style={{ margin: '0 0 0.75rem', fontSize: '0.75rem', color: 'var(--neutral)' }}>
-                    This will mark them as inactive.
+                    {statusConfirm === 'On Break' ? 'You can set an expected return date below.' : 'This will mark them as no longer attending.'}
                   </p>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button className={styles.formSubmit} style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }} onClick={() => { setField('enrollment_status', statusConfirm); setStatusConfirm(null); }}>
