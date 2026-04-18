@@ -19,7 +19,7 @@ export default function CheckInPanel({ students }: CheckInPanelProps) {
       student_id: student.id,
       source: 'kiosk',
       checked_in_by: 'kiosk',
-      session_duration_minutes: getSessionDuration(student.subjects),
+      session_duration_minutes: getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail }),
     });
   };
 

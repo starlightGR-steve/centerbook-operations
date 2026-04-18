@@ -196,7 +196,7 @@ export default function KioskPage() {
       const result = await checkInStudent({
         student_id: student.id,
         source: 'barcode',
-        session_duration_minutes: getSessionDuration(student.subjects),
+        session_duration_minutes: getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail }),
       });
       setAnnouncement(`${student.first_name} ${student.last_name} checked in`);
       setUndoToast({

@@ -8,7 +8,7 @@ import {
   X, Heart, Minus, Plus, Check, Send, AlertTriangle, ExternalLink, Clock,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
+import { parseSubjects, parseScheduleDays, formatTimeKey, getSessionDuration } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
 import { useVisitPlan } from '@/hooks/useVisitPlan';
@@ -77,8 +77,8 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   // Visit plan — pre-populate Class Prep from planned items
   const { activeItems: visitPlanItems } = useVisitPlan(isEditMode ? null : student.id);
 
-  // State — use schedule_detail duration if available, else default 60
-  const defaultMinutes = todayDetail?.duration ?? (subjects.length > 1 ? 60 : 30);
+  // State — use schedule_detail duration if available, else fall through getSessionDuration priority
+  const defaultMinutes = getSessionDuration(subjects, { scheduleDetail: student.schedule_detail });
   const [sessionMinutes, setSessionMinutes] = useState(defaultMinutes);
   const [pickupContactId, setPickupContactId] = useState<number | null>(null);
   const [selectedChecklist, setSelectedChecklist] = useState<string[]>(existingPrep?.checklist ?? []);

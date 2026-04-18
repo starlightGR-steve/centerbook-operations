@@ -752,9 +752,10 @@ export function formatTimeKey(key: number | null): string {
 }
 
 /** Get session duration in minutes.
- *  Priority: attendance session_duration_minutes (per-session, may be adjusted)
- *          → schedule_detail[today] (scheduled default)
- *          → 60 min default → subject-count fallback */
+ *  Priority: attendance session_duration_minutes (per-session override)
+ *          → schedule_detail[today].duration (scheduled default for today)
+ *          → legacy subject-count fallback (only when scheduleDetail not provided)
+ *          → 60 min final default */
 export function getSessionDuration(
   subjects: string | string[] | null | undefined,
   options?: {
@@ -762,7 +763,7 @@ export function getSessionDuration(
     sessionDurationMinutes?: number | null;
   }
 ): number {
-  // 1. Attendance record's session_duration_minutes (explicitly set or adjusted per-session)
+  // 1. Attendance record's session_duration_minutes (explicit per-session override)
   // parseInt guards against API returning a numeric string (e.g., "30")
   if (options?.sessionDurationMinutes) return typeof options.sessionDurationMinutes === 'string' ? parseInt(options.sessionDurationMinutes, 10) || 60 : options.sessionDurationMinutes;
   // 2. schedule_detail for today (scheduled default for this day)
@@ -771,15 +772,17 @@ export function getSessionDuration(
     const todayEntry = options.scheduleDetail[todayDay];
     if (todayEntry?.duration) return todayEntry.duration;
   }
-  // 3. Default 60 when options were provided but had no data
-  if (options) return 60;
-  // 4. Legacy subject-count fallback (callers that don't pass options)
-  if (!subjects) return 30;
-  const parsed =
-    typeof subjects === 'string'
-      ? subjects.split(',').map((s) => s.trim()).filter(Boolean)
-      : subjects;
-  return parsed.length * 30 || 30;
+  // 3. Legacy subject-count fallback — only when caller did not supply scheduleDetail
+  if (!options?.scheduleDetail) {
+    if (!subjects) return 30;
+    const parsed =
+      typeof subjects === 'string'
+        ? subjects.split(',').map((s) => s.trim()).filter(Boolean)
+        : subjects;
+    return parsed.length * 30 || 30;
+  }
+  // 4. Final default — scheduleDetail was provided but today has no entry
+  return 60;
 }
 
 /** Get time remaining in minutes from check-in time and session duration */
