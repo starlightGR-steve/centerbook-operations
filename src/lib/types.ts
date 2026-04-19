@@ -754,6 +754,7 @@ export function formatTimeKey(key: number | null): string {
 /** Get session duration in minutes.
  *  Priority: attendance session_duration_minutes (per-session override)
  *          → schedule_detail[today].duration (scheduled default for today)
+ *          → max duration across all schedule_detail entries (walk-in / makeup day)
  *          → legacy subject-count fallback (only when scheduleDetail not provided)
  *          → 60 min final default */
 export function getSessionDuration(
@@ -771,8 +772,15 @@ export function getSessionDuration(
     const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     const todayEntry = options.scheduleDetail[todayDay];
     if (todayEntry?.duration) return todayEntry.duration;
+    // 3. Walk-in / makeup day — student isn't scheduled today, so use their
+    //    longest scheduled session across other weekdays. Max (not min/avg) so
+    //    teachers can scale down rather than run out of time mid-session.
+    const durations = Object.values(options.scheduleDetail)
+      .map((d) => d?.duration)
+      .filter((d): d is number => typeof d === 'number' && d > 0);
+    if (durations.length > 0) return Math.max(...durations);
   }
-  // 3. Legacy subject-count fallback — only when caller did not supply scheduleDetail
+  // 4. Legacy subject-count fallback — only when caller did not supply scheduleDetail
   if (!options?.scheduleDetail) {
     if (!subjects) return 30;
     const parsed =
@@ -781,7 +789,7 @@ export function getSessionDuration(
         : subjects;
     return parsed.length * 30 || 30;
   }
-  // 4. Final default — scheduleDetail was provided but today has no entry
+  // 5. Final default — scheduleDetail was provided but had no usable entries
   return 60;
 }
 
