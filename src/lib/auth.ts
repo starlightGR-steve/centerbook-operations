@@ -1,6 +1,5 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
 
 export type AppRole = 'superuser' | 'admin' | 'staff';
 
@@ -39,24 +38,22 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Fetch staff record from WordPress REST API
         const res = await fetch(`${apiBase}/staff/auth`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Basic ' + Buffer.from(`${apiUser}:${apiPass}`).toString('base64'),
           },
-          body: JSON.stringify({ email: credentials.email }),
+          body: JSON.stringify({
+            email: credentials.email,
+            password: credentials.password,
+          }),
         });
 
         if (!res.ok) return null;
 
         const envelope = await res.json();
         const staff = envelope.data ?? envelope;
-
-        // Verify password against bcrypt hash
-        const valid = await bcrypt.compare(credentials.password, staff.password_hash);
-        if (!valid) return null;
 
         return {
           id: String(staff.id),
