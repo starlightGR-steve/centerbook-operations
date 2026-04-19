@@ -838,7 +838,7 @@ export default function AttendancePage() {
             ))}
           </div>
         ) : (
-          <div className={styles.columns}>
+          <div className={styles.columns} data-testid="attendance-columns">
 
             {/* ── Column 1: Expected (orange) ── */}
             <div className={`${styles.column} ${mobileTab !== 'expected' ? styles.mobileHidden : ''}`}>
