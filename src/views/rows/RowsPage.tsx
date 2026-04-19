@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { mutate as globalMutate } from 'swr';
-import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, LogOut, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Square, CheckSquare, Circle, CheckCircle2, Clock, Lightbulb, CircleHelp, Star, Zap, ClipboardList } from 'lucide-react';
+import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Square, CheckSquare, Circle, CheckCircle2, Clock, Lightbulb, CircleHelp, Star, Zap, ClipboardList } from 'lucide-react';
 import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClockDisplay from '@/components/ClockDisplay';
 import PosBadge from '@/components/PosBadge';
@@ -856,7 +856,7 @@ export default function RowsPage() {
                         handleRowCheckout(s.id);
                       }}
                     >
-                      <LogOut size={12} /> Done
+                      <CheckCircle2 size={12} /> Done
                     </button>
                     <div className={styles.moveWrap}>
                       <button
