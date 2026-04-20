@@ -1,0 +1,198 @@
+.popover {
+  width: 21rem;
+  max-width: 100%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 32px rgba(48, 48, 48, 0.08);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  font-family: var(--font-primary);
+}
+
+.topLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.bigDuration {
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.helperLabel {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--secondary-dark);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.presetRow,
+.adjustRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.presetBtn,
+.adjustBtn {
+  flex: 1;
+  min-height: var(--touch-min);
+  background: var(--white);
+  border: 1.5px solid #d3d1c7;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-1);
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.presetBtn:hover,
+.adjustBtn:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.presetBtn:focus-visible,
+.adjustBtn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.presetActive {
+  background: var(--secondary);
+  color: var(--white);
+  border-color: var(--secondary);
+}
+
+.presetActive:hover {
+  background: var(--secondary-dark);
+  border-color: var(--secondary-dark);
+  color: var(--white);
+}
+
+.adjustBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.divider {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-1) 0;
+}
+
+.timeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-min);
+}
+
+.timeRowEditing {
+  background: #f7f9fb;
+  border: 1.5px solid var(--secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+}
+
+.timeLabel {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--neutral);
+  min-width: 3.5rem;
+}
+
+.timeValue {
+  flex: 1;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.timeInput {
+  flex: 1;
+  width: 10rem;
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--text);
+  background: var(--white);
+  border: 1.5px solid var(--secondary);
+  border-radius: var(--radius-btn);
+  padding: var(--space-2) var(--space-2_5);
+  min-height: var(--touch-min);
+}
+
+.timeInput:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 154, 171, 0.18);
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  background: transparent;
+  border: none;
+  color: var(--secondary);
+  cursor: pointer;
+  border-radius: var(--radius-btn);
+  flex-shrink: 0;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.iconBtn:hover {
+  background: var(--secondary-ul);
+}
+
+.iconBtn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.iconBtnSave {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.iconBtnSave:hover {
+  background: var(--secondary-dark);
+  color: var(--white);
+}
+
+.errorRow {
+  font-size: var(--text-md);
+  color: var(--red);
+  line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presetBtn,
+  .adjustBtn,
+  .iconBtn {
+    transition: none;
+  }
+}

@@ -1,0 +1,90 @@
+.card {
+  background: var(--color-note-bg);
+  border: 1px solid var(--color-note-border-light);
+  border-left: 4px solid var(--color-note-border-strong);
+  border-radius: var(--radius-btn);
+  padding: var(--space-4) 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.warnIcon {
+  color: var(--color-note-text);
+  flex-shrink: 0;
+}
+
+.fromLabel {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-note-text);
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.text {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.markBtn {
+  align-self: flex-start;
+  background: var(--white);
+  border: 1.5px solid var(--color-note-border-strong);
+  color: var(--color-note-text-dark);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  border-radius: var(--radius-btn);
+  padding: var(--space-2) var(--space-4);
+  min-height: var(--touch-min);
+  min-width: 8.75rem;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.markBtn:hover {
+  background: var(--color-note-bg);
+}
+
+.markBtn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+/* Done state */
+.cardDone {
+  opacity: 0.6;
+  background: #f5f1e6;
+}
+.cardDone .text {
+  text-decoration: line-through;
+  color: var(--neutral);
+}
+
+.doneIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: #1f6f2e;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  align-self: flex-start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .markBtn {
+    transition: none;
+  }
+}

@@ -440,6 +440,21 @@ export default function AttendancePage() {
       } catch (err) {
         console.error('handleEditPrep: failed to update flags', err);
       }
+      // Bug 86agkv2wu fix: Update Class Prep also persists session_duration_minutes when changed.
+      const currentAttendance = activeAttendanceMap.get(options.studentId);
+      if (
+        currentAttendance &&
+        options.sessionMinutes !== undefined &&
+        options.sessionMinutes !== currentAttendance.session_duration_minutes
+      ) {
+        try {
+          await updateAttendance(currentAttendance.id, {
+            session_duration_minutes: options.sessionMinutes,
+          });
+        } catch (err) {
+          console.error('handleEditPrep: failed to update session duration', err);
+        }
+      }
       setCheckInPopupStudent(null);
       setCheckInEditPrep(null);
       return;

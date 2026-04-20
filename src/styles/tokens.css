@@ -40,7 +40,60 @@
 
   /* Layout */
   --sidebar-width:  180px;
-  --touch-min:      44px;
+  --touch-min:      2.75rem; /* 44px */
+  --tap-min:        2rem;    /* 32px secondary tap targets */
+
+  /* Done state (flags, checklist, buttons) */
+  --color-done-bg:   #e3e7ea;
+  --color-done-text: #b0b7bc;
+
+  /* Testing state */
+  --color-testing:    #5b3e8a;
+  --color-testing-bg: #f7f4fb; /* Whole Class only; Row View uses white */
+
+  /* Warning timer state (1-5 min remaining) */
+  --color-warn-border: #eab308;
+  --color-warn-text:   #92400e;
+
+  /* Overtime state (<= 0 min) */
+  --color-over-border: #ef4444;
+  --color-over-text:   #b91c1c;
+
+  /* Teacher note (amber) */
+  --color-note-bg:           #fffbed;
+  --color-note-border-light: #f2d385;
+  --color-note-border-strong:#e8a13a;
+  --color-note-text:         #b85a00;
+  --color-note-text-dark:    #8b5a00;
+
+  /* Subject letter text (Whole Class View) */
+  --color-math-text:    #2d6fa0;
+  --color-reading-text: #b85a1a;
+
+  /* KC enrollment strip */
+  --color-kc-strip: #009aab;
+
+  /* Drag lock — unlocked state */
+  --color-lock-unlocked-bg:   #fcf2ea;
+  --color-lock-unlocked-text: #8c4215;
+
+  /* Whole Class students-checked pill */
+  --color-pill-checked-bg:   #d9f0ec;
+  --color-pill-checked-text: #006d79;
+
+  /* Record Test result chips */
+  --color-pass-bg:        #d4edda;
+  --color-pass-border:    #a7e3ba;
+  --color-pass-text:      #1f6f2e;
+  --color-retest-bg:      #f8d7da;
+  --color-retest-border:  #c73340;
+  --color-retest-text:    #8b1e28;
+  --color-borderline-bg:  #fff3cd;
+  --color-borderline-border:#e8a13a;
+  --color-borderline-text:#8b5a00;
+  --color-postpone-bg:    #f5f5f4;
+  --color-postpone-border:#a8a29e;
+  --color-postpone-text:  #44403c;
 
   /* Radii */
   --radius-btn:     6px;

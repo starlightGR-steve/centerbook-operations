@@ -1,0 +1,114 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 4rem;
+  padding: 0 var(--space-5);
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-primary);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--secondary);
+  text-decoration: none;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.divider {
+  display: inline-block;
+  width: 1px;
+  height: 1.75rem;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.metaGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.peopleIcon {
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+
+.sectionBadge {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--secondary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #eef9fb;
+  border: 1px solid rgba(0, 154, 171, 0.3);
+  padding: var(--space-0_5) var(--space-2);
+  border-radius: var(--radius-sm);
+  line-height: 1.2;
+}
+
+@media (max-width: 52rem) {
+  .sectionBadge {
+    display: none;
+  }
+}
+
+.rowTitle {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--secondary-dark);
+}
+
+.seatCount {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--neutral);
+}
+
+.teacherSelect {
+  font-family: var(--font-primary);
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--text);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: var(--space-1_5) var(--space-3);
+  min-height: var(--touch-min);
+  cursor: pointer;
+}
+
+.teacherSelect:focus {
+  outline: none;
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 2px rgba(0, 154, 171, 0.18);
+}
+
+.clockSlot {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  color: var(--secondary);
+}
