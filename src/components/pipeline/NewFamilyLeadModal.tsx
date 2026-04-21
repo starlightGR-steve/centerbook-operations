@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { createFamilyLead } from '@/hooks/usePipeline';
+import { getCenterToday } from '@/lib/dates';
 import styles from './NewFamilyLeadModal.module.css';
 
 const LEAD_SOURCES = ['Website', 'Referral', 'Walk-in', 'Phone', 'Social Media', 'Other'];
@@ -48,7 +49,7 @@ export default function NewFamilyLeadModal({ onClose, onCreated }: NewFamilyLead
         primary_contact_phone: contactPhone.trim() || undefined,
         number_of_students: numStudents,
         family_notes: notes.trim() || undefined,
-        inquiry_date: new Date().toISOString().split('T')[0],
+        inquiry_date: getCenterToday(),
       });
       onCreated();
       onClose();

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { ArrowRight } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { createAbsence } from '@/hooks/useAbsences';
+import { getCenterToday } from '@/lib/dates';
 import type { AbsenceReason } from '@/lib/types';
 import styles from './ExcusedAbsenceModal.module.css';
 
@@ -98,7 +99,7 @@ export default function ExcusedAbsenceModal({ student, onClose, onSave }: Excuse
   const handleSave = async () => {
     setSaving(true);
     const staffId = Number((session?.user as { id?: string })?.id) || null;
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getCenterToday();
 
     try {
       if (reason === 'vacation' && vacationStart && vacationEnd) {

@@ -1,4 +1,5 @@
 import useSWR, { mutate } from 'swr';
+import { getCenterToday } from '@/lib/dates';
 import type { StaffSlotAssignment } from '@/lib/types';
 
 // No staff slots API yet — return empty arrays in production
@@ -27,7 +28,7 @@ export async function assignStaffToSlot(
     staff_id: staffId,
     day_of_week: day,
     time_sort_key: timeSortKey,
-    effective_from: new Date().toISOString().split('T')[0],
+    effective_from: getCenterToday(),
     effective_to: null,
     created_at: new Date().toISOString(),
   };

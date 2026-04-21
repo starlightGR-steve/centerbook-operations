@@ -1,10 +1,11 @@
 import useSWR, { mutate } from 'swr';
 import { api } from '@/lib/api';
+import { getCenterToday } from '@/lib/dates';
 import type { TimeEntry, ClockInRequest, ClockOutRequest } from '@/lib/types';
 
 /** Fetch today's time entries */
 export function useTimeclock(date?: string) {
-  const d = date || new Date().toISOString().split('T')[0];
+  const d = date || getCenterToday();
 
   return useSWR<TimeEntry[]>(
     `timeclock-${d}`,
@@ -25,7 +26,7 @@ export function useClockedInStaff(date?: string) {
 /** Clock in a staff member */
 export async function clockInStaff(data: ClockInRequest): Promise<TimeEntry> {
   const result = await api.timeclock.clockIn(data);
-  const d = new Date().toISOString().split('T')[0];
+  const d = getCenterToday();
   mutate(`timeclock-${d}`);
   return result;
 }
@@ -33,7 +34,7 @@ export async function clockInStaff(data: ClockInRequest): Promise<TimeEntry> {
 /** Clock out a staff member */
 export async function clockOutStaff(data: ClockOutRequest): Promise<TimeEntry> {
   const result = await api.timeclock.clockOut(data);
-  const d = new Date().toISOString().split('T')[0];
+  const d = getCenterToday();
   mutate(`timeclock-${d}`);
   return result;
 }

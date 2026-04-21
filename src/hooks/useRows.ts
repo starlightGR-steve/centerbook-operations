@@ -1,9 +1,10 @@
 import useSWR, { mutate as globalMutate } from 'swr';
 import { api } from '@/lib/api';
+import { getCenterToday } from '@/lib/dates';
 import type { RowAssignment, RowAssignmentFlags, AssignRowRequest, RowTeacher, AssignRowTeacherRequest } from '@/lib/types';
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0];
+  return getCenterToday();
 }
 
 /** SWR key for classroom assignments */

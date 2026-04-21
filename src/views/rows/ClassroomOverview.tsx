@@ -5,6 +5,7 @@ import { Edit2, Plus } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
 import WholeClassCard, { type WholeClassTeacherNote } from '@/components/classroom/WholeClassCard';
 import DragLockToggle from '@/components/classroom/DragLockToggle';
+import { getCenterToday } from '@/lib/dates';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { useClassroomTeachers, assignTeacherToRow } from '@/hooks/useRows';
@@ -91,7 +92,7 @@ export default function ClassroomOverview({
   const totalIn = checkedInStudents.length;
 
   // Teacher assignments
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCenterToday();
   const { data: teacherAssignments, mutate: mutateTeachers } = useClassroomTeachers(today);
   const { data: allStaff } = useActiveStaff();
   const { data: timeclockEntries } = useTimeclock(today);

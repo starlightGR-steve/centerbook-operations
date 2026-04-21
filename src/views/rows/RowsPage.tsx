@@ -14,6 +14,7 @@ import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { useClassroomConfig } from '@/hooks/useClassroomConfig';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
+import { getCenterToday } from '@/lib/dates';
 import { api } from '@/lib/api';
 import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
 import { getTimeRemaining, getSessionDuration, getTeacherNotes } from '@/lib/types';
@@ -91,7 +92,7 @@ export default function RowsPage() {
   const { data: allStudents } = useStudents();
   const { data: checkedIn } = useCheckedInStudents(undefined, 10000);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCenterToday();
   const { data: persistedAssignments } = useClassroomAssignments(today);
   const { data: teacherAssignments } = useClassroomTeachers(today);
   const { data: allStaff } = useActiveStaff();

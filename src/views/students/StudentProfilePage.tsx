@@ -26,6 +26,7 @@ import {
   Pin,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { getCenterToday } from '@/lib/dates';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Badge from '@/components/ui/Badge';
 import StudentJournal from '@/components/StudentJournal';
@@ -270,7 +271,7 @@ export default function StudentProfilePage({ studentId }: Props) {
   const openTasks = tasks?.filter((t) => t.status === 'open') ?? [];
   const completedTasks = tasks?.filter((t) => t.status === 'complete') ?? [];
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCenterToday();
 
   const handleCompleteTask = async (taskId: number) => {
     try {
@@ -1041,7 +1042,7 @@ export default function StudentProfilePage({ studentId }: Props) {
 
           {/* ── Absence Planning ── */}
           {(() => {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getCenterToday();
             const upcoming = (studentAbsences || [])
               .filter((a: Absence) => a.absence_date >= today)
               .sort((a: Absence, b: Absence) => a.absence_date.localeCompare(b.absence_date));

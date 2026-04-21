@@ -505,7 +505,9 @@ export default function AttendancePage() {
         flags.teacher_note = options.noteForTeacher;
       }
       try {
-        const todayDate = new Date().toISOString().split('T')[0];
+        // Use the same centerToday derived at the top of the component (line ~176)
+        // so this write hits the same SWR cache key the row view reads from.
+        const todayDate = centerToday;
         await assignStudentToRow({
           student_id: options.studentId,
           row_label: 'Unassigned',

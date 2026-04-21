@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { useActiveAttendance } from '@/hooks/useAttendance';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassroomAssignments } from '@/hooks/useRows';
+import { getCenterToday } from '@/lib/dates';
 import type { Student } from '@/lib/types';
 import styles from './AssignStudentPicker.module.css';
 
@@ -34,7 +35,7 @@ const SECTIONS: Array<{
 ];
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0];
+  return getCenterToday();
 }
 
 function sectionKeyFor(pos: Student['classroom_position']): SectionKey | null {
