@@ -1,0 +1,185 @@
+.card {
+  position: relative;
+  width: 19rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1.125rem var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+/* Testing state — 2px purple border */
+.cardTesting {
+  border-width: 2px;
+  border-color: var(--color-testing);
+  padding: calc(1.125rem - 1px) calc(var(--space-5) - 1px);
+}
+
+/* Warning state — 3px yellow border (overrides testing border color, keeps TESTING tab) */
+.cardWarn {
+  border-width: 3px;
+  border-color: var(--color-warn-border);
+  padding: calc(1.125rem - 2px) calc(var(--space-5) - 2px);
+}
+.cardWarn .name,
+.cardWarn .timerNum,
+.cardWarn .timerUnit {
+  color: var(--color-warn-text);
+}
+
+/* Overtime state — 3px red border, takes precedence over warning */
+.cardOver {
+  border-width: 3px;
+  border-color: var(--color-over-border);
+  padding: calc(1.125rem - 2px) calc(var(--space-5) - 2px);
+}
+.cardOver .name,
+.cardOver .timerNum,
+.cardOver .timerUnit {
+  color: var(--color-over-text);
+}
+
+/* Tabs */
+.testingTab {
+  position: absolute;
+  top: -0.75rem;
+  left: 0.875rem;
+  background: var(--color-testing);
+  color: var(--white);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 0.1875rem;
+  z-index: 1;
+}
+
+.redFlagTab {
+  position: absolute;
+  top: -0.75rem;
+  right: 0.375rem;
+  width: 22px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-over-border);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.name {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.timer {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.125rem;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.timerNum {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.timerUnit {
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+/* Subject row */
+.subjectRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.subjectPill {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--white);
+  padding: var(--space-1) 0.6875rem;
+  border-radius: var(--radius-btn);
+  min-height: 1.625rem;
+  line-height: 1;
+}
+
+.pillMath { background: var(--math); }
+.pillReading { background: var(--reading); }
+
+.medicalBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  background: transparent;
+  border: none;
+  color: #e01c3c;
+  cursor: pointer;
+  border-radius: var(--radius-btn);
+}
+
+.medicalBtn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.medicalBtn:hover {
+  background: rgba(224, 28, 60, 0.08);
+}
+
+/* Flag stack */
+.flagStack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Checklist stack */
+.checklistStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Actions row */
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

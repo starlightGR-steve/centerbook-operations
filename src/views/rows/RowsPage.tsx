@@ -1,56 +1,32 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate as globalMutate } from 'swr';
-import { ChevronRight, Users, Heart, RefreshCw, AlertCircle, Plus, Flag, Sparkles, HelpCircle, UserCheck, BookOpen, Square, CheckSquare, Circle, CheckCircle2, Clock, Lightbulb, CircleHelp, Star, Zap, ClipboardList } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import { useSessionAdjust } from '@/context/SessionAdjustContext';
-import ClockDisplay from '@/components/ClockDisplay';
-import PosBadge from '@/components/PosBadge';
-import VisibilityLabel from '@/components/VisibilityLabel';
-import SubjectBadges from '@/components/SubjectBadges';
-import NoteCard from '@/components/NoteCard';
 import ClassroomOverview from './ClassroomOverview';
 import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents } from '@/hooks/useAttendance';
-import { useNotes } from '@/hooks/useNotes';
 import { useClassroomAssignments, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { useClassroomConfig } from '@/hooks/useClassroomConfig';
 import { CLASSROOM_CONFIG } from '@/lib/classroom-config';
-import { FLAG_CONFIG, CHECKLIST_CONFIG } from '@/lib/flags';
-import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
+import { getCenterToday } from '@/lib/dates';
 import { api } from '@/lib/api';
 import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
-import { getTimeRemaining, getSessionDuration, parseSubjects, getTeacherNotes } from '@/lib/types';
+import { getTimeRemaining, getSessionDuration, getTeacherNotes } from '@/lib/types';
 import RowsSkeleton from './RowsSkeleton';
 import ClassroomSetup from './ClassroomSetup';
 import AddStudentPicker from './AddStudentPicker';
+import RowViewCard, { type TeacherNoteSummary } from '@/components/classroom/RowViewCard';
+import TimePopover from '@/components/classroom/TimePopover';
+import SwipeShell, { type RowSummary } from '@/components/classroom/SwipeShell';
+import RowMetaBar from '@/components/classroom/RowMetaBar';
+import AssignStudentPicker from '@/components/classroom/AssignStudentPicker';
 import styles from './RowsPage.module.css';
-
-/** Render a flag icon from config string */
-function FlagPillIcon({ icon }: { icon: string | undefined }) {
-  if (!icon) return <Flag size={10} />;
-  if (icon.startsWith('text:')) {
-    return <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, lineHeight: 1 }}>{icon.slice(5)}</span>;
-  }
-  const p = { size: 10 };
-  switch (icon) {
-    case 'Lightbulb': return <Lightbulb {...p} />;
-    case 'CircleHelp': return <CircleHelp {...p} />;
-    case 'BookOpen': return <BookOpen {...p} />;
-    case 'Star': return <Star {...p} />;
-    case 'AlertCircle': return <AlertCircle {...p} />;
-    case 'Zap': return <Zap {...p} />;
-    case 'Flag': return <Flag {...p} />;
-    case 'Heart': return <Heart {...p} />;
-    case 'UserCheck': return <UserCheck {...p} />;
-    case 'Sparkles': return <Sparkles {...p} />;
-    case 'ClipboardList': return <ClipboardList {...p} />;
-    default: return <Flag {...p} />;
-  }
-}
 
 interface FlatRow extends ClassroomRow {
   section: string;
@@ -87,12 +63,13 @@ function buildAssignments(
 }
 
 export default function RowsPage() {
-  const [selectedRowId, setSelectedRowId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('rows_selectedRowId') || null;
-    }
-    return null;
-  });
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // URL is the source of truth for which row is open in Row View. Missing param
+  // means we render the Whole Class Overview; an unknown param falls back to row 0
+  // and the URL gets rewritten in an effect below.
+  const rowParam = searchParams.get('row');
+  const selectedRowId = rowParam;
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [showSetup, setShowSetup] = useState(false);
   const [dragStudent, setDragStudent] = useState<Student | null>(null);
@@ -100,30 +77,26 @@ export default function RowsPage() {
   const [addToRowLabel, setAddToRowLabel] = useState<string | null>(null);
   const [addToTestingRowLabel, setAddToTestingRowLabel] = useState<string | null>(null);
   const [rowCompleteIds, setRowCompleteIds] = useState<Set<number>>(new Set());
-  const [assigningToRow, setAssigningToRow] = useState(false);
   const [movingStudent, setMovingStudent] = useState<number | null>(null);
+  const [pickerRowLabel, setPickerRowLabel] = useState<string | null>(null);
   const [, setTick] = useState(0);
 
   // Live Class feature state
-  const [taskNoteInput, setTaskNoteInput] = useState<string | null>(null); // task id being noted
-  const [taskNoteText, setTaskNoteText] = useState('');
   // Local optimistic flag overrides (cleared on SWR revalidation)
   const [optimisticFlags, setOptimisticFlags] = useState<Record<number, RowAssignmentFlags>>({});
   const [flagSaveError, setFlagSaveError] = useState<string | null>(null);
-  const { optimistic: sessionOptimistic, persistAdjustment } = useSessionAdjust();
+  const { optimistic: sessionOptimistic } = useSessionAdjust();
   const [sessionPopoverStudent, setSessionPopoverStudent] = useState<number | null>(null);
-  const [expandedNoteStudent, setExpandedNoteStudent] = useState<number | null>(null);
+  // expandedNoteStudent removed in Step 1: pertinent_note now surfaces via Detail Panel (wired in Step 6).
 
   const { data: allStudents } = useStudents();
   const { data: checkedIn } = useCheckedInStudents(undefined, 10000);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCenterToday();
   const { data: persistedAssignments } = useClassroomAssignments(today);
   const { data: teacherAssignments } = useClassroomTeachers(today);
   const { data: allStaff } = useActiveStaff();
   const { data: timeclockEntries } = useTimeclock(today);
-  const { flags: flagConfig } = useFlagConfig();
-  const { items: checklistConfig } = useChecklistConfig();
   const { data: apiSections } = useClassroomConfig();
 
   useEffect(() => {
@@ -178,10 +151,16 @@ export default function RowsPage() {
   const handleDragEnd = useCallback(() => setDragStudent(null), []);
 
   const handleSelectRow = useCallback((rowId: string) => {
-    setSelectedRowId(rowId);
     setSelectedStudentId(null);
-    sessionStorage.setItem('rows_selectedRowId', rowId);
-  }, []);
+    router.replace(`/rows?row=${encodeURIComponent(rowId)}`, { scroll: false });
+  }, [router]);
+
+  const handleRowChange = useCallback((newIndex: number) => {
+    const target = rows[newIndex];
+    if (!target) return;
+    setSelectedStudentId(null);
+    router.replace(`/rows?row=${encodeURIComponent(target.id)}`, { scroll: false });
+  }, [router, rows]);
 
   const handleSetup = useCallback(() => setShowSetup(true), []);
 
@@ -219,20 +198,6 @@ export default function RowsPage() {
       await updateStudentFlags(studentId, updated, today);
     }
   }, [rowIdToLabel, today, getStudentFlags]);
-
-  // Helper: get flag keys array for display (active flags only)
-  const getFlags = useCallback((s: Student): string[] => {
-    const f = getStudentFlags(s.id);
-    return flagConfig.map((fc) => fc.key).filter((k) => (f as Record<string, unknown>)[k]);
-  }, [getStudentFlags, flagConfig]);
-
-  // Helper: get all flag keys present in the flags object (for Row View — show active + done)
-  const getAllFlags = useCallback((s: Student): { key: string; active: boolean }[] => {
-    const f = getStudentFlags(s.id);
-    return flagConfig
-      .filter((fc) => (f as Record<string, unknown>)[fc.key] !== undefined)
-      .map((fc) => ({ key: fc.key, active: !!(f as Record<string, unknown>)[fc.key] }));
-  }, [getStudentFlags, flagConfig]);
 
   // Revert an optimistic flag update and surface an error toast
   const handleFlagError = useCallback((studentId: number, err: unknown) => {
@@ -291,17 +256,6 @@ export default function RowsPage() {
     }).catch((err) => handleFlagError(studentId, err));
   }, [getStudentFlags, today, handleFlagError]);
 
-  // Helper: set custom task text
-  const setCustomTask = useCallback((studentId: number, text: string) => {
-    const current = getStudentFlags(studentId);
-    const tasks = { ...(current.tasks || {}), custom: text || null };
-    const updated: RowAssignmentFlags = { ...current, tasks };
-    setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
-    updateStudentFlags(studentId, updated, today).then(() => {
-      setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
-    }).catch((err) => handleFlagError(studentId, err));
-  }, [getStudentFlags, today, handleFlagError]);
-
   const setTeacherNote = useCallback((studentId: number, note: string | null) => {
     const current = getStudentFlags(studentId);
     const updated: RowAssignmentFlags = { ...current, teacher_note: note };
@@ -317,11 +271,6 @@ export default function RowsPage() {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
     }).catch((err) => handleFlagError(studentId, err));
   }, [today, handleFlagError]);
-
-  const dismissTaskNote = useCallback(() => {
-    setTaskNoteInput(null);
-    setTaskNoteText('');
-  }, []);
 
   // Helper: get adjusted time remaining (uses optimistic duration if pending, otherwise DB value)
   const getAdjustedTimeRemaining = useCallback((s: Student, att: Attendance | undefined): number => {
@@ -359,22 +308,45 @@ export default function RowsPage() {
     });
   }, [allStaff, clockedInIds]);
 
-  // currentRow is needed both for teacher dropdown and for the row detail view
+  // Swipe traversal — preserves classroom-config declaration order (EL → Main → Upper).
+  const swipeRows: RowSummary[] = useMemo(
+    () => rows.map((r) => ({
+      id: r.id,
+      label: r.label,
+      section: r.section,
+      seats: r.seats + r.testingSeats,
+    })),
+    [rows]
+  );
+
+  const currentRowIndex = selectedRowId
+    ? swipeRows.findIndex((r) => r.id === selectedRowId)
+    : -1;
+  const safeRowIndex = currentRowIndex === -1 ? 0 : currentRowIndex;
   const currentRow = rows.find((r) => r.id === selectedRowId);
+  const currentSwipeRow = swipeRows[safeRowIndex];
+
+  // If URL holds an unknown row id, rewrite to the first valid row so the swipe shell
+  // doesn't render with a -1 index. Skipped while the rows list is empty (initial load).
+  useEffect(() => {
+    if (selectedRowId && currentRowIndex === -1 && swipeRows.length > 0) {
+      router.replace(`/rows?row=${encodeURIComponent(swipeRows[0].id)}`, { scroll: false });
+    }
+  }, [selectedRowId, currentRowIndex, swipeRows, router]);
 
   const teacherForRow = useMemo(() => {
-    if (!teacherAssignments || !currentRow) return 0;
-    return teacherAssignments.find((t) => t.row_label === currentRow.label)?.staff_id ?? 0;
-  }, [teacherAssignments, currentRow]);
+    if (!teacherAssignments || !currentSwipeRow) return 0;
+    return teacherAssignments.find((t) => t.row_label === currentSwipeRow.label)?.staff_id ?? 0;
+  }, [teacherAssignments, currentSwipeRow]);
 
-  const handleTeacherChange = useCallback(async (staffId: number) => {
-    if (!staffId || !currentRow) return;
+  const handleTeacherChange = useCallback(async (staffId: number | null) => {
+    if (!staffId || !currentSwipeRow) return;
     await assignTeacherToRow({
       staff_id: staffId,
-      row_label: currentRow.label,
+      row_label: currentSwipeRow.label,
       session_date: today,
     });
-  }, [currentRow, today]);
+  }, [currentSwipeRow, today]);
 
   if (!allStudents || !checkedIn) {
     return <RowsSkeleton />;
@@ -468,465 +440,183 @@ export default function RowsPage() {
     );
   }
 
-  // ROW DETAIL (drill-down)
-  const rowStudents = (assignments[selectedRowId] || []).sort((a, b) => {
-    const aAtt = attendanceMap.get(a.id);
-    const bAtt = attendanceMap.get(b.id);
-    const aRem = aAtt ? getTimeRemaining(a.subjects, aAtt.check_in, { scheduleDetail: a.schedule_detail, sessionDurationMinutes: aAtt.session_duration_minutes }) : 999;
-    const bRem = bAtt ? getTimeRemaining(b.subjects, bAtt.check_in, { scheduleDetail: b.schedule_detail, sessionDurationMinutes: bAtt.session_duration_minutes }) : 999;
-    return aRem - bRem;
-  });
-
+  // ROW DETAIL (drill-down) — wrapped in SwipeShell. The render prop runs once per
+  // row in the swipe track so all slides exist in the DOM for native scroll-snap.
   const selectedStudent = selectedStudentId
     ? allStudents.find((s) => s.id === selectedStudentId) ?? null
     : null;
 
-  return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button
-            className={styles.backBtn}
-            onClick={() => {
-              setSelectedRowId(null);
-              setSelectedStudentId(null);
-              sessionStorage.removeItem('rows_selectedRowId');
-            }}
-          >
-            <ChevronRight size={16} style={{ transform: 'rotate(180deg)' }} />
-            All Rows
-          </button>
-          <div className={styles.divider} />
-          <Users size={20} color="var(--secondary)" />
-          <h3 className={styles.rowTitle}>{currentRow?.label || selectedRowId}</h3>
-          {currentRow?.advanced && (
-            <span className={styles.advancedBadge}>Advanced</span>
-          )}
-          {currentRow?.ratio && (
-            <span className={styles.ratioBadge}>{currentRow.ratio}</span>
-          )}
-          {staffOptions.length > 0 && (
-            <select
-              className={styles.teacherSelect}
-              value={teacherForRow}
-              onChange={(e) => handleTeacherChange(Number(e.target.value))}
-            >
-              <option value={0}>Assign teacher...</option>
-              {staffOptions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.first_name || ''} {s.last_name || ''}{clockedInIds.has(s.id) ? ' ●' : ''}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-        <ClockDisplay size="sm" />
-      </header>
+  const renderSlide = (row: RowSummary) => {
+    const flatRow = rows.find((r) => r.id === row.id);
+    if (!flatRow) return null;
+    const totalCapacity = flatRow.seats + flatRow.testingSeats;
+    const slideStudents = (assignments[row.id] || []).slice().sort((a, b) => {
+      const aAtt = attendanceMap.get(a.id);
+      const bAtt = attendanceMap.get(b.id);
+      const aRem = aAtt
+        ? getTimeRemaining(a.subjects, aAtt.check_in, { scheduleDetail: a.schedule_detail, sessionDurationMinutes: aAtt.session_duration_minutes })
+        : 999;
+      const bRem = bAtt
+        ? getTimeRemaining(b.subjects, bAtt.check_in, { scheduleDetail: b.schedule_detail, sessionDurationMinutes: bAtt.session_duration_minutes })
+        : 999;
+      return aRem - bRem;
+    });
+    const hasOpenSeat = slideStudents.length < totalCapacity;
 
-      <div className={styles.content}>
-        <div className={styles.gridWrap}>
-          <div
-            className={styles.cardGrid}
-            data-compact={selectedStudent ? '' : undefined}
+    return (
+      <div className={styles.cardGrid} data-compact={selectedStudent ? '' : undefined}>
+        {hasOpenSeat && (
+          <button
+            type="button"
+            className={styles.assignPlaceholder}
+            onClick={() => setPickerRowLabel(flatRow.label)}
           >
-            {/* Assign Student card — hidden at capacity (regular + testing seats) */}
-            {currentRow && rowStudents.length < (currentRow.seats + (currentRow.testingSeats ?? 0)) && (
-            <div
-              className={styles.assignCard}
-              onClick={() => setAssigningToRow(!assigningToRow)}
-            >
-              <Plus size={24} />
-              <span className={styles.assignLabel}>Assign Student</span>
-              {assigningToRow && (
-                <div
-                  className={styles.assignPopover}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {(() => {
-                    const assignedIds = new Set(rowStudents.map((s) => s.id));
-                    const available = checkedInStudents.filter(
-                      (s) => !assignedIds.has(s.id)
-                    );
-                    if (available.length === 0) {
+            <Plus size={24} aria-hidden="true" />
+            <span>+ Assign Student</span>
+          </button>
+        )}
+
+        {slideStudents.map((s) => {
+          const att = attendanceMap.get(s.id);
+          const remaining = getAdjustedTimeRemaining(s, att);
+          const studentFlagsObj = getStudentFlags(s.id);
+          const isMoveOpen = movingStudent === s.id;
+          const isSessionOpen = sessionPopoverStudent === s.id;
+          const scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+          const rawSessionDuration = att?.session_duration_minutes != null ? Number(att.session_duration_minutes) : null;
+          const currentDuration = sessionOptimistic[s.id] ?? s.schedule_detail?.[scheduleDay]?.duration ?? rawSessionDuration ?? 60;
+          const teacherNotes: TeacherNoteSummary[] = getTeacherNotes(studentFlagsObj).map((n, idx) => ({
+            id: `${s.id}-${idx}`,
+            text: n.text,
+            done: n.done,
+          }));
+
+          return (
+            <div key={s.id} className={styles.cardSlot}>
+              <RowViewCard
+                student={s}
+                attendance={att}
+                flags={studentFlagsObj}
+                timeRemainingMinutes={remaining}
+                teacherNotes={teacherNotes}
+                onCardTap={() => {
+                  // TODO: Step 6 wires DetailPanel routing; for now toggles existing StudentDetailPanel.
+                  setSelectedStudentId(selectedStudentId === s.id ? null : s.id);
+                }}
+                onDone={() => handleRowCheckout(s.id)}
+                onMove={() => setMovingStudent(isMoveOpen ? null : s.id)}
+                onTime={() => setSessionPopoverStudent(isSessionOpen ? null : s.id)}
+                onFlagToggle={(k) => toggleFlag(s.id, k)}
+                onChecklistToggle={(k) => toggleTask(s.id, k)}
+                onMedicalTap={() => {
+                  // TODO: Step 6 routes Medical tap to DetailPanel medical section
+                  setSelectedStudentId(s.id);
+                }}
+              />
+
+              {isMoveOpen && (
+                <div className={styles.movePopover} onClick={(e) => e.stopPropagation()}>
+                  {rows
+                    .filter((r) => r.id !== row.id)
+                    .map((r) => {
+                      const count = (assignments[r.id] || []).length;
+                      const cap = r.seats + (r.testingSeats ?? 0);
+                      const isFull = count >= cap;
                       return (
-                        <p className={styles.popoverEmpty}>
-                          No available students to add.
-                        </p>
+                        <button
+                          key={r.id}
+                          className={`${styles.moveItem} ${isFull ? styles.moveItemFull : ''}`}
+                          disabled={isFull}
+                          onClick={() => {
+                            moveStudentToRow(s.id, r.id);
+                            setMovingStudent(null);
+                          }}
+                        >
+                          <span>{r.label}</span>
+                          <span className={styles.moveSeatCount}>{count}/{cap}</span>
+                        </button>
                       );
-                    }
-                    return available.map((s) => (
-                      <button
-                        key={s.id}
-                        className={styles.popoverItem}
-                        onClick={() => {
-                          moveStudentToRow(s.id, selectedRowId);
-                          setAssigningToRow(false);
-                        }}
-                      >
-                        <span className={styles.popoverName}>
-                          {s.first_name} {s.last_name}
-                        </span>
-                        <span className={styles.popoverMeta}>
-                          <SubjectBadges subjects={parseSubjects(s.subjects)} />
-                          {s.classroom_position && (
-                            <PosBadge position={s.classroom_position} />
-                          )}
-                        </span>
-                      </button>
-                    ));
-                  })()}
+                    })}
+                </div>
+              )}
+
+              {isSessionOpen && att && (
+                <div className={styles.timePopoverAnchor} onClick={(e) => e.stopPropagation()}>
+                  <TimePopover
+                    attendanceId={att.id}
+                    studentId={s.id}
+                    initialDurationMinutes={currentDuration}
+                    initialCheckIn={att.check_in}
+                    isOpen
+                    onClose={() => setSessionPopoverStudent(null)}
+                  />
                 </div>
               )}
             </div>
-            )}
-
-            {rowStudents.map((s) => {
-              const att = attendanceMap.get(s.id);
-              const attendance = att;
-              const remaining = getAdjustedTimeRemaining(s, att);
-              const isOver = att ? remaining <= 0 : false;
-              const isWarn = att ? remaining > 0 && remaining <= 5 : false;
-              const isAlert = isOver || isWarn;
-              const isSel = selectedStudentId === s.id;
-              const subjects = parseSubjects(s.subjects);
-              const timeStr =
-                !att
-                  ? '—'
-                  : isOver
-                    ? remaining === 0
-                      ? '0'
-                      : `+${Math.abs(remaining)}`
-                    : String(remaining);
-              const isMoveOpen = movingStudent === s.id;
-              const flags = getFlags(s);
-              const studentFlagsObj = getStudentFlags(s.id);
-              const isTestingStudent = !!studentFlagsObj.taking_test;
-              const hasTeacherNote = getTeacherNotes(studentFlagsObj).some((n) => !n.done);
-              const hasPertinentNote = !!s.pertinent_note;
-              const flagTasks = studentFlagsObj.tasks || {};
-              const _scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-              const rawSessionDuration = att?.session_duration_minutes != null ? Number(att.session_duration_minutes) : null;
-              const currentDuration = sessionOptimistic[s.id] ?? s.schedule_detail?.[_scheduleDay]?.duration ?? rawSessionDuration ?? 60;
-              const isSessionOpen = sessionPopoverStudent === s.id;
-              const isNoteExpanded = expandedNoteStudent === s.id;
-
-              return (
-                <div
-                  key={s.id}
-                  className={`${styles.studentCard} ${
-                    isOver ? styles.cardOver : isWarn ? styles.cardWarn : ''
-                  } ${isSel ? styles.cardSelected : ''} ${isTestingStudent ? styles.cardTesting : ''}`}
-                  onClick={() =>
-                    setSelectedStudentId(isSel ? null : s.id)
-                  }
-                >
-                  {/* Teacher note indicator — top-right amber icon */}
-                  {hasTeacherNote && (
-                    <AlertCircle size={14} className={styles.teacherNoteIcon} />
-                  )}
-
-                  {/* 1. Pertinent note alert banner */}
-                  {hasPertinentNote && (
-                    <div
-                      className={styles.pertinentBanner}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedNoteStudent(isNoteExpanded ? null : s.id);
-                      }}
-                    >
-                      <Flag size={10} />
-                      <span className={styles.pertinentLabel}>Note</span>
-                    </div>
-                  )}
-                  {hasPertinentNote && isNoteExpanded && (
-                    <p className={styles.pertinentText}>{s.pertinent_note}</p>
-                  )}
-
-                  <div>
-                    {/* Testing table badge */}
-                    {isTestingStudent && (
-                      <div className={styles.testingBadgeRow}>
-                        <span className={styles.testingBadge}>Testing Table</span>
-                      </div>
-                    )}
-                    {/* 2. Name + time remaining */}
-                    <div className={styles.cardTop}>
-                      <h3
-                        className={styles.cardName}
-                        style={{
-                          color: isOver
-                            ? 'var(--red)'
-                            : isWarn
-                              ? '#92400e'
-                              : undefined,
-                        }}
-                      >
-                        {s.first_name} {s.last_name}
-                      </h3>
-                      <div className={styles.cardTopRight}>
-                        {attendance && (
-                          <span
-                            className={styles.cardTimeInline}
-                            style={{ color: isOver ? 'var(--red)' : isWarn ? '#92400e' : 'var(--neutral)' }}
-                          >
-                            <Clock size={12} />
-                            {isOver ? '+' : ''}{Math.abs(remaining ?? 0)}m
-                          </span>
-                        )}
-                        {isAlert && (
-                          <AlertCircle
-                            size={16}
-                            color={isOver ? 'var(--red)' : '#92400e'}
-                            className={styles.pulseIcon}
-                          />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 3. Subject+level badges */}
-                    <div className={styles.levelBadgeRow}>
-                      {subjects.includes('Math') && (
-                        <span className={styles.levelBadgeMath}>
-                          Math {s.current_level_math || ''}
-                        </span>
-                      )}
-                      {subjects.includes('Reading') && (
-                        <span className={styles.levelBadgeReading}>
-                          Reading {s.current_level_reading || ''}
-                        </span>
-                      )}
-                      {s.program_type === 'Kumon Connect' && (
-                        <span className={styles.kcBadge}>KC</span>
-                      )}
-                    </div>
-
-                    {/* Medical + position badges */}
-                    <div className={styles.cardBadges}>
-                      {s.medical_notes && s.medical_notes !== 'None' && s.medical_notes.trim() !== '' && (
-                        <span className={styles.medicalBadge}>
-                          <Heart size={8} /> Medical
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 4. Assigned flags only — icon-only colored circles */}
-                    {getFlags(s).length > 0 && (
-                      <div className={styles.flagRow} onClick={(e) => e.stopPropagation()}>
-                        {getFlags(s).map((key) => {
-                          const fc = flagConfig.find((f) => f.key === key);
-                          if (!fc) return null;
-                          return (
-                            <button
-                              key={key}
-                              className={styles.flagCircleBtn}
-                              onClick={() => toggleFlag(s.id, key)}
-                              title={fc.label}
-                            >
-                              <FlagPillIcon icon={fc.icon} />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* 5. Assigned checklist items only */}
-                    {(() => {
-                      const assignedTasks = checklistConfig.filter(
-                        (ci) => (flagTasks as Record<string, unknown>)[ci.key] !== undefined &&
-                                (flagTasks as Record<string, unknown>)[ci.key] !== null
-                      );
-                      if (assignedTasks.length === 0 && !flagTasks.custom) return null;
-                      return (
-                        <div className={styles.taskList} onClick={(e) => e.stopPropagation()}>
-                          {assignedTasks.map((ci) => {
-                            const isDone = (flagTasks as Record<string, unknown>)[ci.key] === true;
-                            return (
-                              <button
-                                key={ci.key}
-                                className={`${styles.taskChip} ${isDone ? styles.taskDone : styles.taskAssigned}`}
-                                onClick={() => toggleTask(s.id, ci.key)}
-                              >
-                                {isDone ? <CheckSquare size={10} color="#16a34a" /> : <Square size={10} />}
-                                <span>{ci.label}</span>
-                              </button>
-                            );
-                          })}
-                          {flagTasks.custom && (
-                            <button key="custom" className={styles.taskChip} onClick={(e) => e.stopPropagation()}>
-                              <Square size={10} />
-                              <span>{flagTasks.custom}</span>
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* 6. Time info + session adjust */}
-                  <div className={styles.cardBottom}>
-                    <div>
-                      <p
-                        className={styles.timeValue}
-                        style={{
-                          color: isOver
-                            ? 'var(--red)'
-                            : isWarn
-                              ? '#92400e'
-                              : undefined,
-                        }}
-                      >
-                        {timeStr}
-                        <span className={styles.timeUnit}>m</span>
-                      </p>
-                      <p
-                        className={styles.timeLabel}
-                        style={{
-                          color: isOver ? 'var(--red)' : undefined,
-                        }}
-                      >
-                        {isOver ? 'over time' : 'remaining'}
-                      </p>
-                    </div>
-                    <div className={styles.sessionAdjustWrap} onClick={(e) => e.stopPropagation()}>
-                      <button
-                        className={styles.sessionAdjustBtn}
-                        onClick={() => setSessionPopoverStudent(isSessionOpen ? null : s.id)}
-                        aria-label="Adjust session time"
-                      >
-                        <Clock size={14} />
-                      </button>
-                      {isSessionOpen && (
-                        <div className={styles.sessionPopover}>
-                          <p className={styles.sessionPopoverTitle}>Session Time</p>
-                          <div className={styles.sessionBtnRow}>
-                            <button
-                              className={styles.sessionDelta}
-                              onClick={() => att && persistAdjustment(att.id, s.id, Math.max(15, currentDuration - 15))}
-                              disabled={!att}
-                            >
-                              -15
-                            </button>
-                            <button
-                              className={styles.sessionDeltaMinor}
-                              onClick={() => att && persistAdjustment(att.id, s.id, Math.max(5, currentDuration - 5))}
-                              disabled={!att}
-                            >
-                              -5
-                            </button>
-                            <span className={styles.sessionCurrent}>
-                              {currentDuration}m
-                            </span>
-                            <button
-                              className={styles.sessionDeltaMinor}
-                              onClick={() => att && persistAdjustment(att.id, s.id, currentDuration + 5)}
-                              disabled={!att}
-                            >
-                              +5
-                            </button>
-                            <button
-                              className={styles.sessionDelta}
-                              onClick={() => att && persistAdjustment(att.id, s.id, currentDuration + 15)}
-                              disabled={!att}
-                            >
-                              +15
-                            </button>
-                          </div>
-                          <div className={styles.sessionPresets}>
-                            {[30, 45, 60, 75, 90].map((d) => (
-                              <button
-                                key={d}
-                                className={styles.sessionPreset}
-                                onClick={() => att && persistAdjustment(att.id, s.id, d)}
-                                disabled={!att}
-                              >
-                                {d}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={styles.cardActions}>
-                    <button
-                      className={styles.rowCheckoutBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRowCheckout(s.id);
-                      }}
-                    >
-                      <CheckCircle2 size={12} /> Done
-                    </button>
-                    <div className={styles.moveWrap}>
-                      <button
-                        className={styles.moveBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMovingStudent(isMoveOpen ? null : s.id);
-                        }}
-                      >
-                        <RefreshCw size={12} /> Move
-                      </button>
-                      {isMoveOpen && (
-                        <div
-                          className={styles.movePopover}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {rows
-                            .filter((r) => r.id !== selectedRowId)
-                            .map((r) => {
-                              const count = (assignments[r.id] || []).length;
-                              const totalCapacity = r.seats + (r.testingSeats ?? 0);
-                              const isFull = count >= totalCapacity;
-                              return (
-                                <button
-                                  key={r.id}
-                                  className={`${styles.moveItem} ${isFull ? styles.moveItemFull : ''}`}
-                                  disabled={isFull}
-                                  onClick={() => {
-                                    moveStudentToRow(s.id, r.id);
-                                    setMovingStudent(null);
-                                  }}
-                                >
-                                  <span>{r.label}</span>
-                                  <span className={styles.moveSeatCount}>
-                                    {count}/{totalCapacity}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {selectedStudent && (
-          <StudentDetailPanel
-            student={selectedStudent}
-            attendance={attendanceMap.get(selectedStudent.id)}
-            rowLabel={currentRow?.label}
-            flags={mergedFlagsMap[selectedStudent.id]}
-            onToggleFlag={(k) => toggleFlag(selectedStudent.id, k)}
-            onToggleTask={(k) => toggleTask(selectedStudent.id, k)}
-            onBulkUpdate={(updated) => bulkUpdateFlags(selectedStudent.id, updated)}
-            onSetTeacherNote={(n) => setTeacherNote(selectedStudent.id, n)}
-            onClose={() => setSelectedStudentId(null)}
-          />
-        )}
-
-        {flagSaveError && (
-          <div className={styles.flagErrorToast} role="alert">
-            <AlertCircle size={14} />
-            {flagSaveError}
-          </div>
-        )}
+          );
+        })}
       </div>
+    );
+  };
+
+  return (
+    <div className={styles.page}>
+      <SwipeShell
+        rows={swipeRows}
+        currentRowIndex={safeRowIndex}
+        onRowChange={handleRowChange}
+        topBar={
+          currentSwipeRow ? (
+            <RowMetaBar
+              currentRow={currentSwipeRow}
+              backHref="/rows"
+              staff={staffOptions}
+              currentTeacherId={teacherForRow}
+              clockedInIds={clockedInIds}
+              onTeacherChange={handleTeacherChange}
+            />
+          ) : null
+        }
+      >
+        {(row) => renderSlide(row)}
+      </SwipeShell>
+
+      {selectedStudent && (
+        <StudentDetailPanel
+          student={selectedStudent}
+          attendance={attendanceMap.get(selectedStudent.id)}
+          rowLabel={currentRow?.label}
+          flags={mergedFlagsMap[selectedStudent.id]}
+          onToggleFlag={(k) => toggleFlag(selectedStudent.id, k)}
+          onToggleTask={(k) => toggleTask(selectedStudent.id, k)}
+          onBulkUpdate={(updated) => bulkUpdateFlags(selectedStudent.id, updated)}
+          onSetTeacherNote={(n) => setTeacherNote(selectedStudent.id, n)}
+          onClose={() => setSelectedStudentId(null)}
+        />
+      )}
+
+      {flagSaveError && (
+        <div className={styles.flagErrorToast} role="alert">
+          <AlertCircle size={14} />
+          {flagSaveError}
+        </div>
+      )}
+
+      <AssignStudentPicker
+        isOpen={pickerRowLabel !== null}
+        rowLabel={pickerRowLabel ?? ''}
+        onSelect={async (student) => {
+          if (!pickerRowLabel) return;
+          await assignStudentToRow({
+            student_id: student.id,
+            row_label: pickerRowLabel,
+            session_date: today,
+            assigned_by: 'Staff',
+          });
+          setPickerRowLabel(null);
+        }}
+        onClose={() => setPickerRowLabel(null)}
+      />
     </div>
   );
 }

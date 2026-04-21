@@ -1,13 +1,16 @@
 'use client';
 
-import { useMemo, useCallback, useEffect, useRef } from 'react';
-import { Edit2, ChevronDown, Plus } from 'lucide-react';
+import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
+import { Edit2, Plus } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
-import SeatSlot from './SeatSlot';
+import WholeClassCard, { type WholeClassTeacherNote } from '@/components/classroom/WholeClassCard';
+import DragLockToggle from '@/components/classroom/DragLockToggle';
+import { getCenterToday } from '@/lib/dates';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { useClassroomTeachers, assignTeacherToRow } from '@/hooks/useRows';
 import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignmentFlags } from '@/lib/types';
+import { getTimeRemaining, getTeacherNotes } from '@/lib/types';
 import styles from './ClassroomOverview.module.css';
 
 interface FlatRow extends ClassroomRow {
@@ -89,7 +92,7 @@ export default function ClassroomOverview({
   const totalIn = checkedInStudents.length;
 
   // Teacher assignments
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCenterToday();
   const { data: teacherAssignments, mutate: mutateTeachers } = useClassroomTeachers(today);
   const { data: allStaff } = useActiveStaff();
   const { data: timeclockEntries } = useTimeclock(today);
@@ -141,10 +144,15 @@ export default function ClassroomOverview({
     return 'Staff';
   };
 
+  // Global drag lock — defaults to locked on every page mount; auto re-locks
+  // after a successful drop. State is intentionally not persisted across sessions.
+  const [isLocked, setIsLocked] = useState(true);
+
   const handleDrop = useCallback((rowId: string, isTesting?: boolean) => {
     if (dragStudent) {
       onMoveStudent(dragStudent.id, rowId, isTesting);
       onDragEnd();
+      setIsLocked(true);
     }
   }, [dragStudent, onMoveStudent, onDragEnd]);
 
@@ -202,16 +210,17 @@ export default function ClassroomOverview({
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h3 className={styles.title}>Live Classroom</h3>
-          <span className={styles.badge}>{totalIn} students checked in</span>
-        </div>
-        <div className={styles.headerRight}>
-          <button className={styles.setupBtn} onClick={onSetup}>
-            <Edit2 size={14} /> Classroom Setup
-          </button>
-          <ClockDisplay size="sm" />
-        </div>
+        <h3 className={styles.title}>Live Classroom</h3>
+        <span className={styles.badge}>{totalIn} students checked in</span>
+        <div className={styles.headerSpacer} />
+        <DragLockToggle
+          isLocked={isLocked}
+          onToggle={() => setIsLocked((v) => !v)}
+        />
+        <button className={styles.setupBtn} onClick={onSetup}>
+          <Edit2 size={16} /> Classroom Setup
+        </button>
+        <ClockDisplay size="sm" />
       </header>
 
       <div className={styles.content}>
@@ -241,26 +250,40 @@ export default function ClassroomOverview({
               >
                 {sectionRows.map((row) => {
                   const rs = assignments[row.id] || [];
-                  // Split students: those with taking_test go to testing slots
                   const regularStudents = rs.filter((s) => !flagsMap[s.id]?.taking_test);
                   const testingStudents = rs.filter((s) => !!flagsMap[s.id]?.taking_test);
 
-                  const tables: { s1: Student | null; s2: Student | null }[] = [];
-                  for (let t = 0; t < row.tables; t++) {
-                    tables.push({
-                      s1: regularStudents[t * 2] || null,
-                      s2: regularStudents[t * 2 + 1] || null,
-                    });
-                  }
-
-                  const testingTableCount = Math.ceil(row.testingSeats / 2);
-                  const testingTables: { s1: Student | null; s2: Student | null }[] = [];
-                  for (let t = 0; t < testingTableCount; t++) {
-                    testingTables.push({
-                      s1: testingStudents[t * 2] || null,
-                      s2: testingStudents[t * 2 + 1] || null,
-                    });
-                  }
+                  const renderCard = (s: Student) => {
+                    const att = attendanceMap.get(s.id);
+                    const flags = flagsMap[s.id];
+                    const remaining = att
+                      ? getTimeRemaining(s.subjects, att.check_in, {
+                          scheduleDetail: s.schedule_detail,
+                          sessionDurationMinutes: att.session_duration_minutes,
+                        })
+                      : 0;
+                    const teacherNotes: WholeClassTeacherNote[] = getTeacherNotes(flags).map((n, idx) => ({
+                      id: `${s.id}-${idx}`,
+                      text: n.text,
+                      done: n.done,
+                    }));
+                    return (
+                      <WholeClassCard
+                        key={s.id}
+                        student={s}
+                        attendance={att}
+                        flags={flags}
+                        timeRemainingMinutes={remaining}
+                        teacherNotes={teacherNotes}
+                        isDraggable={!isLocked}
+                        onCardTap={() => onSelectStudent(s)}
+                        onDragStart={() => onDragStart(s)}
+                        onDragEnd={onDragEnd}
+                        onTouchDragStart={() => onDragStart(s)}
+                        isDragging={dragStudent?.id === s.id}
+                      />
+                    );
+                  };
 
                   return (
                     <div
@@ -309,41 +332,8 @@ export default function ClassroomOverview({
                         </span>
                       </div>
 
-                      <div className={styles.tables}>
-                        {tables.map((table, ti) => {
-                          const bothEmpty = !table.s1 && !table.s2;
-                          return (
-                            <div
-                              key={ti}
-                              className={`${styles.tablePair} ${bothEmpty ? styles.mobileHideEmpty : ''}`}
-                            >
-                              <div className={!table.s1 ? styles.mobileHideEmpty : undefined}>
-                                <SeatSlot
-                                  student={table.s1}
-                                  attendance={table.s1 ? attendanceMap.get(table.s1.id) : undefined}
-                                  flags={table.s1 ? flagsMap[table.s1.id] : undefined}
-                                  onDragStart={() => table.s1 && onDragStart(table.s1)}
-                                  onDragEnd={onDragEnd}
-                                  onTouchDragStart={() => table.s1 && onDragStart(table.s1)}
-                                  onSelect={() => table.s1 && onSelectStudent(table.s1)}
-                                  isDragging={dragStudent?.id === table.s1?.id}
-                                />
-                              </div>
-                              <div className={!table.s2 ? styles.mobileHideEmpty : undefined}>
-                                <SeatSlot
-                                  student={table.s2}
-                                  attendance={table.s2 ? attendanceMap.get(table.s2.id) : undefined}
-                                  flags={table.s2 ? flagsMap[table.s2.id] : undefined}
-                                  onDragStart={() => table.s2 && onDragStart(table.s2)}
-                                  onDragEnd={onDragEnd}
-                                  onTouchDragStart={() => table.s2 && onDragStart(table.s2)}
-                                  onSelect={() => table.s2 && onSelectStudent(table.s2)}
-                                  isDragging={dragStudent?.id === table.s2?.id}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
+                      <div className={styles.cardStack} onClick={(e) => e.stopPropagation()}>
+                        {regularStudents.map(renderCard)}
                       </div>
 
                       {rs.length < row.seats && (
@@ -356,7 +346,6 @@ export default function ClassroomOverview({
                         </div>
                       )}
 
-                      {/* Testing table section */}
                       {row.testingSeats > 0 && (
                         <div
                           className={`${styles.testingSection} ${dragStudent ? styles.testingSectionDropTarget : ''}`}
@@ -384,33 +373,8 @@ export default function ClassroomOverview({
                               {testingStudents.length}/{row.testingSeats}
                             </span>
                           </div>
-                          <div className={styles.tables}>
-                            {testingTables.map((table, ti) => (
-                              <div key={ti} className={styles.tablePair}>
-                                <SeatSlot
-                                  student={table.s1}
-                                  attendance={table.s1 ? attendanceMap.get(table.s1.id) : undefined}
-                                  flags={table.s1 ? flagsMap[table.s1.id] : undefined}
-                                  onDragStart={() => table.s1 && onDragStart(table.s1)}
-                                  onDragEnd={onDragEnd}
-                                  onTouchDragStart={() => table.s1 && onDragStart(table.s1)}
-                                  onSelect={() => table.s1 && onSelectStudent(table.s1)}
-                                  isDragging={dragStudent?.id === table.s1?.id}
-                                  isTesting
-                                />
-                                <SeatSlot
-                                  student={table.s2}
-                                  attendance={table.s2 ? attendanceMap.get(table.s2.id) : undefined}
-                                  flags={table.s2 ? flagsMap[table.s2.id] : undefined}
-                                  onDragStart={() => table.s2 && onDragStart(table.s2)}
-                                  onDragEnd={onDragEnd}
-                                  onTouchDragStart={() => table.s2 && onDragStart(table.s2)}
-                                  onSelect={() => table.s2 && onSelectStudent(table.s2)}
-                                  isDragging={dragStudent?.id === table.s2?.id}
-                                  isTesting
-                                />
-                              </div>
-                            ))}
+                          <div className={styles.cardStack}>
+                            {testingStudents.map(renderCard)}
                           </div>
                           {testingStudents.length < row.testingSeats && (
                             <div
@@ -423,7 +387,6 @@ export default function ClassroomOverview({
                           )}
                         </div>
                       )}
-
                     </div>
                   );
                 })}

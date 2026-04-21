@@ -124,7 +124,10 @@ export default function AttendancePage() {
   // Check-in popup
   const [checkInPopupStudent, setCheckInPopupStudent] = useState<Student | null>(null);
   const [checkInEditPrep, setCheckInEditPrep] = useState<{
-    flags: string[]; checklist: string[]; teacherNote: string;
+    flags: string[];
+    checklist: string[];
+    teacherNote: string;
+    session_duration_minutes?: number | string | null;
   } | null>(null);
 
   // Search dropdown (all active students)
@@ -414,7 +417,11 @@ export default function AttendancePage() {
   /* ── Edit class prep for already-checked-in student ── */
   const handleEditPrep = (student: Student) => {
     const assignment = assignments?.find((a) => a.student_id === student.id);
-    setCheckInEditPrep(parseExistingFlags(assignment?.flags));
+    const currentAttendance = activeAttendanceMap.get(student.id);
+    setCheckInEditPrep({
+      ...parseExistingFlags(assignment?.flags),
+      session_duration_minutes: currentAttendance?.session_duration_minutes ?? null,
+    });
     setCheckInPopupStudent(student);
   };
 
@@ -439,6 +446,23 @@ export default function AttendancePage() {
         await updateStudentFlags(options.studentId, flags);
       } catch (err) {
         console.error('handleEditPrep: failed to update flags', err);
+      }
+      // Bug 86agkv2wu fix: Update Class Prep also persists session_duration_minutes when changed.
+      // Number() coercion both sides: WordPress returns numeric columns as strings, so a raw
+      // !== check against a number always fires and the backend rejects the empty PUT with 400.
+      const currentAttendance = activeAttendanceMap.get(options.studentId);
+      if (
+        currentAttendance &&
+        options.sessionMinutes !== undefined &&
+        Number(options.sessionMinutes) !== Number(currentAttendance.session_duration_minutes)
+      ) {
+        try {
+          await updateAttendance(currentAttendance.id, {
+            session_duration_minutes: Number(options.sessionMinutes),
+          });
+        } catch (err) {
+          console.error('handleEditPrep: failed to update session duration', err);
+        }
       }
       setCheckInPopupStudent(null);
       setCheckInEditPrep(null);
@@ -481,7 +505,9 @@ export default function AttendancePage() {
         flags.teacher_note = options.noteForTeacher;
       }
       try {
-        const todayDate = new Date().toISOString().split('T')[0];
+        // Use the same centerToday derived at the top of the component (line ~176)
+        // so this write hits the same SWR cache key the row view reads from.
+        const todayDate = centerToday;
         await assignStudentToRow({
           student_id: options.studentId,
           row_label: 'Unassigned',
@@ -602,9 +628,10 @@ export default function AttendancePage() {
   };
 
   /* ── Time remaining helper ── */
-  const getRemaining = (student: Student, checkInTime: string): number => {
+  const getRemaining = (student: Student, checkInTime: string, sessionDurationMinutes?: number): number => {
     return getTimeRemaining(student.subjects, checkInTime, {
       scheduleDetail: student.schedule_detail,
+      sessionDurationMinutes,
     });
   };
 
@@ -915,7 +942,7 @@ export default function AttendancePage() {
                 ) : (
                   filteredCheckedIn.map(({ attendance: att, student: s }) => {
                     if (!s) return null;
-                    const remaining = getRemaining(s, att.check_in);
+                    const remaining = getRemaining(s, att.check_in, att.session_duration_minutes);
                     const remClass = remainingClass(remaining);
                     const menuKey = `checkedin-${att.id}`;
                     return (

@@ -1,12 +1,13 @@
 import useSWR, { mutate } from 'swr';
 import { api } from '@/lib/api';
+import { getCenterToday } from '@/lib/dates';
 import type { Absence, CreateAbsenceRequest } from '@/lib/types';
 
 const dateKey = (date: string) => `absences-${date}`;
 
 /** Fetch absences for a date */
 export function useAbsences(date?: string) {
-  const d = date || new Date().toISOString().split('T')[0];
+  const d = date || getCenterToday();
 
   return useSWR<Absence[]>(
     dateKey(d),

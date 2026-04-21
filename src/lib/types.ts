@@ -513,7 +513,7 @@ export interface RowAssignmentFlags {
   needs_help?: boolean;
   work_with_amy?: boolean;
   needs_homework?: boolean;
-  taking_test?: boolean;
+  taking_test?: boolean | { math?: string; reading?: string };
   teacher_note?: string | null;
   teacher_notes?: Array<{ text: string; done: boolean }>;
   tasks?: Record<string, boolean | string | null | undefined>;

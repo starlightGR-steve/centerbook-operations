@@ -1,9 +1,10 @@
 import useSWR, { mutate as globalMutate } from 'swr';
 import { api } from '@/lib/api';
+import { getCenterToday } from '@/lib/dates';
 import type { RowAssignment, RowAssignmentFlags, AssignRowRequest, RowTeacher, AssignRowTeacherRequest } from '@/lib/types';
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0];
+  return getCenterToday();
 }
 
 /** SWR key for classroom assignments */
@@ -46,9 +47,19 @@ export function buildOverridesMap(
   rowLabelToId: Record<string, string>
 ): Record<string, string> {
   if (!assignments) return {};
+  // Bug 2 fix: normalize both sides of the row_label lookup. Backend assignments
+  // can carry slightly different capitalization or whitespace from the saved
+  // classroom config (e.g. "All EL Seats" stored vs "ALL EL Seats" in config),
+  // dropping students from their row bucket under strict equality.
+  const normalizedLookup: Record<string, string> = {};
+  Object.entries(rowLabelToId).forEach(([label, rowId]) => {
+    normalizedLookup[label.toLowerCase().trim()] = rowId;
+  });
+
   const map: Record<string, string> = {};
   assignments.forEach((a) => {
-    const rowId = rowLabelToId[a.row_label];
+    const key = (a.row_label || '').toLowerCase().trim();
+    const rowId = normalizedLookup[key];
     if (rowId) {
       map[String(a.student_id)] = rowId;
     }

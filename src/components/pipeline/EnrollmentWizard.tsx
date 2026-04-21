@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { Check, ChevronRight, Plus, Search } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { api } from '@/lib/api';
+import { getCenterToday } from '@/lib/dates';
 import type { Family, Student, Contact } from '@/lib/types';
 import styles from './EnrollmentWizard.module.css';
 
@@ -201,7 +202,7 @@ export default function EnrollmentWizard({ family, onClose, onComplete }: Enroll
     setSaving(true);
     setError(null);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getCenterToday();
       const created: Student[] = [];
       for (const form of studentForms) {
         const s = await api.students.create({

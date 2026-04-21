@@ -1,0 +1,151 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sectionLabel {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--secondary-dark);
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.subjectBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--touch-min);
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2_5);
+  cursor: pointer;
+  flex: 1;
+  min-height: var(--touch-min);
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.track {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 16px;
+  background: var(--color-done-bg);
+  border-radius: 999px;
+  flex-shrink: 0;
+  transition: background-color 150ms ease;
+}
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  background: var(--white);
+  border-radius: 50%;
+  transition: transform 150ms ease;
+}
+
+.switch input:checked + .track {
+  background: var(--secondary);
+}
+
+.switch input:checked + .track .thumb {
+  transform: translateX(14px);
+}
+
+.switch input:focus-visible + .track {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.subjectLabel {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.subjectPill {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--white);
+  padding: var(--space-1) 0.6875rem;
+  border-radius: var(--radius-btn);
+  min-height: 1.625rem;
+  line-height: 1;
+}
+
+.pill_math { background: var(--math); }
+.pill_reading { background: var(--reading); }
+
+.levelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: 2.625rem; /* aligns under switch label */
+}
+
+.levelLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--neutral);
+}
+
+.levelSelect {
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 500;
+  padding: var(--space-1_5) var(--space-3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--text);
+  min-height: var(--touch-min);
+  cursor: pointer;
+}
+
+.levelSelect:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--neutral);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .thumb {
+    transition: none;
+  }
+}

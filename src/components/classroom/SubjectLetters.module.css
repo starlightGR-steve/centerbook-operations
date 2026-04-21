@@ -1,0 +1,18 @@
+.row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.1875rem;
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.math {
+  color: var(--color-math-text);
+}
+
+.reading {
+  color: var(--color-reading-text);
+}

@@ -12,6 +12,7 @@ import type { UndoToastItem } from '@/components/ui/UndoToast';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { getSessionDuration, formatTimeKey, formatTime } from '@/lib/types';
+import { getCenterToday } from '@/lib/dates';
 import type { Student, Staff, TimeEntry } from '@/lib/types';
 import KioskSkeleton from './KioskSkeleton';
 import CheckInPopup from './CheckInPopup';
@@ -240,7 +241,7 @@ export default function KioskPage() {
       if (Object.keys(tasks).length > 0) flags.tasks = tasks;
       if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getCenterToday();
         await updateStudentFlags(options.studentId, flags, today);
       } catch {
         // Non-critical -- flags will be set manually in row view

@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import {
-  X, Heart, Minus, Plus, Check, Send, AlertTriangle, ExternalLink, Clock,
+  X, Heart, Check, Send, AlertTriangle, ExternalLink,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { parseSubjects, parseScheduleDays, formatTimeKey, getSessionDuration } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
 import { useVisitPlan } from '@/hooks/useVisitPlan';
+import TimePopover from '@/components/classroom/TimePopover';
 import styles from './CheckInPopup.module.css';
 
 export interface CheckInOptions {
@@ -32,10 +33,13 @@ interface CheckInPopupProps {
     flags: string[];
     checklist: string[];
     teacherNote: string;
+    /** Bug 1 fix (86agkv2wu): hydrated from cb_attendance.session_duration_minutes
+     *  in edit mode so the popup doesn't fall back to the schedule default and
+     *  silently overwrite a staff-overridden duration on Update Class Prep.
+     *  Stringly-typed because WordPress returns numeric columns as strings. */
+    session_duration_minutes?: number | string | null;
   };
 }
-
-const PRESET_TIMES = [30, 45, 60, 90];
 
 // Checklist items and flag options are now loaded from center config via hooks
 
@@ -77,8 +81,11 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   // Visit plan — pre-populate Class Prep from planned items
   const { activeItems: visitPlanItems } = useVisitPlan(isEditMode ? null : student.id);
 
-  // State — use schedule_detail duration if available, else fall through getSessionDuration priority
-  const defaultMinutes = getSessionDuration(subjects, { scheduleDetail: student.schedule_detail });
+  // State — in edit mode, prefer the existing attendance value (hydrated by the
+  // caller) over the schedule default; otherwise fall through getSessionDuration.
+  const defaultMinutes = existingPrep?.session_duration_minutes != null
+    ? Number(existingPrep.session_duration_minutes)
+    : getSessionDuration(subjects, { scheduleDetail: student.schedule_detail });
   const [sessionMinutes, setSessionMinutes] = useState(defaultMinutes);
   const [pickupContactId, setPickupContactId] = useState<number | null>(null);
   const [selectedChecklist, setSelectedChecklist] = useState<string[]>(existingPrep?.checklist ?? []);
@@ -87,9 +94,10 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   const [notesList, setNotesList] = useState<string[]>([]);
   const [currentNote, setCurrentNote] = useState(existingPrep?.teacherNote ?? '');
   const [confirming, setConfirming] = useState(false);
-  const [showEndTime, setShowEndTime] = useState(false);
-  const [endTime, setEndTime] = useState('');
   const [visitPlanApplied, setVisitPlanApplied] = useState(false);
+
+  // Frozen baseline so the TimePopover's End time doesn't drift while the popup is open.
+  const checkInBaselineRef = useRef<string>(new Date().toISOString());
 
   // Apply visit plan items once when they load (only for new check-ins, not edits)
   // Note: teacher_note is NOT pre-filled into the input — it auto-applies in flags on confirm
@@ -117,23 +125,6 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   }, [contacts, pickupContactId]);
 
   const selectedContact = contacts?.find((c) => c.id === pickupContactId);
-
-  const adjustTime = (delta: number) => {
-    setSessionMinutes((prev) => Math.max(15, Math.min(180, prev + delta)));
-  };
-
-  const handleEndTimeChange = (value: string) => {
-    setEndTime(value);
-    if (!value) return;
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const [h, m] = value.split(':').map(Number);
-    const endMinutes = h * 60 + m;
-    const duration = endMinutes - nowMinutes;
-    if (duration > 0 && duration <= 180) {
-      setSessionMinutes(duration);
-    }
-  };
 
   const toggleChecklist = (item: string) => {
     setSelectedChecklist((prev) =>
@@ -249,45 +240,17 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
               )}
             </div>
 
-            {/* Session Time */}
+            {/* Session Time — TimePopover in draft mode (no PUT until check-in confirms) */}
             <div className={styles.col}>
               <span className={styles.colLabel}>Session Time</span>
-              <div className={styles.timeDisplay}>{sessionMinutes}m</div>
-              <div className={styles.timeControls}>
-                <button className={styles.timeBtn} onClick={() => adjustTime(-5)}>-5</button>
-                <button className={styles.timeBtn} onClick={() => adjustTime(-1)}>-1</button>
-                <span className={styles.timeValue}>{sessionMinutes}</span>
-                <button className={styles.timeBtn} onClick={() => adjustTime(1)}>+1</button>
-                <button className={styles.timeBtn} onClick={() => adjustTime(5)}>+5</button>
-              </div>
-              <div className={styles.presets}>
-                {PRESET_TIMES.map((t) => (
-                  <button
-                    key={t}
-                    className={`${styles.presetBtn} ${sessionMinutes === t ? styles.presetActive : ''}`}
-                    onClick={() => setSessionMinutes(t)}
-                  >
-                    {t}m
-                  </button>
-                ))}
-              </div>
-              <button
-                className={`${styles.endTimeToggle} ${showEndTime ? styles.endTimeToggleActive : ''}`}
-                onClick={() => setShowEndTime((v) => !v)}
-              >
-                <Clock size={12} /> Set end time
-              </button>
-              {showEndTime && (
-                <div className={styles.endTimeRow}>
-                  <input
-                    type="time"
-                    className={styles.endTimeInput}
-                    value={endTime}
-                    onChange={(e) => handleEndTimeChange(e.target.value)}
-                  />
-                  {endTime && <span className={styles.endTimeDuration}>{sessionMinutes}m from now</span>}
-                </div>
-              )}
+              <TimePopover
+                studentId={student.id}
+                initialDurationMinutes={sessionMinutes}
+                initialCheckIn={checkInBaselineRef.current}
+                isOpen
+                onClose={() => { /* no-op: parent owns visibility */ }}
+                onDraftChange={({ durationMinutes }) => setSessionMinutes(durationMinutes)}
+              />
             </div>
 
             {/* Schedule */}

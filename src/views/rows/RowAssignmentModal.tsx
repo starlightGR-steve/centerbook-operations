@@ -5,6 +5,7 @@ import Modal from '@/components/ui/Modal';
 import StudentRow from '@/components/StudentRow';
 import type { Student } from '@/lib/types';
 import { assignStudentToRow } from '@/hooks/useRows';
+import { getCenterToday } from '@/lib/dates';
 
 interface RowAssignmentModalProps {
   open: boolean;
@@ -19,7 +20,7 @@ export default function RowAssignmentModal({
   rowLabel,
   availableStudents,
 }: RowAssignmentModalProps) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCenterToday();
 
   const handleAssign = async (student: Student) => {
     await assignStudentToRow({

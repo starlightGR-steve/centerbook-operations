@@ -7,6 +7,7 @@
    - Library endpoints use live API
    ═══════════════════════════════════════════ */
 
+import { getCenterToday } from './dates';
 import type {
   ApiResponse,
   Notification,
@@ -263,7 +264,7 @@ export const api = {
   // ── Attendance (Kiosk) ──
   attendance: {
     today: (date?: string) => {
-      const d = date || new Date().toISOString().split('T')[0];
+      const d = date || getCenterToday();
       return directFetch<Attendance[]>(`/attendance?date=${d}`);
     },
     active: () => directFetch<Attendance[]>('/attendance?active=1'),
@@ -297,7 +298,7 @@ export const api = {
   // ── Timeclock (Staff) ──
   timeclock: {
     today: (date?: string) => {
-      const d = date || new Date().toISOString().split('T')[0];
+      const d = date || getCenterToday();
       return directFetch<TimeEntry[]>(`/timeclock?date=${d}`);
     },
     forStaff: (staffId: number, from?: string, to?: string) => {
@@ -440,7 +441,7 @@ export const api = {
   classroom: {
     /** Get all student row assignments for a date */
     assignments: (date?: string) => {
-      const d = date || new Date().toISOString().split('T')[0];
+      const d = date || getCenterToday();
       return directFetch<RowAssignment[]>(`/classroom/assignments?date=${d}`);
     },
 
@@ -453,7 +454,7 @@ export const api = {
 
     /** Remove a student's row assignment for a date */
     unassign: (studentId: number, date?: string) => {
-      const d = date || new Date().toISOString().split('T')[0];
+      const d = date || getCenterToday();
       return directFetch<{ deleted: boolean }>(
         `/classroom/assignments/${studentId}?date=${d}`,
         { method: 'DELETE' }
@@ -462,7 +463,7 @@ export const api = {
 
     /** Update flags on a student's row assignment */
     updateFlags: (studentId: number, flags: RowAssignmentFlags, date?: string) => {
-      const d = date || new Date().toISOString().split('T')[0];
+      const d = date || getCenterToday();
       return directFetch<RowAssignment>(
         `/classroom/assignments/${studentId}/flags?date=${d}`,
         { method: 'PATCH', body: JSON.stringify({ flags }) }
@@ -471,7 +472,7 @@ export const api = {
 
     /** Get all teacher-to-row assignments for a date */
     teachers: (date?: string) => {
-      const d = date || new Date().toISOString().split('T')[0];
+      const d = date || getCenterToday();
       return directFetch<RowTeacher[]>(`/classroom/teachers?date=${d}`);
     },
 

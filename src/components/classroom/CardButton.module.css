@@ -1,0 +1,74 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1_5);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) 0.875rem;
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  flex: 1;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+/* Done variant — accent orange */
+.btn_done {
+  background: var(--accent);
+  color: var(--white);
+  border: 1.5px solid var(--accent);
+}
+.btn_done:hover:not(:disabled) {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+/* Move variant — neutral white */
+.btn_move {
+  background: var(--white);
+  color: var(--text);
+  border: 1.5px solid #d3d1c7;
+}
+.btn_move:hover:not(:disabled) {
+  background: var(--primary-ul);
+}
+
+/* Time variant — teal outline */
+.btn_time {
+  background: var(--white);
+  color: var(--secondary);
+  border: 1.5px solid var(--secondary);
+}
+.btn_time:hover:not(:disabled) {
+  background: var(--secondary-ul);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}

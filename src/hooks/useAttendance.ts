@@ -1,10 +1,11 @@
 import useSWR, { mutate } from 'swr';
 import { api } from '@/lib/api';
+import { getCenterToday } from '@/lib/dates';
 import type { Attendance, CheckInRequest, CheckOutRequest } from '@/lib/types';
 
 /** Fetch today's attendance records (date-filtered) */
 export function useAttendance(date?: string, refreshInterval = 10000) {
-  const d = date || new Date().toISOString().split('T')[0];
+  const d = date || getCenterToday();
 
   return useSWR<Attendance[]>(
     `attendance-${d}`,
@@ -33,7 +34,7 @@ export function useCheckedInStudents(date?: string, refreshInterval?: number) {
 
 /** Revalidate both attendance caches */
 async function revalidateAll(date?: string) {
-  const d = date || new Date().toISOString().split('T')[0];
+  const d = date || getCenterToday();
   await Promise.all([
     mutate(`attendance-${d}`),
     mutate('attendance-active'),

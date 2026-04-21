@@ -1,0 +1,177 @@
+.card {
+  position: relative;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1 1 17.5rem;
+  /* Spec specifies min-width 17.5rem; loosened to 0 here so cards can shrink
+     inside narrower row cards on smaller viewports without overflowing. */
+  min-width: 0;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  transition: border-color 150ms ease, opacity 150ms ease;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.cardDragging {
+  opacity: 0.5;
+}
+
+/* KC enrollment — left strip + extra padding-left */
+.cardKC {
+  padding-left: 1.125rem;
+}
+
+.kcStrip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--color-kc-strip);
+  border-radius: var(--radius-btn) 0 0 var(--radius-btn);
+}
+
+/* Testing — 2px purple border, tinted bg, padding shrinks 2px each side */
+.cardTesting {
+  border-width: 2px;
+  border-color: var(--color-testing);
+  background: var(--color-testing-bg);
+  padding-top: calc(var(--space-3) - 1px);
+  padding-bottom: calc(var(--space-3) - 1px);
+  padding-right: calc(var(--space-4) - 1px);
+  padding-left: calc(var(--space-4) - 1px);
+}
+.cardTesting.cardKC {
+  padding-left: calc(1.125rem - 1px);
+}
+
+/* Warning — 3px yellow border, name + timer go amber. Tint retained when also testing. */
+.cardWarn {
+  border-width: 3px;
+  border-color: var(--color-warn-border);
+  padding-top: calc(var(--space-3) - 2px);
+  padding-bottom: calc(var(--space-3) - 2px);
+  padding-right: calc(var(--space-4) - 2px);
+  padding-left: calc(var(--space-4) - 2px);
+}
+.cardWarn.cardKC {
+  padding-left: calc(1.125rem - 2px);
+}
+.cardWarn .name,
+.cardWarn .timerNumber,
+.cardWarn .timerUnit {
+  color: var(--color-warn-text);
+}
+
+/* Overtime — 3px red border, name + timer red. Tint retained when also testing. */
+.cardOver {
+  border-width: 3px;
+  border-color: var(--color-over-border);
+  padding-top: calc(var(--space-3) - 2px);
+  padding-bottom: calc(var(--space-3) - 2px);
+  padding-right: calc(var(--space-4) - 2px);
+  padding-left: calc(var(--space-4) - 2px);
+}
+.cardOver.cardKC {
+  padding-left: calc(1.125rem - 2px);
+}
+.cardOver .name,
+.cardOver .timerNumber,
+.cardOver .timerUnit {
+  color: var(--color-over-text);
+}
+
+/* TESTING tab — white bg, purple text (reverse of Row View) */
+.testingTab {
+  position: absolute;
+  top: -11px;
+  left: 14px;
+  background: var(--white);
+  color: var(--color-testing);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 0.5rem;
+  border-radius: 0.1875rem;
+  z-index: 3;
+}
+
+/* Red flag tab — top-right */
+.redFlagTab {
+  position: absolute;
+  right: 0.25rem;
+  top: -0.75rem;
+  width: 22px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-over-border);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Content group — wraps name, subject letters, medical, flag chips */
+.contentGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  row-gap: var(--space-1_5);
+  column-gap: var(--space-2);
+}
+
+.name {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.medicalHeart {
+  color: #e01c3c;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* Timer — right side */
+.timer {
+  display: inline-flex;
+  align-items: baseline;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.timerNumber {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.timerUnit {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin-left: 0.0625rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}
