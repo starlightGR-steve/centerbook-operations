@@ -124,7 +124,10 @@ export default function AttendancePage() {
   // Check-in popup
   const [checkInPopupStudent, setCheckInPopupStudent] = useState<Student | null>(null);
   const [checkInEditPrep, setCheckInEditPrep] = useState<{
-    flags: string[]; checklist: string[]; teacherNote: string;
+    flags: string[];
+    checklist: string[];
+    teacherNote: string;
+    session_duration_minutes?: number | string | null;
   } | null>(null);
 
   // Search dropdown (all active students)
@@ -414,7 +417,11 @@ export default function AttendancePage() {
   /* ── Edit class prep for already-checked-in student ── */
   const handleEditPrep = (student: Student) => {
     const assignment = assignments?.find((a) => a.student_id === student.id);
-    setCheckInEditPrep(parseExistingFlags(assignment?.flags));
+    const currentAttendance = activeAttendanceMap.get(student.id);
+    setCheckInEditPrep({
+      ...parseExistingFlags(assignment?.flags),
+      session_duration_minutes: currentAttendance?.session_duration_minutes ?? null,
+    });
     setCheckInPopupStudent(student);
   };
 

@@ -33,6 +33,11 @@ interface CheckInPopupProps {
     flags: string[];
     checklist: string[];
     teacherNote: string;
+    /** Bug 1 fix (86agkv2wu): hydrated from cb_attendance.session_duration_minutes
+     *  in edit mode so the popup doesn't fall back to the schedule default and
+     *  silently overwrite a staff-overridden duration on Update Class Prep.
+     *  Stringly-typed because WordPress returns numeric columns as strings. */
+    session_duration_minutes?: number | string | null;
   };
 }
 
@@ -76,8 +81,11 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   // Visit plan — pre-populate Class Prep from planned items
   const { activeItems: visitPlanItems } = useVisitPlan(isEditMode ? null : student.id);
 
-  // State — use schedule_detail duration if available, else fall through getSessionDuration priority
-  const defaultMinutes = getSessionDuration(subjects, { scheduleDetail: student.schedule_detail });
+  // State — in edit mode, prefer the existing attendance value (hydrated by the
+  // caller) over the schedule default; otherwise fall through getSessionDuration.
+  const defaultMinutes = existingPrep?.session_duration_minutes != null
+    ? Number(existingPrep.session_duration_minutes)
+    : getSessionDuration(subjects, { scheduleDetail: student.schedule_detail });
   const [sessionMinutes, setSessionMinutes] = useState(defaultMinutes);
   const [pickupContactId, setPickupContactId] = useState<number | null>(null);
   const [selectedChecklist, setSelectedChecklist] = useState<string[]>(existingPrep?.checklist ?? []);

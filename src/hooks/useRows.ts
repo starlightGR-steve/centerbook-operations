@@ -46,6 +46,11 @@ export function buildOverridesMap(
   rowLabelToId: Record<string, string>
 ): Record<string, string> {
   if (!assignments) return {};
+  // TEMP DEBUG: Bug 2 (assigned student missing from Row View). Remove after confirming.
+  if (typeof window !== 'undefined') {
+    console.log('[DEBUG] rowLabelToId', rowLabelToId);
+    console.log('[DEBUG] assignment row_labels', assignments.map((a) => ({ student_id: a.student_id, row_label: a.row_label })));
+  }
   const map: Record<string, string> = {};
   assignments.forEach((a) => {
     const rowId = rowLabelToId[a.row_label];
