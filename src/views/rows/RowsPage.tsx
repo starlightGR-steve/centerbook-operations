@@ -8,8 +8,8 @@ import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClassroomOverview from './ClassroomOverview';
 import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
-import { useCheckedInStudents } from '@/hooks/useAttendance';
-import { useClassroomAssignments, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
+import { useActiveAttendance } from '@/hooks/useAttendance';
+import { useClassroomAssignmentsActive, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags, getAttendanceIdForStudent } from '@/hooks/useRows';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { useClassroomConfig } from '@/hooks/useClassroomConfig';
@@ -90,10 +90,17 @@ export default function RowsPage() {
   // expandedNoteStudent removed in Step 1: pertinent_note now surfaces via Detail Panel (wired in Step 6).
 
   const { data: allStudents } = useStudents();
-  const { data: checkedIn } = useCheckedInStudents(undefined, 10000);
+  // 86ah0ex1k: session-scoped check-in feed. Live Class follows the active
+  // attendance set (any student currently checked in, regardless of date) so
+  // mid-session midnight rollovers don't drop students from the row view.
+  const { data: activeAttendance } = useActiveAttendance(10000);
+  const checkedIn = activeAttendance;
 
   const today = getCenterToday();
-  const { data: persistedAssignments } = useClassroomAssignments(today);
+  // 86ah0ex1k: session-scoped row assignments (v2.51.0+). Returns assignments
+  // bound to active check-ins regardless of session_date.
+  const { data: persistedAssignments } = useClassroomAssignmentsActive();
+  // Teacher assignments stay date-scoped per backend scope decision.
   const { data: teacherAssignments } = useClassroomTeachers(today);
   const { data: allStaff } = useActiveStaff();
   const { data: timeclockEntries } = useTimeclock(today);
@@ -179,25 +186,35 @@ export default function RowsPage() {
     return optimisticFlags[studentId] || flagsMap[studentId] || {};
   }, [optimisticFlags, flagsMap]);
 
+  // 86ah0ex1k: bind classroom writes to the active attendance row when known.
+  // Falls back to undefined if the student isn't currently checked in, in which
+  // case the backend infers from student_id (date-scoped legacy path).
+  const getAttId = useCallback(
+    (studentId: number) => getAttendanceIdForStudent(activeAttendance, studentId),
+    [activeAttendance]
+  );
+
   const moveStudentToRow = useCallback(async (studentId: number, rowId: string, isTesting?: boolean) => {
     const label = rowIdToLabel[rowId];
     if (!label) return;
+    const attId = getAttId(studentId);
     await assignStudentToRow({
       student_id: studentId,
       row_label: label,
       session_date: today,
       assigned_by: 'Staff',
+      attendance_id: attId,
     });
     // Auto-flag: set taking_test when moved to testing seat, clear when moved to regular
     const currentFlags = getStudentFlags(studentId);
     if (isTesting && !currentFlags.taking_test) {
-      await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today);
+      await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today, attId);
     } else if (!isTesting && currentFlags.taking_test) {
       const updated = { ...currentFlags };
       delete updated.taking_test;
-      await updateStudentFlags(studentId, updated, today);
+      await updateStudentFlags(studentId, updated, today, attId);
     }
-  }, [rowIdToLabel, today, getStudentFlags]);
+  }, [rowIdToLabel, today, getStudentFlags, getAttId]);
 
   // Revert an optimistic flag update and surface an error toast
   const handleFlagError = useCallback((studentId: number, err: unknown) => {
@@ -216,7 +233,7 @@ export default function RowsPage() {
     // Optimistic update
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     // Persist
-    updateStudentFlags(studentId, updated, today).then(() => {
+    updateStudentFlags(studentId, updated, today, getAttId(studentId)).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
       // Flag toggled OFF → mark matching visit plan item done (fire-and-forget)
       if (wasOn) {
@@ -226,7 +243,7 @@ export default function RowsPage() {
         }).catch(console.error);
       }
     }).catch((err) => handleFlagError(studentId, err));
-  }, [getStudentFlags, today, handleFlagError]);
+  }, [getStudentFlags, today, handleFlagError, getAttId]);
 
   // Helper: toggle task — 3-state: missing → assigned(false) → done(true) → missing
   const toggleTask = useCallback((studentId: number, taskKey: string) => {
@@ -244,7 +261,7 @@ export default function RowsPage() {
     }
     const updated: RowAssignmentFlags = { ...current, tasks };
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
-    updateStudentFlags(studentId, updated, today).then(() => {
+    updateStudentFlags(studentId, updated, today, getAttId(studentId)).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
       // Task checked off → mark matching visit plan item done (fire-and-forget)
       if (markedDone) {
@@ -254,23 +271,23 @@ export default function RowsPage() {
         }).catch(console.error);
       }
     }).catch((err) => handleFlagError(studentId, err));
-  }, [getStudentFlags, today, handleFlagError]);
+  }, [getStudentFlags, today, handleFlagError, getAttId]);
 
   const setTeacherNote = useCallback((studentId: number, note: string | null) => {
     const current = getStudentFlags(studentId);
     const updated: RowAssignmentFlags = { ...current, teacher_note: note };
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
-    updateStudentFlags(studentId, updated, today).then(() => {
+    updateStudentFlags(studentId, updated, today, getAttId(studentId)).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
     }).catch((err) => handleFlagError(studentId, err));
-  }, [getStudentFlags, today, handleFlagError]);
+  }, [getStudentFlags, today, handleFlagError, getAttId]);
 
   const bulkUpdateFlags = useCallback((studentId: number, updated: RowAssignmentFlags) => {
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
-    updateStudentFlags(studentId, updated, today).then(() => {
+    updateStudentFlags(studentId, updated, today, getAttId(studentId)).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
     }).catch((err) => handleFlagError(studentId, err));
-  }, [today, handleFlagError]);
+  }, [today, handleFlagError, getAttId]);
 
   // Helper: get adjusted time remaining (uses optimistic duration if pending, otherwise DB value)
   const getAdjustedTimeRemaining = useCallback((s: Student, att: Attendance | undefined): number => {
@@ -409,6 +426,7 @@ export default function RowsPage() {
                 student_id: studentId,
                 row_label: addToRowLabel,
                 session_date: today,
+                attendance_id: getAttId(studentId),
               });
               setAddToRowLabel(null);
             }}
@@ -421,15 +439,17 @@ export default function RowsPage() {
             rowLabel={`${addToTestingRowLabel} — Testing Table`}
             unassignedStudents={unassignedStudents}
             onAssign={async (studentId) => {
+              const attId = getAttId(studentId);
               await assignStudentToRow({
                 student_id: studentId,
                 row_label: addToTestingRowLabel,
                 session_date: today,
+                attendance_id: attId,
               });
               // Auto-flag as taking_test
               const currentFlags = getStudentFlags(studentId);
               if (!currentFlags.taking_test) {
-                await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today);
+                await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today, attId);
               }
               setAddToTestingRowLabel(null);
             }}
@@ -612,6 +632,7 @@ export default function RowsPage() {
             row_label: pickerRowLabel,
             session_date: today,
             assigned_by: 'Staff',
+            attendance_id: getAttId(student.id),
           });
           setPickerRowLabel(null);
         }}

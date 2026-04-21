@@ -439,13 +439,21 @@ export const api = {
 
   // ── Classroom Assignments ──
   classroom: {
-    /** Get all student row assignments for a date */
+    /** Get row assignments for a date (historical / explicit-date queries). */
     assignments: (date?: string) => {
       const d = date || getCenterToday();
       return directFetch<RowAssignment[]>(`/classroom/assignments?date=${d}`);
     },
 
-    /** Upsert a student row assignment */
+    /** Get row assignments for all currently-active check-ins (session-scoped, v2.51.0+).
+     *  Returns assignments linked to attendance rows where check_out IS NULL,
+     *  regardless of session_date. Used by Live Class surfaces. */
+    assignmentsActive: () =>
+      directFetch<RowAssignment[]>('/classroom/assignments?active=1'),
+
+    /** Upsert a student row assignment. Pass `attendance_id` (v2.51.0+) when known
+     *  so the assignment is bound to the open check-in. Backend will infer from
+     *  student_id otherwise. */
     assign: (data: AssignRowRequest) =>
       directFetch<RowAssignment>('/classroom/assignments', {
         method: 'POST',
@@ -461,12 +469,21 @@ export const api = {
       );
     },
 
-    /** Update flags on a student's row assignment */
-    updateFlags: (studentId: number, flags: RowAssignmentFlags, date?: string) => {
+    /** Update flags on a student's row assignment.
+     *  v2.51.0+: pass `attendanceId` to target the active session directly.
+     *  Backward-compat: the date param is still accepted by the backend. */
+    updateFlags: (
+      studentId: number,
+      flags: RowAssignmentFlags,
+      date?: string,
+      attendanceId?: number,
+    ) => {
       const d = date || getCenterToday();
+      const body: Record<string, unknown> = { flags };
+      if (attendanceId != null) body.attendance_id = attendanceId;
       return directFetch<RowAssignment>(
         `/classroom/assignments/${studentId}/flags?date=${d}`,
-        { method: 'PATCH', body: JSON.stringify({ flags }) }
+        { method: 'PATCH', body: JSON.stringify(body) }
       );
     },
 

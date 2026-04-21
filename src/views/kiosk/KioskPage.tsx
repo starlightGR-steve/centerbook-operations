@@ -6,13 +6,12 @@ import AttendanceEditModal from '@/components/AttendanceEditModal';
 import SubjectBadges from '@/components/SubjectBadges';
 import { useStudents } from '@/hooks/useStudents';
 import { useCheckedInStudents, checkInStudent, checkOutStudent, deleteAttendance, updateAttendance } from '@/hooks/useAttendance';
-import { updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
+import { removeStudentFromRow } from '@/hooks/useRows';
 import UndoToast from '@/components/ui/UndoToast';
 import type { UndoToastItem } from '@/components/ui/UndoToast';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { getSessionDuration, formatTimeKey, formatTime } from '@/lib/types';
-import { getCenterToday } from '@/lib/dates';
 import type { Student, Staff, TimeEntry } from '@/lib/types';
 import KioskSkeleton from './KioskSkeleton';
 import CheckInPopup from './CheckInPopup';
@@ -228,25 +227,15 @@ export default function KioskPage() {
       session_duration_minutes: options.sessionMinutes,
     });
 
-    // Persist flags from check-in prep to row assignment
-    const hasData = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0 || !!options.noteForTeacher;
-    if (hasData) {
-      const flags: Record<string, unknown> = {};
-      options.selectedFlags.forEach((key) => { flags[key] = true; });
-      const tasks: Record<string, unknown> = {};
-      options.selectedChecklist.forEach((key) => {
-        if (key.startsWith('__custom__:')) tasks.custom = key.slice(11);
-        else tasks[key] = true;
-      });
-      if (Object.keys(tasks).length > 0) flags.tasks = tasks;
-      if (options.noteForTeacher) flags.teacher_note = options.noteForTeacher;
-      try {
-        const today = getCenterToday();
-        await updateStudentFlags(options.studentId, flags, today);
-      } catch {
-        // Non-critical -- flags will be set manually in row view
-      }
-    }
+    // 86ah0ex1k: kiosk check-in no longer auto-creates an 'Unassigned' row
+    // assignment, so this updateStudentFlags PATCH would land on a non-existent
+    // assignment row and 404. Paused until the explicit-assign flow ships.
+    // See deferred ticket: handleEditPrep 404 on flags PATCH.
+    void options.selectedFlags;
+    void options.selectedChecklist;
+    void options.noteForTeacher;
+    // TODO(86ah0ex1k follow-up): route check-in-time prep through the new
+    // attendance_id-bound assignment write once that flow lands.
 
     setCheckInStudentPopup(null);
     setAnnouncement(`${studentName} checked in`);

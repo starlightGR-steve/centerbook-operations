@@ -538,13 +538,19 @@ export interface RowAssignment {
   assigned_at: string;        // ISO datetime
   assigned_by: string | null;
   flags?: RowAssignmentFlags | null;
+  /** FK to cb_attendance.id when the row is session-scoped (backend v2.51.0+).
+   *  Older records returned by date-scoped endpoints may omit this field. */
+  attendance_id?: number | null;
 }
 
 export interface AssignRowRequest {
   student_id: number;
   row_label: string;
-  session_date: string;       // YYYY-MM-DD
+  session_date: string;       // YYYY-MM-DD — kept for backward compat
   assigned_by?: string;
+  /** Preferred under v2.51.0+: link the assignment to the student's open
+   *  cb_attendance row. Backend infers from student_id if omitted. */
+  attendance_id?: number;
 }
 
 export interface RowTeacher {
