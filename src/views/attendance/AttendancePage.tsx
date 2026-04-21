@@ -628,9 +628,10 @@ export default function AttendancePage() {
   };
 
   /* ── Time remaining helper ── */
-  const getRemaining = (student: Student, checkInTime: string): number => {
+  const getRemaining = (student: Student, checkInTime: string, sessionDurationMinutes?: number): number => {
     return getTimeRemaining(student.subjects, checkInTime, {
       scheduleDetail: student.schedule_detail,
+      sessionDurationMinutes,
     });
   };
 
@@ -941,7 +942,7 @@ export default function AttendancePage() {
                 ) : (
                   filteredCheckedIn.map(({ attendance: att, student: s }) => {
                     if (!s) return null;
-                    const remaining = getRemaining(s, att.check_in);
+                    const remaining = getRemaining(s, att.check_in, att.session_duration_minutes);
                     const remClass = remainingClass(remaining);
                     const menuKey = `checkedin-${att.id}`;
                     return (
