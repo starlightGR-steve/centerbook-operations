@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, useLayoutEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate as globalMutate } from 'swr';
 import { AlertCircle, Plus } from 'lucide-react';
@@ -8,8 +9,8 @@ import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClassroomOverview from './ClassroomOverview';
 import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
-import { useCheckedInStudents } from '@/hooks/useAttendance';
-import { useClassroomAssignments, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags } from '@/hooks/useRows';
+import { useActiveAttendance } from '@/hooks/useAttendance';
+import { useClassroomAssignmentsActive, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags, getAttendanceIdForStudent } from '@/hooks/useRows';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { useClassroomConfig } from '@/hooks/useClassroomConfig';
@@ -62,6 +63,84 @@ function buildAssignments(
   return assignments;
 }
 
+/**
+ * Portaled, viewport-clamped popover anchored to a DOM element.
+ *
+ * Placement preference:
+ *   1. Above the anchor (popover bottom = anchor top - GAP)
+ *   2. Below the anchor (popover top = anchor bottom + GAP) if (1) overflows the viewport top
+ *   3. Clamped inside the viewport (with VIEWPORT_PAD breathing room) if neither fits
+ *
+ * Horizontal: right-aligned with the anchor; left edge clamped to VIEWPORT_PAD if narrow.
+ *
+ * The wrapper paints with `visibility: hidden` until useLayoutEffect computes the final
+ * coordinates, preventing a one-frame flash at (0, 0). Position is captured once on mount
+ * (and on anchor change) — no scroll/resize listeners; the parent's outside-click backdrop
+ * handles dismissal so position staleness is bounded by interaction.
+ */
+const VIEWPORT_PAD = 8;
+
+interface PositionedPortalProps {
+  anchorEl: HTMLElement;
+  gap: number;
+  className: string;
+  onClick?: (e: React.MouseEvent) => void;
+  children: ReactNode;
+}
+
+function PositionedPortal({ anchorEl, gap, className, onClick, children }: PositionedPortalProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const popRect = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Vertical placement
+    let top: number;
+    const aboveTop = anchorRect.top - gap - popRect.height;
+    if (aboveTop >= VIEWPORT_PAD) {
+      top = aboveTop;
+    } else {
+      const belowTop = anchorRect.bottom + gap;
+      if (belowTop + popRect.height <= vh - VIEWPORT_PAD) {
+        top = belowTop;
+      } else {
+        top = Math.max(VIEWPORT_PAD, vh - VIEWPORT_PAD - popRect.height);
+      }
+    }
+
+    // Horizontal placement: right-align with anchor, clamp inside viewport
+    let left = anchorRect.right - popRect.width;
+    if (left < VIEWPORT_PAD) left = VIEWPORT_PAD;
+    if (left + popRect.width > vw - VIEWPORT_PAD) {
+      left = Math.max(VIEWPORT_PAD, vw - VIEWPORT_PAD - popRect.width);
+    }
+
+    setPos({ top, left });
+  }, [anchorEl, gap]);
+
+  return createPortal(
+    <div
+      ref={wrapperRef}
+      className={className}
+      style={{
+        top: pos?.top ?? 0,
+        left: pos?.left ?? 0,
+        visibility: pos ? 'visible' : 'hidden',
+      }}
+      onClick={onClick}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+}
+
 export default function RowsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,11 +168,22 @@ export default function RowsPage() {
   const [sessionPopoverStudent, setSessionPopoverStudent] = useState<number | null>(null);
   // expandedNoteStudent removed in Step 1: pertinent_note now surfaces via Detail Panel (wired in Step 6).
 
+  // Per-card refs for portal anchor lookup. Map<studentId, cardSlot DOM node>.
+  // Populated via callback ref inside renderSlide; cleaned up when a card unmounts.
+  const cardSlotRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+
   const { data: allStudents } = useStudents();
-  const { data: checkedIn } = useCheckedInStudents(undefined, 10000);
+  // 86ah0ex1k: session-scoped check-in feed. Live Class follows the active
+  // attendance set (any student currently checked in, regardless of date) so
+  // mid-session midnight rollovers don't drop students from the row view.
+  const { data: activeAttendance } = useActiveAttendance(10000);
+  const checkedIn = activeAttendance;
 
   const today = getCenterToday();
-  const { data: persistedAssignments } = useClassroomAssignments(today);
+  // 86ah0ex1k: session-scoped row assignments (v2.51.0+). Returns assignments
+  // bound to active check-ins regardless of session_date.
+  const { data: persistedAssignments } = useClassroomAssignmentsActive();
+  // Teacher assignments stay date-scoped per backend scope decision.
   const { data: teacherAssignments } = useClassroomTeachers(today);
   const { data: allStaff } = useActiveStaff();
   const { data: timeclockEntries } = useTimeclock(today);
@@ -179,25 +269,35 @@ export default function RowsPage() {
     return optimisticFlags[studentId] || flagsMap[studentId] || {};
   }, [optimisticFlags, flagsMap]);
 
+  // 86ah0ex1k: bind classroom writes to the active attendance row when known.
+  // Falls back to undefined if the student isn't currently checked in, in which
+  // case the backend infers from student_id (date-scoped legacy path).
+  const getAttId = useCallback(
+    (studentId: number) => getAttendanceIdForStudent(activeAttendance, studentId),
+    [activeAttendance]
+  );
+
   const moveStudentToRow = useCallback(async (studentId: number, rowId: string, isTesting?: boolean) => {
     const label = rowIdToLabel[rowId];
     if (!label) return;
+    const attId = getAttId(studentId);
     await assignStudentToRow({
       student_id: studentId,
       row_label: label,
       session_date: today,
       assigned_by: 'Staff',
+      attendance_id: attId,
     });
     // Auto-flag: set taking_test when moved to testing seat, clear when moved to regular
     const currentFlags = getStudentFlags(studentId);
     if (isTesting && !currentFlags.taking_test) {
-      await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today);
+      await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today, attId);
     } else if (!isTesting && currentFlags.taking_test) {
       const updated = { ...currentFlags };
       delete updated.taking_test;
-      await updateStudentFlags(studentId, updated, today);
+      await updateStudentFlags(studentId, updated, today, attId);
     }
-  }, [rowIdToLabel, today, getStudentFlags]);
+  }, [rowIdToLabel, today, getStudentFlags, getAttId]);
 
   // Revert an optimistic flag update and surface an error toast
   const handleFlagError = useCallback((studentId: number, err: unknown) => {
@@ -216,7 +316,7 @@ export default function RowsPage() {
     // Optimistic update
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
     // Persist
-    updateStudentFlags(studentId, updated, today).then(() => {
+    updateStudentFlags(studentId, updated, today, getAttId(studentId)).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
       // Flag toggled OFF → mark matching visit plan item done (fire-and-forget)
       if (wasOn) {
@@ -226,7 +326,7 @@ export default function RowsPage() {
         }).catch(console.error);
       }
     }).catch((err) => handleFlagError(studentId, err));
-  }, [getStudentFlags, today, handleFlagError]);
+  }, [getStudentFlags, today, handleFlagError, getAttId]);
 
   // Helper: toggle task — 3-state: missing → assigned(false) → done(true) → missing
   const toggleTask = useCallback((studentId: number, taskKey: string) => {
@@ -244,7 +344,7 @@ export default function RowsPage() {
     }
     const updated: RowAssignmentFlags = { ...current, tasks };
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
-    updateStudentFlags(studentId, updated, today).then(() => {
+    updateStudentFlags(studentId, updated, today, getAttId(studentId)).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
       // Task checked off → mark matching visit plan item done (fire-and-forget)
       if (markedDone) {
@@ -254,23 +354,23 @@ export default function RowsPage() {
         }).catch(console.error);
       }
     }).catch((err) => handleFlagError(studentId, err));
-  }, [getStudentFlags, today, handleFlagError]);
+  }, [getStudentFlags, today, handleFlagError, getAttId]);
 
   const setTeacherNote = useCallback((studentId: number, note: string | null) => {
     const current = getStudentFlags(studentId);
     const updated: RowAssignmentFlags = { ...current, teacher_note: note };
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
-    updateStudentFlags(studentId, updated, today).then(() => {
+    updateStudentFlags(studentId, updated, today, getAttId(studentId)).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
     }).catch((err) => handleFlagError(studentId, err));
-  }, [getStudentFlags, today, handleFlagError]);
+  }, [getStudentFlags, today, handleFlagError, getAttId]);
 
   const bulkUpdateFlags = useCallback((studentId: number, updated: RowAssignmentFlags) => {
     setOptimisticFlags((prev) => ({ ...prev, [studentId]: updated }));
-    updateStudentFlags(studentId, updated, today).then(() => {
+    updateStudentFlags(studentId, updated, today, getAttId(studentId)).then(() => {
       setOptimisticFlags((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
     }).catch((err) => handleFlagError(studentId, err));
-  }, [today, handleFlagError]);
+  }, [today, handleFlagError, getAttId]);
 
   // Helper: get adjusted time remaining (uses optimistic duration if pending, otherwise DB value)
   const getAdjustedTimeRemaining = useCallback((s: Student, att: Attendance | undefined): number => {
@@ -409,6 +509,7 @@ export default function RowsPage() {
                 student_id: studentId,
                 row_label: addToRowLabel,
                 session_date: today,
+                attendance_id: getAttId(studentId),
               });
               setAddToRowLabel(null);
             }}
@@ -421,15 +522,17 @@ export default function RowsPage() {
             rowLabel={`${addToTestingRowLabel} — Testing Table`}
             unassignedStudents={unassignedStudents}
             onAssign={async (studentId) => {
+              const attId = getAttId(studentId);
               await assignStudentToRow({
                 student_id: studentId,
                 row_label: addToTestingRowLabel,
                 session_date: today,
+                attendance_id: attId,
               });
               // Auto-flag as taking_test
               const currentFlags = getStudentFlags(studentId);
               if (!currentFlags.taking_test) {
-                await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today);
+                await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today, attId);
               }
               setAddToTestingRowLabel(null);
             }}
@@ -482,17 +585,23 @@ export default function RowsPage() {
           const studentFlagsObj = getStudentFlags(s.id);
           const isMoveOpen = movingStudent === s.id;
           const isSessionOpen = sessionPopoverStudent === s.id;
-          const scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-          const rawSessionDuration = att?.session_duration_minutes != null ? Number(att.session_duration_minutes) : null;
-          const currentDuration = sessionOptimistic[s.id] ?? s.schedule_detail?.[scheduleDay]?.duration ?? rawSessionDuration ?? 60;
           const teacherNotes: TeacherNoteSummary[] = getTeacherNotes(studentFlagsObj).map((n, idx) => ({
             id: `${s.id}-${idx}`,
             text: n.text,
             done: n.done,
           }));
 
+          // The Move/Time popovers are portaled to document.body to escape
+          // SwipeShell's overflow clipping; the cardSlot ref is the anchor.
           return (
-            <div key={s.id} className={styles.cardSlot}>
+            <div
+              key={s.id}
+              ref={(el) => {
+                if (el) cardSlotRefs.current.set(s.id, el);
+                else cardSlotRefs.current.delete(s.id);
+              }}
+              className={styles.cardSlot}
+            >
               <RowViewCard
                 student={s}
                 attendance={att}
@@ -513,45 +622,6 @@ export default function RowsPage() {
                   setSelectedStudentId(s.id);
                 }}
               />
-
-              {isMoveOpen && (
-                <div className={styles.movePopover} onClick={(e) => e.stopPropagation()}>
-                  {rows
-                    .filter((r) => r.id !== row.id)
-                    .map((r) => {
-                      const count = (assignments[r.id] || []).length;
-                      const cap = r.seats + (r.testingSeats ?? 0);
-                      const isFull = count >= cap;
-                      return (
-                        <button
-                          key={r.id}
-                          className={`${styles.moveItem} ${isFull ? styles.moveItemFull : ''}`}
-                          disabled={isFull}
-                          onClick={() => {
-                            moveStudentToRow(s.id, r.id);
-                            setMovingStudent(null);
-                          }}
-                        >
-                          <span>{r.label}</span>
-                          <span className={styles.moveSeatCount}>{count}/{cap}</span>
-                        </button>
-                      );
-                    })}
-                </div>
-              )}
-
-              {isSessionOpen && att && (
-                <div className={styles.timePopoverAnchor} onClick={(e) => e.stopPropagation()}>
-                  <TimePopover
-                    attendanceId={att.id}
-                    studentId={s.id}
-                    initialDurationMinutes={currentDuration}
-                    initialCheckIn={att.check_in}
-                    isOpen
-                    onClose={() => setSessionPopoverStudent(null)}
-                  />
-                </div>
-              )}
             </div>
           );
         })}
@@ -612,11 +682,95 @@ export default function RowsPage() {
             row_label: pickerRowLabel,
             session_date: today,
             assigned_by: 'Staff',
+            attendance_id: getAttId(student.id),
           });
           setPickerRowLabel(null);
         }}
         onClose={() => setPickerRowLabel(null)}
       />
+
+      {/* Move + Time popovers — portaled to document.body to escape SwipeShell
+          overflow clipping. Position is computed from the cardSlot anchor's
+          bounding rect at render time; outside taps dismiss via the backdrop. */}
+      {(movingStudent !== null || sessionPopoverStudent !== null) && createPortal(
+        <div
+          className={styles.popoverBackdrop}
+          onClick={() => {
+            setMovingStudent(null);
+            setSessionPopoverStudent(null);
+          }}
+        />,
+        document.body
+      )}
+
+      {movingStudent !== null && (() => {
+        const anchorEl = cardSlotRefs.current.get(movingStudent);
+        if (!anchorEl) return null;
+        const movingId = movingStudent;
+        const currentRowId = rowOverrides[String(movingId)];
+        return (
+          <PositionedPortal
+            anchorEl={anchorEl}
+            gap={4} /* matches the original .movePopover margin-bottom */
+            className={styles.movePopover}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {rows
+              .filter((r) => r.id !== currentRowId)
+              .map((r) => {
+                const count = (assignments[r.id] || []).length;
+                const cap = r.seats + (r.testingSeats ?? 0);
+                const isFull = count >= cap;
+                return (
+                  <button
+                    key={r.id}
+                    className={`${styles.moveItem} ${isFull ? styles.moveItemFull : ''}`}
+                    disabled={isFull}
+                    onClick={() => {
+                      moveStudentToRow(movingId, r.id);
+                      setMovingStudent(null);
+                    }}
+                  >
+                    <span>{r.label}</span>
+                    <span className={styles.moveSeatCount}>{count}/{cap}</span>
+                  </button>
+                );
+              })}
+          </PositionedPortal>
+        );
+      })()}
+
+      {sessionPopoverStudent !== null && (() => {
+        const studentId = sessionPopoverStudent;
+        const anchorEl = cardSlotRefs.current.get(studentId);
+        const att = attendanceMap.get(studentId);
+        if (!anchorEl || !att) return null;
+        const student = allStudents?.find((s) => s.id === studentId);
+        const scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+        const rawSessionDuration = att.session_duration_minutes != null ? Number(att.session_duration_minutes) : null;
+        const currentDuration =
+          sessionOptimistic[studentId]
+            ?? student?.schedule_detail?.[scheduleDay]?.duration
+            ?? rawSessionDuration
+            ?? 60;
+        return (
+          <PositionedPortal
+            anchorEl={anchorEl}
+            gap={6} /* matches the original .timePopoverAnchor margin-bottom */
+            className={styles.timePopoverAnchor}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TimePopover
+              attendanceId={att.id}
+              studentId={studentId}
+              initialDurationMinutes={currentDuration}
+              initialCheckIn={att.check_in}
+              isOpen
+              onClose={() => setSessionPopoverStudent(null)}
+            />
+          </PositionedPortal>
+        );
+      })()}
     </div>
   );
 }

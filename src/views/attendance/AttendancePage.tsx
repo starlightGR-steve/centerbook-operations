@@ -24,7 +24,7 @@ import { useCenterSettings } from '@/hooks/useCenterSettings';
 import { api } from '@/lib/api';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
-import { useClassroomAssignments, assignStudentToRow, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
+import { useClassroomAssignmentsActive, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
 import { useAbsences } from '@/hooks/useAbsences';
 import {
   getTimeRemaining, getSessionDuration, formatTimeKey, formatTime, parseSubjects,
@@ -179,7 +179,10 @@ export default function AttendancePage() {
   const { data: activeStaff } = useActiveStaff();
   const { data: timeEntries } = useTimeclock();
   const { data: todayAbsences, mutate: mutateAbsences } = useAbsences();
-  const { data: assignments } = useClassroomAssignments();
+  // 86ah0ex1k: session-scoped — Edit Class Prep needs the active assignment
+  // (not a date-keyed lookup) so flags survive midnight and don't depend on
+  // synthetic 'Unassigned' placeholders that no longer exist.
+  const { data: assignments } = useClassroomAssignmentsActive();
 
   const today = getToday();
   const todayDay = today;
@@ -442,8 +445,12 @@ export default function AttendancePage() {
       } else if (options.noteForTeacher) {
         flags.teacher_note = options.noteForTeacher;
       }
+      // 86ah0ex1k: pass attendance_id so the PATCH targets the active session-bound
+      // assignment row directly under v2.51.0+; backend falls back to date-scoped
+      // lookup when omitted.
+      const editAttId = activeAttendanceMap.get(options.studentId)?.id;
       try {
-        await updateStudentFlags(options.studentId, flags);
+        await updateStudentFlags(options.studentId, flags, undefined, editAttId);
       } catch (err) {
         console.error('handleEditPrep: failed to update flags', err);
       }
@@ -487,39 +494,19 @@ export default function AttendancePage() {
       return;
     }
 
-    // Persist flags from check-in prep
-    const hasData = options.selectedFlags.length > 0 || options.selectedChecklist.length > 0 || !!options.noteForTeacher || (options.teacherNotes && options.teacherNotes.length > 0);
-    let flagSaveFailed = false;
-    if (hasData) {
-      const flags: Record<string, unknown> = {};
-      options.selectedFlags.forEach((key) => { flags[key] = true; });
-      const tasks: Record<string, unknown> = {};
-      options.selectedChecklist.forEach((key) => {
-        if (key.startsWith('__custom__:')) tasks.custom = key.slice(11);
-        else tasks[key] = false;
-      });
-      if (Object.keys(tasks).length > 0) flags.tasks = tasks;
-      if (options.teacherNotes && options.teacherNotes.length > 0) {
-        flags.teacher_notes = options.teacherNotes;
-      } else if (options.noteForTeacher) {
-        flags.teacher_note = options.noteForTeacher;
-      }
-      try {
-        // Use the same centerToday derived at the top of the component (line ~176)
-        // so this write hits the same SWR cache key the row view reads from.
-        const todayDate = centerToday;
-        await assignStudentToRow({
-          student_id: options.studentId,
-          row_label: 'Unassigned',
-          session_date: todayDate,
-          assigned_by: 'kiosk',
-        });
-        await updateStudentFlags(options.studentId, flags, todayDate);
-      } catch (err) {
-        console.error('handleCheckInConfirm: failed to persist check-in flags', err);
-        flagSaveFailed = true;
-      }
-    }
+    // 86ah0ex1k: synthetic 'Unassigned' row write removed at kiosk check-in.
+    // Row assignment is now an explicit action (Row View / AssignStudentPicker).
+    // The downstream updateStudentFlags(...) PATCH cannot land without an existing
+    // assignment row, so check-in-time class-prep persistence is paused here until
+    // a proper data-flow is built (deferred ticket: handleEditPrep 404 on flags PATCH).
+    // Check-in itself (cb_attendance row) succeeds above; only the prep payload is dropped.
+    const flagSaveFailed = false;
+    void options.selectedFlags;
+    void options.selectedChecklist;
+    void options.noteForTeacher;
+    void options.teacherNotes;
+    // TODO(86ah0ex1k follow-up): once the explicit-assign flow lands, route
+    // check-in-time class prep into the new attendance_id-bound assignment write.
 
     setCheckInPopupStudent(null);
     setAnnouncement(`${studentName} checked in`);

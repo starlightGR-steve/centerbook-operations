@@ -5,8 +5,7 @@ import { X, Search } from 'lucide-react';
 import useSWR from 'swr';
 import { useActiveAttendance } from '@/hooks/useAttendance';
 import { useStudents } from '@/hooks/useStudents';
-import { useClassroomAssignments } from '@/hooks/useRows';
-import { getCenterToday } from '@/lib/dates';
+import { useClassroomAssignmentsActive } from '@/hooks/useRows';
 import type { Student } from '@/lib/types';
 import styles from './AssignStudentPicker.module.css';
 
@@ -34,10 +33,6 @@ const SECTIONS: Array<{
   { key: 'uc', label: 'Upper Classroom', position: 'Upper Classroom', tag: 'UC' },
 ];
 
-function todayStr(): string {
-  return getCenterToday();
-}
-
 function sectionKeyFor(pos: Student['classroom_position']): SectionKey | null {
   if (pos === 'Early Learners') return 'el';
   if (pos === 'Main Classroom') return 'mc';
@@ -53,7 +48,10 @@ export default function AssignStudentPicker({
 }: AssignStudentPickerProps) {
   const { data: activeAttendance } = useActiveAttendance();
   const { data: allStudents } = useStudents();
-  const { data: rowAssignments } = useClassroomAssignments(todayStr());
+  // 86ah0ex1k: session-scoped — assignments tied to active check-ins.
+  // Synthetic 'Unassigned' rows are no longer written at check-in (Step 4),
+  // so any record returned here is a real row binding.
+  const { data: rowAssignments } = useClassroomAssignmentsActive();
 
   const [search, setSearch] = useState('');
   const [focusIdx, setFocusIdx] = useState(0);

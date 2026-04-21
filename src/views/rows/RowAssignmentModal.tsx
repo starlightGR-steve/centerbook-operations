@@ -4,7 +4,8 @@ import { ChevronRight } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import StudentRow from '@/components/StudentRow';
 import type { Student } from '@/lib/types';
-import { assignStudentToRow } from '@/hooks/useRows';
+import { assignStudentToRow, getAttendanceIdForStudent } from '@/hooks/useRows';
+import { useActiveAttendance } from '@/hooks/useAttendance';
 import { getCenterToday } from '@/lib/dates';
 
 interface RowAssignmentModalProps {
@@ -21,6 +22,7 @@ export default function RowAssignmentModal({
   availableStudents,
 }: RowAssignmentModalProps) {
   const today = getCenterToday();
+  const { data: activeAttendance } = useActiveAttendance();
 
   const handleAssign = async (student: Student) => {
     await assignStudentToRow({
@@ -28,6 +30,7 @@ export default function RowAssignmentModal({
       row_label: rowLabel,
       session_date: today,
       assigned_by: 'Staff',
+      attendance_id: getAttendanceIdForStudent(activeAttendance, student.id),
     });
     onClose();
   };
