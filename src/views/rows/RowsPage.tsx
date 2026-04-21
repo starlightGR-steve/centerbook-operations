@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate as globalMutate } from 'swr';
 import { AlertCircle, Plus } from 'lucide-react';
@@ -88,6 +89,10 @@ export default function RowsPage() {
   const { optimistic: sessionOptimistic } = useSessionAdjust();
   const [sessionPopoverStudent, setSessionPopoverStudent] = useState<number | null>(null);
   // expandedNoteStudent removed in Step 1: pertinent_note now surfaces via Detail Panel (wired in Step 6).
+
+  // Per-card refs for portal anchor lookup. Map<studentId, cardSlot DOM node>.
+  // Populated via callback ref inside renderSlide; cleaned up when a card unmounts.
+  const cardSlotRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
   const { data: allStudents } = useStudents();
   // 86ah0ex1k: session-scoped check-in feed. Live Class follows the active
@@ -502,17 +507,23 @@ export default function RowsPage() {
           const studentFlagsObj = getStudentFlags(s.id);
           const isMoveOpen = movingStudent === s.id;
           const isSessionOpen = sessionPopoverStudent === s.id;
-          const scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-          const rawSessionDuration = att?.session_duration_minutes != null ? Number(att.session_duration_minutes) : null;
-          const currentDuration = sessionOptimistic[s.id] ?? s.schedule_detail?.[scheduleDay]?.duration ?? rawSessionDuration ?? 60;
           const teacherNotes: TeacherNoteSummary[] = getTeacherNotes(studentFlagsObj).map((n, idx) => ({
             id: `${s.id}-${idx}`,
             text: n.text,
             done: n.done,
           }));
 
+          // The Move/Time popovers are portaled to document.body to escape
+          // SwipeShell's overflow clipping; the cardSlot ref is the anchor.
           return (
-            <div key={s.id} className={styles.cardSlot}>
+            <div
+              key={s.id}
+              ref={(el) => {
+                if (el) cardSlotRefs.current.set(s.id, el);
+                else cardSlotRefs.current.delete(s.id);
+              }}
+              className={styles.cardSlot}
+            >
               <RowViewCard
                 student={s}
                 attendance={att}
@@ -533,45 +544,6 @@ export default function RowsPage() {
                   setSelectedStudentId(s.id);
                 }}
               />
-
-              {isMoveOpen && (
-                <div className={styles.movePopover} onClick={(e) => e.stopPropagation()}>
-                  {rows
-                    .filter((r) => r.id !== row.id)
-                    .map((r) => {
-                      const count = (assignments[r.id] || []).length;
-                      const cap = r.seats + (r.testingSeats ?? 0);
-                      const isFull = count >= cap;
-                      return (
-                        <button
-                          key={r.id}
-                          className={`${styles.moveItem} ${isFull ? styles.moveItemFull : ''}`}
-                          disabled={isFull}
-                          onClick={() => {
-                            moveStudentToRow(s.id, r.id);
-                            setMovingStudent(null);
-                          }}
-                        >
-                          <span>{r.label}</span>
-                          <span className={styles.moveSeatCount}>{count}/{cap}</span>
-                        </button>
-                      );
-                    })}
-                </div>
-              )}
-
-              {isSessionOpen && att && (
-                <div className={styles.timePopoverAnchor} onClick={(e) => e.stopPropagation()}>
-                  <TimePopover
-                    attendanceId={att.id}
-                    studentId={s.id}
-                    initialDurationMinutes={currentDuration}
-                    initialCheckIn={att.check_in}
-                    isOpen
-                    onClose={() => setSessionPopoverStudent(null)}
-                  />
-                </div>
-              )}
             </div>
           );
         })}
@@ -638,6 +610,101 @@ export default function RowsPage() {
         }}
         onClose={() => setPickerRowLabel(null)}
       />
+
+      {/* Move + Time popovers — portaled to document.body to escape SwipeShell
+          overflow clipping. Position is computed from the cardSlot anchor's
+          bounding rect at render time; outside taps dismiss via the backdrop. */}
+      {(movingStudent !== null || sessionPopoverStudent !== null) && createPortal(
+        <div
+          className={styles.popoverBackdrop}
+          onClick={() => {
+            setMovingStudent(null);
+            setSessionPopoverStudent(null);
+          }}
+        />,
+        document.body
+      )}
+
+      {movingStudent !== null && (() => {
+        const anchorEl = cardSlotRefs.current.get(movingStudent);
+        if (!anchorEl) return null;
+        const rect = anchorEl.getBoundingClientRect();
+        const movingId = movingStudent;
+        const currentRowId = rowOverrides[String(movingId)];
+        const GAP = 4; // matches the original .movePopover margin-bottom (var(--space-1))
+        return createPortal(
+          <div
+            className={styles.movePopover}
+            style={{
+              top: rect.top - GAP,
+              right: window.innerWidth - rect.right,
+              transform: 'translateY(-100%)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {rows
+              .filter((r) => r.id !== currentRowId)
+              .map((r) => {
+                const count = (assignments[r.id] || []).length;
+                const cap = r.seats + (r.testingSeats ?? 0);
+                const isFull = count >= cap;
+                return (
+                  <button
+                    key={r.id}
+                    className={`${styles.moveItem} ${isFull ? styles.moveItemFull : ''}`}
+                    disabled={isFull}
+                    onClick={() => {
+                      moveStudentToRow(movingId, r.id);
+                      setMovingStudent(null);
+                    }}
+                  >
+                    <span>{r.label}</span>
+                    <span className={styles.moveSeatCount}>{count}/{cap}</span>
+                  </button>
+                );
+              })}
+          </div>,
+          document.body
+        );
+      })()}
+
+      {sessionPopoverStudent !== null && (() => {
+        const studentId = sessionPopoverStudent;
+        const anchorEl = cardSlotRefs.current.get(studentId);
+        const att = attendanceMap.get(studentId);
+        if (!anchorEl || !att) return null;
+        const rect = anchorEl.getBoundingClientRect();
+        const student = allStudents?.find((s) => s.id === studentId);
+        const scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+        const rawSessionDuration = att.session_duration_minutes != null ? Number(att.session_duration_minutes) : null;
+        const currentDuration =
+          sessionOptimistic[studentId]
+            ?? student?.schedule_detail?.[scheduleDay]?.duration
+            ?? rawSessionDuration
+            ?? 60;
+        const GAP = 6; // matches the original .timePopoverAnchor margin-bottom (var(--space-1_5))
+        return createPortal(
+          <div
+            className={styles.timePopoverAnchor}
+            style={{
+              top: rect.top - GAP,
+              right: window.innerWidth - rect.right,
+              transform: 'translateY(-100%)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TimePopover
+              attendanceId={att.id}
+              studentId={studentId}
+              initialDurationMinutes={currentDuration}
+              initialCheckIn={att.check_in}
+              isOpen
+              onClose={() => setSessionPopoverStudent(null)}
+            />
+          </div>,
+          document.body
+        );
+      })()}
     </div>
   );
 }

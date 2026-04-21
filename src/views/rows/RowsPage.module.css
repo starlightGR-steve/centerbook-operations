@@ -125,13 +125,20 @@
   flex-direction: column;
 }
 
-/* Anchor for the floating TimePopover above the card actions row. */
+/* Floating TimePopover wrapper. Portaled to document.body to escape the
+   SwipeShell viewport/slide overflow clipping. Position is set inline via
+   style prop, computed from the anchor cardSlot's bounding rect. */
 .timePopoverAnchor {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  margin-bottom: var(--space-1_5);
-  z-index: 25;
+  position: fixed;
+  z-index: 1000;
+}
+
+/* Backdrop for outside-click dismissal of either floating popover.
+   Sits one tier below the popovers so taps outside fire onClick on this layer. */
+.popoverBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
 }
 
 .assignPlaceholder {
@@ -505,15 +512,12 @@
 }
 
 .movePopover {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  margin-bottom: var(--space-1);
+  position: fixed;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  z-index: 20;
+  z-index: 1000;
   min-width: 11.25rem;
   padding: var(--space-1);
 }
