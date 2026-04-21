@@ -24,6 +24,7 @@ import RowViewCard, { type TeacherNoteSummary } from '@/components/classroom/Row
 import TimePopover from '@/components/classroom/TimePopover';
 import SwipeShell, { type RowSummary } from '@/components/classroom/SwipeShell';
 import RowMetaBar from '@/components/classroom/RowMetaBar';
+import AssignStudentPicker from '@/components/classroom/AssignStudentPicker';
 import styles from './RowsPage.module.css';
 
 interface FlatRow extends ClassroomRow {
@@ -76,6 +77,7 @@ export default function RowsPage() {
   const [addToTestingRowLabel, setAddToTestingRowLabel] = useState<string | null>(null);
   const [rowCompleteIds, setRowCompleteIds] = useState<Set<number>>(new Set());
   const [movingStudent, setMovingStudent] = useState<number | null>(null);
+  const [pickerRowLabel, setPickerRowLabel] = useState<string | null>(null);
   const [, setTick] = useState(0);
 
   // Live Class feature state
@@ -466,10 +468,7 @@ export default function RowsPage() {
           <button
             type="button"
             className={styles.assignPlaceholder}
-            onClick={() => {
-              // TODO: Step 5 wires AssignStudentPicker
-              console.log('open assign student picker', row.id);
-            }}
+            onClick={() => setPickerRowLabel(flatRow.label)}
           >
             <Plus size={24} aria-hidden="true" />
             <span>+ Assign Student</span>
@@ -601,6 +600,22 @@ export default function RowsPage() {
           {flagSaveError}
         </div>
       )}
+
+      <AssignStudentPicker
+        isOpen={pickerRowLabel !== null}
+        rowLabel={pickerRowLabel ?? ''}
+        onSelect={async (student) => {
+          if (!pickerRowLabel) return;
+          await assignStudentToRow({
+            student_id: student.id,
+            row_label: pickerRowLabel,
+            session_date: today,
+            assigned_by: 'Staff',
+          });
+          setPickerRowLabel(null);
+        }}
+        onClose={() => setPickerRowLabel(null)}
+      />
     </div>
   );
 }

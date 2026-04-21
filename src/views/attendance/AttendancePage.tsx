@@ -441,15 +441,17 @@ export default function AttendancePage() {
         console.error('handleEditPrep: failed to update flags', err);
       }
       // Bug 86agkv2wu fix: Update Class Prep also persists session_duration_minutes when changed.
+      // Number() coercion both sides: WordPress returns numeric columns as strings, so a raw
+      // !== check against a number always fires and the backend rejects the empty PUT with 400.
       const currentAttendance = activeAttendanceMap.get(options.studentId);
       if (
         currentAttendance &&
         options.sessionMinutes !== undefined &&
-        options.sessionMinutes !== currentAttendance.session_duration_minutes
+        Number(options.sessionMinutes) !== Number(currentAttendance.session_duration_minutes)
       ) {
         try {
           await updateAttendance(currentAttendance.id, {
-            session_duration_minutes: options.sessionMinutes,
+            session_duration_minutes: Number(options.sessionMinutes),
           });
         } catch (err) {
           console.error('handleEditPrep: failed to update session duration', err);
