@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, useLayoutEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate as globalMutate } from 'swr';
@@ -61,6 +61,84 @@ function buildAssignments(
     }
   });
   return assignments;
+}
+
+/**
+ * Portaled, viewport-clamped popover anchored to a DOM element.
+ *
+ * Placement preference:
+ *   1. Above the anchor (popover bottom = anchor top - GAP)
+ *   2. Below the anchor (popover top = anchor bottom + GAP) if (1) overflows the viewport top
+ *   3. Clamped inside the viewport (with VIEWPORT_PAD breathing room) if neither fits
+ *
+ * Horizontal: right-aligned with the anchor; left edge clamped to VIEWPORT_PAD if narrow.
+ *
+ * The wrapper paints with `visibility: hidden` until useLayoutEffect computes the final
+ * coordinates, preventing a one-frame flash at (0, 0). Position is captured once on mount
+ * (and on anchor change) — no scroll/resize listeners; the parent's outside-click backdrop
+ * handles dismissal so position staleness is bounded by interaction.
+ */
+const VIEWPORT_PAD = 8;
+
+interface PositionedPortalProps {
+  anchorEl: HTMLElement;
+  gap: number;
+  className: string;
+  onClick?: (e: React.MouseEvent) => void;
+  children: ReactNode;
+}
+
+function PositionedPortal({ anchorEl, gap, className, onClick, children }: PositionedPortalProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const popRect = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Vertical placement
+    let top: number;
+    const aboveTop = anchorRect.top - gap - popRect.height;
+    if (aboveTop >= VIEWPORT_PAD) {
+      top = aboveTop;
+    } else {
+      const belowTop = anchorRect.bottom + gap;
+      if (belowTop + popRect.height <= vh - VIEWPORT_PAD) {
+        top = belowTop;
+      } else {
+        top = Math.max(VIEWPORT_PAD, vh - VIEWPORT_PAD - popRect.height);
+      }
+    }
+
+    // Horizontal placement: right-align with anchor, clamp inside viewport
+    let left = anchorRect.right - popRect.width;
+    if (left < VIEWPORT_PAD) left = VIEWPORT_PAD;
+    if (left + popRect.width > vw - VIEWPORT_PAD) {
+      left = Math.max(VIEWPORT_PAD, vw - VIEWPORT_PAD - popRect.width);
+    }
+
+    setPos({ top, left });
+  }, [anchorEl, gap]);
+
+  return createPortal(
+    <div
+      ref={wrapperRef}
+      className={className}
+      style={{
+        top: pos?.top ?? 0,
+        left: pos?.left ?? 0,
+        visibility: pos ? 'visible' : 'hidden',
+      }}
+      onClick={onClick}
+    >
+      {children}
+    </div>,
+    document.body
+  );
 }
 
 export default function RowsPage() {
@@ -628,18 +706,13 @@ export default function RowsPage() {
       {movingStudent !== null && (() => {
         const anchorEl = cardSlotRefs.current.get(movingStudent);
         if (!anchorEl) return null;
-        const rect = anchorEl.getBoundingClientRect();
         const movingId = movingStudent;
         const currentRowId = rowOverrides[String(movingId)];
-        const GAP = 4; // matches the original .movePopover margin-bottom (var(--space-1))
-        return createPortal(
-          <div
+        return (
+          <PositionedPortal
+            anchorEl={anchorEl}
+            gap={4} /* matches the original .movePopover margin-bottom */
             className={styles.movePopover}
-            style={{
-              top: rect.top - GAP,
-              right: window.innerWidth - rect.right,
-              transform: 'translateY(-100%)',
-            }}
             onClick={(e) => e.stopPropagation()}
           >
             {rows
@@ -663,8 +736,7 @@ export default function RowsPage() {
                   </button>
                 );
               })}
-          </div>,
-          document.body
+          </PositionedPortal>
         );
       })()}
 
@@ -673,7 +745,6 @@ export default function RowsPage() {
         const anchorEl = cardSlotRefs.current.get(studentId);
         const att = attendanceMap.get(studentId);
         if (!anchorEl || !att) return null;
-        const rect = anchorEl.getBoundingClientRect();
         const student = allStudents?.find((s) => s.id === studentId);
         const scheduleDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
         const rawSessionDuration = att.session_duration_minutes != null ? Number(att.session_duration_minutes) : null;
@@ -682,15 +753,11 @@ export default function RowsPage() {
             ?? student?.schedule_detail?.[scheduleDay]?.duration
             ?? rawSessionDuration
             ?? 60;
-        const GAP = 6; // matches the original .timePopoverAnchor margin-bottom (var(--space-1_5))
-        return createPortal(
-          <div
+        return (
+          <PositionedPortal
+            anchorEl={anchorEl}
+            gap={6} /* matches the original .timePopoverAnchor margin-bottom */
             className={styles.timePopoverAnchor}
-            style={{
-              top: rect.top - GAP,
-              right: window.innerWidth - rect.right,
-              transform: 'translateY(-100%)',
-            }}
             onClick={(e) => e.stopPropagation()}
           >
             <TimePopover
@@ -701,8 +768,7 @@ export default function RowsPage() {
               isOpen
               onClose={() => setSessionPopoverStudent(null)}
             />
-          </div>,
-          document.body
+          </PositionedPortal>
         );
       })()}
     </div>
