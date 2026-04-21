@@ -51,9 +51,19 @@ export function buildOverridesMap(
     console.log('[DEBUG] rowLabelToId', rowLabelToId);
     console.log('[DEBUG] assignment row_labels', assignments.map((a) => ({ student_id: a.student_id, row_label: a.row_label })));
   }
+  // Bug 2 fix: normalize both sides of the row_label lookup. Backend assignments
+  // can carry slightly different capitalization or whitespace from the saved
+  // classroom config (e.g. "All EL Seats" stored vs "ALL EL Seats" in config),
+  // dropping students from their row bucket under strict equality.
+  const normalizedLookup: Record<string, string> = {};
+  Object.entries(rowLabelToId).forEach(([label, rowId]) => {
+    normalizedLookup[label.toLowerCase().trim()] = rowId;
+  });
+
   const map: Record<string, string> = {};
   assignments.forEach((a) => {
-    const rowId = rowLabelToId[a.row_label];
+    const key = (a.row_label || '').toLowerCase().trim();
+    const rowId = normalizedLookup[key];
     if (rowId) {
       map[String(a.student_id)] = rowId;
     }
