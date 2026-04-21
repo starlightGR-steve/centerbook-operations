@@ -47,11 +47,6 @@ export function buildOverridesMap(
   rowLabelToId: Record<string, string>
 ): Record<string, string> {
   if (!assignments) return {};
-  // TEMP DEBUG: Bug 2 (assigned student missing from Row View). Remove after confirming.
-  if (typeof window !== 'undefined') {
-    console.log('[DEBUG] rowLabelToId', rowLabelToId);
-    console.log('[DEBUG] assignment row_labels', assignments.map((a) => ({ student_id: a.student_id, row_label: a.row_label })));
-  }
   // Bug 2 fix: normalize both sides of the row_label lookup. Backend assignments
   // can carry slightly different capitalization or whitespace from the saved
   // classroom config (e.g. "All EL Seats" stored vs "ALL EL Seats" in config),
