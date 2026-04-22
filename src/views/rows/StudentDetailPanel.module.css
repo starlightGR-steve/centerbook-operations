@@ -1591,6 +1591,32 @@
   z-index: 1000;
 }
 
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .panel {
+    position: fixed;
+    top: 3rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 800;
+    border-left: none;
+  }
+}
+
+/* TimePopover wrapper + backdrop when invoked from Session info card. */
+.timePopoverBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.timePopoverWrapper {
+  position: fixed;
+  z-index: 1000;
+}
+
 /* ── Responsive ──
    86ah1fzxr P0-2: the full-screen <768px override was removed. Spec is silent
    on mobile; Ops app runs on iPad + desktop so the 24rem fixed drawer fits at
