@@ -463,33 +463,11 @@ export default function StudentDetailPanel({
             )}
           </div>
 
-          {/* 86agzuwdf §3C: Testing Setup — multi-subject toggles + level pickers.
-              Persists to flags.taking_test (object form). Auto-clears when every
-              active subject has a Record Test submitted (effect above). */}
-          {onBulkUpdate && (
-            <div className={styles.testingSetupWrap}>
-              <TestingSetupSection
-                student={student}
-                currentFlags={flags}
-                onChange={handleTestingChange}
-              />
-            </div>
-          )}
-
-          {/* 86agzuwdf §3C: Record Test — appears only when Testing Setup has
-              ≥1 subject ON. Postponed routes to visit plan; others post a
-              test_result notification. Form auto-tracks submitted subjects via
-              the auto-clear effect above. */}
-          {testingActive && (
-            <div className={styles.recordTestWrap}>
-              <RecordTestForm
-                student={student}
-                activeSubjects={testingState}
-                onSubmit={handleRecordTestSubmit}
-                onCancel={handleRecordTestCancel}
-              />
-            </div>
-          )}
+          {/* 86ah1fzxr P0-3: During Class spec order is
+              Add button -> Teacher notes -> Flags -> Checklist -> Testing Setup
+              -> Record Test. Testing + Record Test used to render here (before
+              teacher notes) — they have been moved below the flag/checklist
+              blocks to match the locked Detail Panel spec. */}
 
           {/* 6a. Teacher notes — individual amber alerts */}
           {(() => {
@@ -634,9 +612,33 @@ export default function StudentDetailPanel({
             return null;
           })()}
 
-          {/* 6e. Record Test Result — moved up to render right under Testing
-              Setup; the inline 3-outcome form was deleted in favor of the shared
-              4-outcome RecordTestForm component (86agzuwdf §3C). */}
+          {/* 6e. Testing Setup — 86agzuwdf §3C, multi-subject toggles + level
+              pickers. Persists to flags.taking_test (object form). Auto-clears
+              when every active subject has a Record Test submitted. Renders
+              after flags/checklist per the locked Detail Panel spec order. */}
+          {onBulkUpdate && (
+            <div className={styles.testingSetupWrap}>
+              <TestingSetupSection
+                student={student}
+                currentFlags={flags}
+                onChange={handleTestingChange}
+              />
+            </div>
+          )}
+
+          {/* 6f. Record Test — 86agzuwdf §3C, appears only when Testing Setup
+              has >=1 subject ON. Postponed routes to visit plan; others post a
+              test_result notification. */}
+          {testingActive && (
+            <div className={styles.recordTestWrap}>
+              <RecordTestForm
+                student={student}
+                activeSubjects={testingState}
+                onSubmit={handleRecordTestSubmit}
+                onCancel={handleRecordTestCancel}
+              />
+            </div>
+          )}
 
           {/* Assign Class Tasks modal (moved inside During Class) */}
           {showAddItems && (

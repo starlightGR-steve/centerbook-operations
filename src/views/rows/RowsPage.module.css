@@ -141,9 +141,12 @@
   z-index: 999;
 }
 
+/* 86ah1fzxr P0-1: per-seat empty affordance. Width matches RowViewCard
+   (19rem); min-height gives a card-shell floor without towering over
+   loaded cards. Rendered once per open seat in a row's capacity. */
 .assignPlaceholder {
   width: 19rem;
-  height: 13rem;
+  min-height: 11.25rem;
   background: transparent;
   border: 2px dashed var(--neutral);
   border-radius: var(--radius-card);
