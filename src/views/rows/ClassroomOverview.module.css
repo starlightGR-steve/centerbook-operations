@@ -114,12 +114,13 @@
   /* same as above -- flex wrap */
 }
 
-/* 86ah1fzxr follow-up: row cards are bounded to their clamp width and do
-   NOT flex-grow. The previous `flex: 1 1 ...` caused row cards to stretch
-   to fill available horizontal space when a section had few rows, producing
-   the "full-width rows" issue Steve flagged on the preview. Spec (86agzay36)
-   only calls for flex-grow on student cards (WholeClassCard), not row
-   containers; row cards stay compact, empty whitespace goes to the right. */
+/* 86ah1fzxr follow-up: row cards grow to fill their section (flex: 1 1).
+   An earlier commit (faecfb0) bounded these to `flex: 0 1` thinking that
+   would stop student cards from going full-width. Root cause was actually
+   .cardStack stacking vertically; see .cardStack rules below. With cardStack
+   flowing horizontally + wrap, row cards widening back to fill the section
+   gives student cards room to lay out multiple per line at their 17.5rem
+   min-width per spec 86agzay36. */
 .rowCard {
   background: var(--white);
   border: 1px solid var(--border);
@@ -128,7 +129,7 @@
   cursor: pointer;
   transition: all 0.15s;
   width: clamp(260px, 30vw, 320px);
-  flex: 0 1 clamp(260px, 30vw, 320px);
+  flex: 1 1 clamp(260px, 30vw, 320px);
   min-width: 0;
 }
 
@@ -213,10 +214,19 @@
   gap: var(--space-1_5);
 }
 
-/* Vertical stack of WholeClassCards inside a row card. */
+/* 86ah1fzxr: WholeClassCards flow horizontally with wrap per 86agzay36
+   ("Cards use min-width with flex-grow: 1 to fill available horizontal
+   space"). Column direction was making the card's flex-basis 17.5rem
+   apply to height, producing tall empty cards. Row direction makes the
+   same 17.5rem basis the per-card min-width — cards size to content
+   height and wrap to additional lines when the row card can't fit more
+   per line. align-items: flex-start keeps wrapped rows top-aligned
+   instead of stretching to match the tallest card in the line. */
 .cardStack {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--space-2);
 }
 
@@ -271,7 +281,7 @@
 
   .rowCard {
     width: clamp(240px, 42vw, 280px);
-    flex: 0 1 clamp(240px, 42vw, 280px);
+    flex: 1 1 clamp(240px, 42vw, 280px);
   }
 }
 
