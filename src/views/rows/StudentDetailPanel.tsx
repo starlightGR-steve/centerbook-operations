@@ -198,21 +198,23 @@ export default function StudentDetailPanel({
   }, [student.id]);
 
   // Auto-clear effect: when every key in taking_test is in submittedSubjects,
-  // flip taking_test to false and reset the local set.
+  // flip taking_test to false and reset the local set. Spread (flags ?? {}) so
+  // freshly-assigned students with no prior flag activity still update cleanly
+  // (the upstream flagsMap omits assignments where a.flags is null).
   useEffect(() => {
-    if (!testingActive || !flags || !onBulkUpdate) return;
+    if (!testingActive || !onBulkUpdate) return;
     const activeKeys = Object.keys(testingState) as Array<'math' | 'reading'>;
     const allSubmitted = activeKeys.every((k) => submittedSubjects.has(k));
     if (allSubmitted && activeKeys.length > 0) {
-      onBulkUpdate({ ...flags, taking_test: false } as RowAssignmentFlags);
+      onBulkUpdate({ ...(flags ?? {}), taking_test: false } as RowAssignmentFlags);
       setSubmittedSubjects(new Set());
     }
   }, [submittedSubjects, testingActive, testingState, flags, onBulkUpdate]);
 
   const handleTestingChange = (next: TestingState) => {
-    if (!flags || !onBulkUpdate) return;
+    if (!onBulkUpdate) return;
     const taking = Object.keys(next).length === 0 ? false : next;
-    onBulkUpdate({ ...flags, taking_test: taking } as RowAssignmentFlags);
+    onBulkUpdate({ ...(flags ?? {}), taking_test: taking } as RowAssignmentFlags);
   };
 
   const handleRecordTestSubmit = async (payload: RecordTestPayload) => {
