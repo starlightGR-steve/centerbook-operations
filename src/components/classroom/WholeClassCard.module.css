@@ -7,7 +7,14 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  flex: 1 1 17.5rem;
+  /* 86ah1fzxr: bounded width regardless of sibling count. Spec 86agzay36
+     says "min-width with flex-grow"; that assumed multi-card rows. The
+     single-card edge case stretched the lone card to full container width,
+     which aspect-ratio: 5/3 then amplified into an oversized height. Per
+     Steve Apr 22 clarification, cards must not stretch past ~320px whether
+     alone or in a row of six. flex-grow: 0 enforces that; clamp scales
+     basis gently 17.5rem -> 20rem across viewports. */
+  flex: 0 0 clamp(17.5rem, 18vw, 20rem);
   /* Spec specifies min-width 17.5rem; loosened to 0 here so cards can shrink
      inside narrower row cards on smaller viewports without overflowing. */
   min-width: 0;
