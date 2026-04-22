@@ -11,6 +11,10 @@
   /* Spec specifies min-width 17.5rem; loosened to 0 here so cards can shrink
      inside narrower row cards on smaller viewports without overflowing. */
   min-width: 0;
+  /* 86ah1fzxr: 5:3 landscape (physical index-card shape) per Steve Apr 22
+     clarification. aspect-ratio is a floor — if content exceeds the derived
+     height (~168px at 280px width, ~192px at 320px), the card grows to fit. */
+  aspect-ratio: 5 / 3;
   cursor: pointer;
   font-family: var(--font-primary);
   transition: border-color 150ms ease, opacity 150ms ease;
