@@ -1,19 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
   X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
   Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  ChevronDown, ChevronUp, Pin,
+  ChevronDown, ChevronUp, Pin, Pencil, Clock,
 } from 'lucide-react';
+import useSWR from 'swr';
 import { api } from '@/lib/api';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
+import AttendanceEditModal from '@/components/AttendanceEditModal';
+import TimePopover from '@/components/classroom/TimePopover';
+import PositionedPortal from '@/components/classroom/PositionedPortal';
+import TestingSetupSection, { type TestingState } from '@/components/classroom/TestingSetupSection';
+import RecordTestForm, { type RecordTestPayload } from '@/components/classroom/RecordTestForm';
+import PermissionsPickupCard from '@/components/classroom/PermissionsPickupCard';
+import type { Contact } from '@/lib/types';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
-import { getTeacherNotes } from '@/lib/types';
+import { getTeacherNotes, formatTime } from '@/lib/types';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
 import { useOutstandingLoans } from '@/hooks/useLibrary';
@@ -95,15 +104,14 @@ export default function StudentDetailPanel({
   const [showDoneNotes, setShowDoneNotes] = useState(false);
   const [showAddItems, setShowAddItems] = useState(false);
 
-  // Test Result form state
-  const [trOpen, setTrOpen] = useState(false);
-  const [trSubject, setTrSubject] = useState<'math' | 'reading' | null>(null);
-  const [trResult, setTrResult] = useState<'passed' | 'review' | 'borderline' | null>(null);
-  const [trNotes, setTrNotes] = useState('');
-  const [trManagerReview, setTrManagerReview] = useState(false);
-  const [trSubmitting, setTrSubmitting] = useState(false);
-  const [trError, setTrError] = useState<string | null>(null);
-  const [trSuccess, setTrSuccess] = useState(false);
+  // 86agzuwdf §3A: Session info card state. Edit opens AttendanceEditModal,
+  // Time opens the same TimePopover used in Row View, anchored to the Time button.
+  const [editAttendanceOpen, setEditAttendanceOpen] = useState(false);
+  const [timePopoverOpen, setTimePopoverOpen] = useState(false);
+  const timeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // 86agzuwdf §3C: Record Test now uses the shared RecordTestForm component;
+  // the old inline trOpen/trSubject/etc. state was deleted along with the form.
   const { data: classroomNotes, mutate: mutateNotes } = useClassroomNotes(student.id);
   const { data: allLoans } = useOutstandingLoans();
   const { flags: flagConfig } = useFlagConfig();
@@ -139,6 +147,109 @@ export default function StudentDetailPanel({
   const subjects = parseSubjects(student.subjects);
   const scheduleDetail = student.schedule_detail;
 
+  // 86agzuwdf §3A: SMS-on-file pill in meta row reads from the FULL Contact
+  // (StudentContact returned by /students/{id}/contacts doesn't carry sms_opt_in).
+  // SWR-keyed per primary_contact_id; deduped 10s.
+  const { data: primaryContact } = useSWR<Contact | null>(
+    student.primary_contact_id ? `contact-${student.primary_contact_id}` : null,
+    async () => student.primary_contact_id ? api.contacts.get(student.primary_contact_id) : null,
+    { dedupingInterval: 10_000, revalidateOnFocus: false }
+  );
+  const primaryContactSmsState: 'on' | 'off' | 'unknown' =
+    !student.primary_contact_id
+      ? 'off'
+      : primaryContact === undefined
+        ? 'unknown'
+        : primaryContact?.sms_opt_in === 1
+          ? 'on'
+          : 'off';
+
+  // 86agzuwdf §3A: compact inline schedule for the meta row, e.g. "M·W·F 3:30p · 60m".
+  // Falls back to "No schedule" when schedule_detail is empty/missing.
+  const compactScheduleText = (() => {
+    const entries = scheduleDetail
+      ? Object.entries(scheduleDetail).sort(([, a], [, b]) => a.sort_key - b.sort_key)
+      : [];
+    if (entries.length === 0) return 'No schedule';
+    const dayInitial: Record<string, string> = {
+      Monday: 'M', Tuesday: 'T', Wednesday: 'W', Thursday: 'Th',
+      Friday: 'F', Saturday: 'Sa', Sunday: 'Su',
+    };
+    const days = entries.map(([day]) => dayInitial[day] ?? day.slice(0, 1)).join('·');
+    const firstStart = entries[0][1].start;
+    const duration = entries[0][1].duration;
+    return `${days} ${firstStart} · ${duration}m`;
+  })();
+
+  // 86agzuwdf §3C: Testing Setup state mirrors flags.taking_test (single source
+  // of truth in the row assignment). Empty object = no subjects active.
+  const takingTest = flags?.taking_test;
+  const testingState: TestingState =
+    takingTest && typeof takingTest === 'object' ? (takingTest as TestingState) : {};
+  const testingActive = Object.keys(testingState).length > 0;
+
+  // Tracks Record Test submissions THIS panel session, so we can auto-clear
+  // taking_test when every active subject has been submitted (per Q5 decision).
+  const [submittedSubjects, setSubmittedSubjects] = useState<Set<'math' | 'reading'>>(new Set());
+
+  // Reset submitted-set on student change.
+  useEffect(() => {
+    setSubmittedSubjects(new Set());
+  }, [student.id]);
+
+  // Auto-clear effect: when every key in taking_test is in submittedSubjects,
+  // flip taking_test to false and reset the local set. Spread (flags ?? {}) so
+  // freshly-assigned students with no prior flag activity still update cleanly
+  // (the upstream flagsMap omits assignments where a.flags is null).
+  useEffect(() => {
+    if (!testingActive || !onBulkUpdate) return;
+    const activeKeys = Object.keys(testingState) as Array<'math' | 'reading'>;
+    const allSubmitted = activeKeys.every((k) => submittedSubjects.has(k));
+    if (allSubmitted && activeKeys.length > 0) {
+      onBulkUpdate({ ...(flags ?? {}), taking_test: false } as RowAssignmentFlags);
+      setSubmittedSubjects(new Set());
+    }
+  }, [submittedSubjects, testingActive, testingState, flags, onBulkUpdate]);
+
+  const handleTestingChange = (next: TestingState) => {
+    if (!onBulkUpdate) return;
+    const taking = Object.keys(next).length === 0 ? false : next;
+    onBulkUpdate({ ...(flags ?? {}), taking_test: taking } as RowAssignmentFlags);
+  };
+
+  const handleRecordTestSubmit = async (payload: RecordTestPayload) => {
+    if (payload.result === 'postponed') {
+      // Q2: reuse 'custom' visit-plan type with descriptive label rather than
+      // introducing a new 'test' type the backend doesn't validate yet.
+      await api.visitPlan.create(student.id, [{
+        item_key: `test_postponed_${payload.subject}_${Date.now()}`,
+        item_type: 'custom',
+        item_label: `Postponed test: ${payload.subject === 'math' ? 'Math' : 'Reading'} ${payload.level}`,
+        notes: payload.notes || undefined,
+      }]);
+    } else {
+      await api.notifications.create({
+        type: 'test_result',
+        student_id: student.id,
+        subject: payload.subject,
+        level: payload.level,
+        result: payload.result,
+        notes: payload.notes || undefined,
+        needs_manager_review: payload.needs_manager_review,
+      });
+    }
+    setSubmittedSubjects((prev) => {
+      const next = new Set(prev);
+      next.add(payload.subject);
+      return next;
+    });
+  };
+
+  const handleRecordTestCancel = () => {
+    // Cancel is form-level; the form stays mounted because Testing Setup is
+    // still active. Clearing the form state is internal to RecordTestForm.
+  };
+
   const handleOpenAddItems = () => {
     setTeacherNoteInput('');
     setShowAddItems(true);
@@ -173,64 +284,75 @@ export default function StudentDetailPanel({
 
   return (
     <div className={styles.panel}>
-      {/* 1. Header — name is clickable link for admins; profile arrow + close */}
+      {/* 86agzuwdf §3A: Header — avatar removed, name is the link to full profile.
+          Subject pills moved into the subtitle slot; classroom/grade/SMS/schedule
+          live in the meta row below. */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.avatar}>{student.first_name[0]}</div>
-          <div>
-            {isAdmin ? (
-              <Link href={`/students/${student.id}`} className={styles.headerNameLink} onClick={onClose}>
-                <h3 className={styles.headerName}>
-                  {student.first_name} {student.last_name}
-                </h3>
-              </Link>
-            ) : (
+          {isAdmin ? (
+            <Link
+              href={`/students/${student.id}`}
+              className={styles.headerNameLink}
+              onClick={onClose}
+              aria-label={`Open ${student.first_name} ${student.last_name}'s full profile`}
+            >
               <h3 className={styles.headerName}>
                 {student.first_name} {student.last_name}
               </h3>
+              <ArrowRight
+                size={24}
+                strokeWidth={2}
+                className={styles.headerNameArrow}
+                aria-hidden="true"
+              />
+            </Link>
+          ) : (
+            <h3 className={styles.headerName}>
+              {student.first_name} {student.last_name}
+            </h3>
+          )}
+          <div className={styles.headerSubtitle}>
+            {subjects.includes('Math') && (
+              <span className={styles.levelBadgeMath}>
+                Math {student.current_level_math || ''}
+              </span>
             )}
-            <p className={styles.headerSub}>
-              {rowLabel || 'Row'} · Grade {student.grade_level || '—'} · {student.program_type || 'Paper'}
-            </p>
+            {subjects.includes('Reading') && (
+              <span className={styles.levelBadgeReading}>
+                Reading {student.current_level_reading || ''}
+              </span>
+            )}
+            {student.program_type === 'Kumon Connect' && (
+              <span className={styles.kcBadge}>KC</span>
+            )}
           </div>
         </div>
         <div className={styles.headerActions}>
-          {isAdmin && (
-            <Link
-              href={`/students/${student.id}`}
-              className={styles.profileIconLink}
-              onClick={onClose}
-              title="View Full Profile"
-            >
-              <ArrowRight size={16} />
-            </Link>
-          )}
-          <button className={styles.closeBtn} onClick={onClose}>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close detail panel">
             <X size={20} />
           </button>
         </div>
       </div>
 
       <div className={styles.body}>
-        {/* 2. Badge row */}
-        <div className={styles.badgeRow}>
+        {/* 86agzuwdf §3A: Meta row — at-a-glance classroom + grade + SMS + compact schedule. */}
+        <div className={styles.metaRow}>
           {student.classroom_position && (
             <span className={styles.posBadge}>{student.classroom_position}</span>
           )}
-          {subjects.includes('Math') && (
-            <span className={styles.levelBadgeMath}>
-              Math {student.current_level_math || ''}
-            </span>
-          )}
-          {subjects.includes('Reading') && (
-            <span className={styles.levelBadgeReading}>
-              Reading {student.current_level_reading || ''}
-            </span>
-          )}
-          {student.program_type === 'Kumon Connect' && (
-            <span className={styles.kcBadge}>KC</span>
-          )}
           <span className={styles.gradeBadge}>Grade {student.grade_level || '—'}</span>
+          {(() => {
+            // SMS pill — only renders once we know whether the primary contact opted in.
+            // Skips silently when there is no primary contact id (no SWR fetch keyed).
+            if (primaryContactSmsState === 'unknown') return null;
+            const on = primaryContactSmsState === 'on';
+            return (
+              <span className={on ? styles.smsPillOn : styles.smsPillOff}>
+                {on ? 'SMS on' : 'SMS off'}
+              </span>
+            );
+          })()}
+          <span className={styles.compactSchedule}>{compactScheduleText}</span>
         </div>
 
         {/* 3. Medical / Allergies */}
@@ -242,6 +364,56 @@ export default function StudentDetailPanel({
               <p className={styles.medicalText}>{student.medical_notes}</p>
             </div>
           </div>
+        )}
+
+        {/* 3b. Session info — 86agzuwdf §3A. Renders only when an attendance record
+            exists (skipped when the panel is opened from Task Inbox or any other
+            non-classroom surface). Permissions card slots after this in §3B/§3E. */}
+        {attendance && (
+          <div className={styles.sessionCard}>
+            <div className={styles.sessionRow}>
+              <div className={styles.sessionField}>
+                <span className={styles.sessionLabel}>Checked in</span>
+                <span className={styles.sessionValue}>{formatTime(attendance.check_in)}</span>
+              </div>
+              <button
+                type="button"
+                className={styles.sessionAction}
+                onClick={() => setEditAttendanceOpen(true)}
+                aria-label="Edit check-in and check-out times"
+              >
+                <Pencil size={14} aria-hidden="true" />
+                Edit
+              </button>
+            </div>
+            <div className={styles.sessionRow}>
+              <div className={styles.sessionField}>
+                <span className={styles.sessionLabel}>Session time</span>
+                <span className={styles.sessionValue}>
+                  {Number(attendance.session_duration_minutes ?? 0)}m
+                </span>
+              </div>
+              <button
+                ref={timeButtonRef}
+                type="button"
+                className={styles.sessionAction}
+                onClick={() => setTimePopoverOpen(true)}
+                aria-label="Adjust session time"
+              >
+                <Clock size={14} aria-hidden="true" />
+                Time
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 86agzuwdf §3B: Permissions & Pickup card. Same attendance gate as Session info. */}
+        {attendance && (
+          <PermissionsPickupCard
+            studentId={student.id}
+            attendanceId={attendance.id}
+            staffId={staffId}
+          />
         )}
 
         {/* 4. SMS Status */}
@@ -290,6 +462,34 @@ export default function StudentDetailPanel({
               </button>
             )}
           </div>
+
+          {/* 86agzuwdf §3C: Testing Setup — multi-subject toggles + level pickers.
+              Persists to flags.taking_test (object form). Auto-clears when every
+              active subject has a Record Test submitted (effect above). */}
+          {onBulkUpdate && (
+            <div className={styles.testingSetupWrap}>
+              <TestingSetupSection
+                student={student}
+                currentFlags={flags}
+                onChange={handleTestingChange}
+              />
+            </div>
+          )}
+
+          {/* 86agzuwdf §3C: Record Test — appears only when Testing Setup has
+              ≥1 subject ON. Postponed routes to visit plan; others post a
+              test_result notification. Form auto-tracks submitted subjects via
+              the auto-clear effect above. */}
+          {testingActive && (
+            <div className={styles.recordTestWrap}>
+              <RecordTestForm
+                student={student}
+                activeSubjects={testingState}
+                onSubmit={handleRecordTestSubmit}
+                onCancel={handleRecordTestCancel}
+              />
+            </div>
+          )}
 
           {/* 6a. Teacher notes — individual amber alerts */}
           {(() => {
@@ -434,150 +634,9 @@ export default function StudentDetailPanel({
             return null;
           })()}
 
-          {/* 6e. Record Test Result */}
-          <div className={styles.testResultSection}>
-            <button
-              className={`${styles.testResultToggle} ${trOpen ? styles.testResultToggleOpen : ''}`}
-              onClick={() => setTrOpen(o => !o)}
-            >
-              <span className={styles.testResultToggleLabel}>Record test result</span>
-              {trOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-
-            {trOpen && (
-              <div className={styles.testResultForm}>
-                {/* Subject */}
-                <div className={styles.trRow}>
-                  <span className={styles.trFieldLabel}>Subject</span>
-                  <div className={styles.trToggleGroup}>
-                    {subjects.includes('Math') && student.current_level_math && (
-                      <button
-                        className={`${styles.trToggleBtn} ${trSubject === 'math' ? styles.trToggleMath : ''}`}
-                        onClick={() => setTrSubject('math')}
-                      >
-                        Math {student.current_level_math}
-                      </button>
-                    )}
-                    {subjects.includes('Reading') && student.current_level_reading && (
-                      <button
-                        className={`${styles.trToggleBtn} ${trSubject === 'reading' ? styles.trToggleReading : ''}`}
-                        onClick={() => setTrSubject('reading')}
-                      >
-                        Reading {student.current_level_reading}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Result */}
-                <div className={styles.trRow}>
-                  <span className={styles.trFieldLabel}>Result</span>
-                  <div className={styles.trToggleGroup}>
-                    {([
-                      { id: 'passed'     as const, label: 'Passed',          cls: styles.trTogglePassed },
-                      { id: 'review'     as const, label: 'Review & retest',  cls: styles.trToggleReview },
-                      { id: 'borderline' as const, label: 'Borderline',       cls: styles.trToggleBorderline },
-                    ]).map(r => (
-                      <button
-                        key={r.id}
-                        className={`${styles.trToggleBtn} ${trResult === r.id ? r.cls : ''}`}
-                        onClick={() => setTrResult(r.id)}
-                      >
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <textarea
-                  className={styles.trNotes}
-                  value={trNotes}
-                  onChange={(e) => setTrNotes(e.target.value)}
-                  placeholder="Notes on the test..."
-                  rows={2}
-                />
-
-                {/* Manager review */}
-                <label className={styles.trManagerRow}>
-                  <input
-                    type="checkbox"
-                    checked={trManagerReview}
-                    onChange={(e) => setTrManagerReview(e.target.checked)}
-                    className={styles.trManagerCheckbox}
-                  />
-                  <span>Amy/Bincy needs to review</span>
-                </label>
-
-                {/* Contextual hint */}
-                {trResult && (
-                  <div className={
-                    trResult === 'passed' ? styles.trHintGreen
-                    : trResult === 'review' ? styles.trHintRed
-                    : styles.trHintAmber
-                  }>
-                    {trResult === 'passed' && 'Fran will be notified to prepare certificate + $1 and pull homework for next level'}
-                    {trResult === 'review' && 'Fran will be notified to pull review worksheets'}
-                    {trResult === 'borderline' && 'This will be sent to Amy/Bincy for review before going to Fran'}
-                  </div>
-                )}
-
-                {trError && <p className={styles.trError}>{trError}</p>}
-                {trSuccess && (
-                  <p className={styles.trSuccessMsg}>
-                    <Check size={14} /> Test result recorded
-                  </p>
-                )}
-
-                {/* Actions */}
-                <div className={styles.trActions}>
-                  <button
-                    className={styles.trCancelBtn}
-                    onClick={() => {
-                      setTrOpen(false);
-                      setTrSubject(null); setTrResult(null);
-                      setTrNotes(''); setTrManagerReview(false);
-                      setTrError(null); setTrSuccess(false);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className={styles.trSubmitBtn}
-                    disabled={!trSubject || !trResult || trSubmitting}
-                    onClick={async () => {
-                      if (!trSubject || !trResult || trSubmitting) return;
-                      setTrSubmitting(true);
-                      setTrError(null);
-                      try {
-                        await api.notifications.create({
-                          type: 'test_result',
-                          student_id: student.id,
-                          subject: trSubject,
-                          level: trSubject === 'math'
-                            ? (student.current_level_math ?? '')
-                            : (student.current_level_reading ?? ''),
-                          result: trResult,
-                          notes: trNotes.trim() || undefined,
-                          needs_manager_review: trManagerReview,
-                        });
-                        setTrSuccess(true);
-                        setTrSubject(null); setTrResult(null);
-                        setTrNotes(''); setTrManagerReview(false);
-                        setTimeout(() => { setTrOpen(false); setTrSuccess(false); }, 2000);
-                      } catch {
-                        setTrError('Failed to submit. Please try again.');
-                      } finally {
-                        setTrSubmitting(false);
-                      }
-                    }}
-                  >
-                    {trSubmitting ? 'Submitting…' : 'Submit →'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* 6e. Record Test Result — moved up to render right under Testing
+              Setup; the inline 3-outcome form was deleted in favor of the shared
+              4-outcome RecordTestForm component (86agzuwdf §3C). */}
 
           {/* Assign Class Tasks modal (moved inside During Class) */}
           {showAddItems && (
@@ -774,6 +833,44 @@ export default function StudentDetailPanel({
         </div>
 
       </div>
+
+      {/* 86agzuwdf §3A: Edit Attendance modal — full-viewport overlay matching the
+          existing UX from AttendancePage / CheckOutPanel / KioskPage call sites. */}
+      {editAttendanceOpen && attendance && (
+        <AttendanceEditModal
+          attendance={attendance}
+          studentName={`${student.first_name} ${student.last_name}`}
+          onClose={() => setEditAttendanceOpen(false)}
+        />
+      )}
+
+      {/* 86agzuwdf §3A: Time popover — anchored to the Time button via the shared
+          PositionedPortal helper. Backdrop dismisses; TimePopover's own internal
+          mousedown listener also closes via onClose. */}
+      {timePopoverOpen && attendance && timeButtonRef.current && createPortal(
+        <div
+          className={styles.timePopoverBackdrop}
+          onClick={() => setTimePopoverOpen(false)}
+        />,
+        document.body
+      )}
+      {timePopoverOpen && attendance && timeButtonRef.current && (
+        <PositionedPortal
+          anchorEl={timeButtonRef.current}
+          gap={6}
+          className={styles.timePopoverWrapper}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TimePopover
+            attendanceId={attendance.id}
+            studentId={student.id}
+            initialDurationMinutes={Number(attendance.session_duration_minutes ?? 60)}
+            initialCheckIn={attendance.check_in}
+            isOpen
+            onClose={() => setTimePopoverOpen(false)}
+          />
+        </PositionedPortal>
+      )}
     </div>
   );
 }

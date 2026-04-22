@@ -576,6 +576,12 @@ export const api = {
       result?: string;
       notes?: string;
       needs_manager_review?: boolean;
+      /** v2.52.0+: bind notification to a specific check-in row (Bathroom request flows). */
+      attendance_id?: number;
+      /** Free-form reason discriminator on type=bathroom_management_request. */
+      reason?: string;
+      /** Staff id originating the request (Bathroom request flows). */
+      requested_by?: number;
     }) =>
       directFetch<{ test_result_id: number; notifications_created: number }>(
         '/notifications',
