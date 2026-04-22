@@ -2,21 +2,21 @@
 
 import { useState, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import Link from 'next/link';
 import useSWR, { mutate as globalMutate } from 'swr';
 import {
   LogOut, UserCircle, Key, Eye, EyeOff,
   ClipboardList, Plus, Check, Inbox,
-  Calendar, Trash2, Search, X as XIcon,
+  Calendar, Trash2, Search, X as XIcon, ArrowRight,
 } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import StudentDetailPanel from '@/views/rows/StudentDetailPanel';
 import { api } from '@/lib/api';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useStudents } from '@/hooks/useStudents';
-import type { CbTask, CbTaskType, CreateTaskRequest } from '@/lib/types';
+import type { CbTask, CbTaskType, CreateTaskRequest, Student } from '@/lib/types';
 import styles from './MePage.module.css';
 
 const TASK_TYPE_LABELS: Record<CbTaskType, string> = {
@@ -88,6 +88,11 @@ export default function MePage() {
   const [studentSearch, setStudentSearch] = useState('');
   const [showStudentSearch, setShowStudentSearch] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  // 86agzuwdf §3D: tapping a task's student name opens the Student Detail Panel
+  // drawer instead of navigating to the full profile page. Read-only context --
+  // no flag/task callbacks wired since the inbox isn't a classroom-edit surface.
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   // Data
   const { data: staff } = useActiveStaff();
@@ -503,9 +508,18 @@ export default function MePage() {
                         )}
 
                         {studentInfo && task.student_id && (
-                          <Link href={`/students/${task.student_id}`} className={styles.taskStudentLink}>
+                          <button
+                            type="button"
+                            className={styles.taskStudentLink}
+                            onClick={() => {
+                              const s = students?.find((x) => x.id === task.student_id);
+                              if (s) setSelectedStudent(s);
+                            }}
+                            aria-label={`Open ${studentInfo.first} ${studentInfo.last}'s details`}
+                          >
                             re: {studentInfo.first} {studentInfo.last}
-                          </Link>
+                            <ArrowRight size={12} aria-hidden="true" />
+                          </button>
                         )}
 
                         {task.notes && (
@@ -659,6 +673,15 @@ export default function MePage() {
           </Button>
         </Card>
       </div>
+
+      {/* 86agzuwdf §3D: Student Detail Panel drawer for task inbox student links. */}
+      {selectedStudent && (
+        <StudentDetailPanel
+          student={selectedStudent}
+          attendance={undefined}
+          onClose={() => setSelectedStudent(null)}
+        />
+      )}
     </div>
   );
 }

@@ -432,18 +432,33 @@
   color: var(--neutral);
 }
 
+/* 86agzuwdf §3D: 44x44 touch target on the inbox student link (now a button
+   that opens the Student Detail Panel drawer instead of full-page nav). */
 .taskStudentLink {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   margin: 2px 0 0;
+  padding: var(--space-1_5) var(--space-2);
+  min-height: var(--touch-min);
   font-family: var(--font-primary);
   font-size: 0.6875rem;
   font-weight: 600;
   color: var(--secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
   text-decoration: none;
+  cursor: pointer;
 }
 
 .taskStudentLink:hover {
   text-decoration: underline;
+}
+
+.taskStudentLink:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
 }
 
 .taskNotes {
