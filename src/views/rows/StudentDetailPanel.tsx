@@ -1,19 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
   X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
   Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  ChevronDown, ChevronUp, Pin,
+  ChevronDown, ChevronUp, Pin, Pencil, Clock,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
+import AttendanceEditModal from '@/components/AttendanceEditModal';
+import TimePopover from '@/components/classroom/TimePopover';
+import PositionedPortal from '@/components/classroom/PositionedPortal';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
-import { getTeacherNotes } from '@/lib/types';
+import { getTeacherNotes, formatTime } from '@/lib/types';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
 import { useOutstandingLoans } from '@/hooks/useLibrary';
@@ -94,6 +98,12 @@ export default function StudentDetailPanel({
   const [teacherNoteInput, setTeacherNoteInput] = useState('');
   const [showDoneNotes, setShowDoneNotes] = useState(false);
   const [showAddItems, setShowAddItems] = useState(false);
+
+  // 86agzuwdf §3A: Session info card state. Edit opens AttendanceEditModal,
+  // Time opens the same TimePopover used in Row View, anchored to the Time button.
+  const [editAttendanceOpen, setEditAttendanceOpen] = useState(false);
+  const [timePopoverOpen, setTimePopoverOpen] = useState(false);
+  const timeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Test Result form state
   const [trOpen, setTrOpen] = useState(false);
@@ -240,6 +250,47 @@ export default function StudentDetailPanel({
             <div>
               <p className={styles.medicalTitle}>Medical / Allergies</p>
               <p className={styles.medicalText}>{student.medical_notes}</p>
+            </div>
+          </div>
+        )}
+
+        {/* 3b. Session info — 86agzuwdf §3A. Renders only when an attendance record
+            exists (skipped when the panel is opened from Task Inbox or any other
+            non-classroom surface). Permissions card slots after this in §3B/§3E. */}
+        {attendance && (
+          <div className={styles.sessionCard}>
+            <div className={styles.sessionRow}>
+              <div className={styles.sessionField}>
+                <span className={styles.sessionLabel}>Checked in</span>
+                <span className={styles.sessionValue}>{formatTime(attendance.check_in)}</span>
+              </div>
+              <button
+                type="button"
+                className={styles.sessionAction}
+                onClick={() => setEditAttendanceOpen(true)}
+                aria-label="Edit check-in and check-out times"
+              >
+                <Pencil size={14} aria-hidden="true" />
+                Edit
+              </button>
+            </div>
+            <div className={styles.sessionRow}>
+              <div className={styles.sessionField}>
+                <span className={styles.sessionLabel}>Session time</span>
+                <span className={styles.sessionValue}>
+                  {Number(attendance.session_duration_minutes ?? 0)}m
+                </span>
+              </div>
+              <button
+                ref={timeButtonRef}
+                type="button"
+                className={styles.sessionAction}
+                onClick={() => setTimePopoverOpen(true)}
+                aria-label="Adjust session time"
+              >
+                <Clock size={14} aria-hidden="true" />
+                Time
+              </button>
             </div>
           </div>
         )}
@@ -774,6 +825,44 @@ export default function StudentDetailPanel({
         </div>
 
       </div>
+
+      {/* 86agzuwdf §3A: Edit Attendance modal — full-viewport overlay matching the
+          existing UX from AttendancePage / CheckOutPanel / KioskPage call sites. */}
+      {editAttendanceOpen && attendance && (
+        <AttendanceEditModal
+          attendance={attendance}
+          studentName={`${student.first_name} ${student.last_name}`}
+          onClose={() => setEditAttendanceOpen(false)}
+        />
+      )}
+
+      {/* 86agzuwdf §3A: Time popover — anchored to the Time button via the shared
+          PositionedPortal helper. Backdrop dismisses; TimePopover's own internal
+          mousedown listener also closes via onClose. */}
+      {timePopoverOpen && attendance && timeButtonRef.current && createPortal(
+        <div
+          className={styles.timePopoverBackdrop}
+          onClick={() => setTimePopoverOpen(false)}
+        />,
+        document.body
+      )}
+      {timePopoverOpen && attendance && timeButtonRef.current && (
+        <PositionedPortal
+          anchorEl={timeButtonRef.current}
+          gap={6}
+          className={styles.timePopoverWrapper}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TimePopover
+            attendanceId={attendance.id}
+            studentId={student.id}
+            initialDurationMinutes={Number(attendance.session_duration_minutes ?? 60)}
+            initialCheckIn={attendance.check_in}
+            isOpen
+            onClose={() => setTimePopoverOpen(false)}
+          />
+        </PositionedPortal>
+      )}
     </div>
   );
 }
