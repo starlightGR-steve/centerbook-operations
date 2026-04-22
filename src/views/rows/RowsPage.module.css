@@ -103,14 +103,16 @@
   overflow-y: auto;
 }
 
-/* Inside a swipe slide: cards stack horizontally with no wrap; the slide
-   itself owns the horizontal scroll when card count exceeds the viewport. */
+/* 86ah1fzxr follow-up: cards wrap to multiple lines inside a swipe slide.
+   Row View spec (86agzftgn, shell spec's implementation notes): "Row
+   containers use flex with wrap if multiple cards per row needed." Cards
+   keep 19rem width; excess capacity flows to subsequent lines instead of
+   forcing horizontal scroll. */
 .cardGrid {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: var(--space-4);
   align-items: flex-start;
-  min-width: min-content;
 }
 
 .cardGrid[data-compact] {
@@ -141,9 +143,12 @@
   z-index: 999;
 }
 
+/* 86ah1fzxr P0-1: per-seat empty affordance. Width matches RowViewCard
+   (19rem); min-height gives a card-shell floor without towering over
+   loaded cards. Rendered once per open seat in a row's capacity. */
 .assignPlaceholder {
   width: 19rem;
-  height: 13rem;
+  min-height: 11.25rem;
   background: transparent;
   border: 2px dashed var(--neutral);
   border-radius: var(--radius-card);

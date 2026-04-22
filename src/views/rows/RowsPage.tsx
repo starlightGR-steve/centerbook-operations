@@ -487,22 +487,32 @@ export default function RowsPage() {
         : 999;
       return aRem - bRem;
     });
-    const hasOpenSeat = slideStudents.length < totalCapacity;
+
+    // 86ah1fzxr P0-1: iterate full capacity so every seat renders. Occupied
+    // slots fill from left (sorted by time remaining), empty slots fill the
+    // remainder with a tappable dashed "+ Assign Student" affordance.
+    const seats: Array<Student | null> = Array.from(
+      { length: totalCapacity },
+      (_, i) => slideStudents[i] ?? null
+    );
 
     return (
       <div className={styles.cardGrid} data-compact={selectedStudent ? '' : undefined}>
-        {hasOpenSeat && (
-          <button
-            type="button"
-            className={styles.assignPlaceholder}
-            onClick={() => setPickerRowLabel(flatRow.label)}
-          >
-            <Plus size={24} aria-hidden="true" />
-            <span>+ Assign Student</span>
-          </button>
-        )}
+        {seats.map((s, i) => {
+          if (!s) {
+            return (
+              <button
+                key={`empty-${i}`}
+                type="button"
+                className={styles.assignPlaceholder}
+                onClick={() => setPickerRowLabel(flatRow.label)}
+              >
+                <Plus size={24} aria-hidden="true" />
+                <span>Assign Student</span>
+              </button>
+            );
+          }
 
-        {slideStudents.map((s) => {
           const att = attendanceMap.get(s.id);
           const remaining = getAdjustedTimeRemaining(s, att);
           const studentFlagsObj = getStudentFlags(s.id);
@@ -574,7 +584,11 @@ export default function RowsPage() {
         {(row) => renderSlide(row)}
       </SwipeShell>
 
-      {selectedStudent && (
+      {/* 86ah1fzxr P0-2: Detail Panel portaled to document.body and positioned
+          as a fixed 24rem right-side drawer (see StudentDetailPanel.module.css
+          .panel block). Escaping the .page flex column prevents the panel from
+          stacking below the grid. */}
+      {selectedStudent && createPortal(
         <StudentDetailPanel
           student={selectedStudent}
           attendance={attendanceMap.get(selectedStudent.id)}
@@ -585,7 +599,8 @@ export default function RowsPage() {
           onBulkUpdate={(updated) => bulkUpdateFlags(selectedStudent.id, updated)}
           onSetTeacherNote={(n) => setTeacherNote(selectedStudent.id, n)}
           onClose={() => setSelectedStudentId(null)}
-        />
+        />,
+        document.body
       )}
 
       {flagSaveError && (
