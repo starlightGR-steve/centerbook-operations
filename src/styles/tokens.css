@@ -66,6 +66,10 @@
   --color-note-text:         #b85a00;
   --color-note-text-dark:    #8b5a00;
 
+  /* Flag / indicator colors. Flag for 86agz5y1w token audit. */
+  --color-work-amy: #6b5b8a;
+  --color-medical:  #e01c3c;
+
   /* Subject letter text (Whole Class View) */
   --color-math-text:    #2d6fa0;
   --color-reading-text: #b85a1a;

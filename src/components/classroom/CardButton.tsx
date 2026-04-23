@@ -24,9 +24,9 @@ export default function CardButton({ variant, label, onPress, disabled }: CardBu
       disabled={disabled}
     >
       <span className={styles.icon} aria-hidden="true">
-        {variant === 'done' && <Check size={16} strokeWidth={2.5} />}
-        {variant === 'move' && <RefreshCw size={16} strokeWidth={2} />}
-        {variant === 'time' && <Clock size={16} strokeWidth={2} />}
+        {variant === 'done' && <Check size={18} strokeWidth={2.5} />}
+        {variant === 'move' && <RefreshCw size={18} strokeWidth={2} />}
+        {variant === 'time' && <Clock size={18} strokeWidth={2} />}
       </span>
       <span className={styles.label}>{label}</span>
     </button>

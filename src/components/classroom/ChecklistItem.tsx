@@ -22,7 +22,7 @@ export default function ChecklistItem({ label, done, onToggle }: ChecklistItemPr
       aria-pressed={done}
     >
       <span className={styles.checkbox} aria-hidden="true">
-        {done && <Check size={14} strokeWidth={3} />}
+        {done && <Check size={16} strokeWidth={3} />}
       </span>
       <span className={styles.label}>{label}</span>
     </button>

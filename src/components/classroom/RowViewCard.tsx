@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Heart, Flag } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { parseSubjects } from '@/lib/types';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
@@ -106,6 +106,14 @@ export default function RowViewCard({
     .filter(Boolean)
     .join(' ');
 
+  const isLightDensity = flagEntries.length === 0 && checklistEntries.length === 0;
+  const actionsClassNames = [
+    styles.actions,
+    isLightDensity ? styles.actionsLight : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   const timeStr = !attendance
     ? '--'
     : isOver
@@ -135,7 +143,17 @@ export default function RowViewCard({
       )}
       {hasUnresolvedNote && (
         <span className={styles.redFlagTab} aria-label="Unresolved teacher note">
-          <Flag size={18} fill="currentColor" strokeWidth={0} />
+          <svg
+            viewBox="0 0 24 32"
+            fill="#ef4444"
+            stroke="#ef4444"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M2 2 L22 2 L22 20 L2 20 Z" />
+            <line x1="2" y1="2" x2="2" y2="32" strokeWidth="2" />
+          </svg>
         </span>
       )}
 
@@ -212,7 +230,7 @@ export default function RowViewCard({
       )}
 
       <div
-        className={styles.actions}
+        className={actionsClassNames}
         onClick={(e) => e.stopPropagation()}
       >
         <CardButton variant="done" label="Done" onPress={onDone} />
