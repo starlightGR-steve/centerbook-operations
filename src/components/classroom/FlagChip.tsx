@@ -57,7 +57,7 @@ export default function FlagChip({
       aria-pressed={done}
     >
       <span className={styles.circle} aria-hidden="true">
-        <Icon size={14} strokeWidth={2.25} />
+        <Icon size={15} strokeWidth={2.25} />
       </span>
       <span className={styles.label}>{label}</span>
     </button>
