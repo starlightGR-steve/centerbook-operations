@@ -7,12 +7,11 @@
   font-size: var(--text-md);
   font-weight: 600;
   border-radius: var(--radius-md);
-  padding: var(--space-2) 0.875rem;
+  padding: 0 var(--space-3);
   min-height: var(--touch-min);
-  min-width: var(--touch-min);
+  min-width: 5rem;
   cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
-  flex: 1;
 }
 
 .btn:focus-visible {
@@ -36,21 +35,20 @@
   white-space: nowrap;
 }
 
-/* Done variant — accent orange */
+/* Done variant — accent orange, no border per spec. */
 .btn_done {
   background: var(--accent);
   color: var(--white);
-  border: 1.5px solid var(--accent);
+  border: none;
 }
 .btn_done:hover:not(:disabled) {
   background: var(--accent-dark);
-  border-color: var(--accent-dark);
 }
 
 /* Move variant — neutral white */
 .btn_move {
   background: var(--white);
-  color: var(--text);
+  color: var(--neutral);
   border: 1.5px solid #d3d1c7;
 }
 .btn_move:hover:not(:disabled) {
