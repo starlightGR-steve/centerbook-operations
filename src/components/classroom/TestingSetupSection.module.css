@@ -1,42 +1,51 @@
 .section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  background: var(--white);
+  border: 2px solid var(--color-testing);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) 1.125rem;
+  max-width: 28rem;
 }
 
 .sectionLabel {
-  margin: 0;
-  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 0.875rem;
+  font-size: var(--text-md);
   font-weight: 700;
-  color: var(--secondary-dark);
+  color: var(--color-testing);
   letter-spacing: 0.06em;
+  text-transform: uppercase;
   line-height: 1;
+}
+
+.sectionLabelIcon {
+  flex-shrink: 0;
 }
 
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
 }
 
 .subjectBlock {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
 }
 
 .toggleRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
+  padding: var(--space-2_5) 0;
   min-height: var(--touch-min);
+  cursor: pointer;
 }
 
 .switch {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2_5);
+  gap: var(--space-3);
   cursor: pointer;
   flex: 1;
   min-height: var(--touch-min);
@@ -50,34 +59,35 @@
   pointer-events: none;
 }
 
+/* Off-state track background: #cbd5e0 per spec. Flag for 86agz5y1w token audit. */
 .track {
   position: relative;
   display: inline-block;
-  width: 30px;
-  height: 16px;
-  background: var(--color-done-bg);
-  border-radius: 999px;
+  width: 2.5rem;
+  height: 1.375rem;
+  background: #cbd5e0;
+  border-radius: 0.75rem;
   flex-shrink: 0;
   transition: background-color 150ms ease;
 }
 
 .thumb {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
   background: var(--white);
   border-radius: 50%;
-  transition: transform 150ms ease;
+  transition: left 150ms ease;
 }
 
 .switch input:checked + .track {
-  background: var(--secondary);
+  background: var(--color-testing);
 }
 
 .switch input:checked + .track .thumb {
-  transform: translateX(14px);
+  left: 1.25rem;
 }
 
 .switch input:focus-visible + .track {
@@ -91,39 +101,27 @@
   color: var(--text);
 }
 
-.subjectPill {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--text-md);
-  font-weight: 700;
-  color: var(--white);
-  padding: var(--space-1) 0.6875rem;
-  border-radius: var(--radius-btn);
-  min-height: 1.625rem;
-  line-height: 1;
-}
-
-.pill_math { background: var(--math); }
-.pill_reading { background: var(--reading); }
-
 .levelRow {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding-left: 2.625rem; /* aligns under switch label */
+  gap: var(--space-2_5);
+  margin-top: var(--space-2_5);
+  padding-left: 3.25rem;
 }
 
 .levelLabel {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .levelSelect {
   font-family: var(--font-primary);
   font-size: var(--text-md);
-  font-weight: 500;
-  padding: var(--space-1_5) var(--space-3);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-3);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-btn);
   background: var(--white);
