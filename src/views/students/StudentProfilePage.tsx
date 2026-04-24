@@ -1013,7 +1013,7 @@ export default function StudentProfilePage({ studentId }: Props) {
           <hr className={styles.groupDivider} />
 
           {/* ── Next Class Planning ── */}
-          <NextClassPlanning studentId={studentId} />
+          <NextClassPlanning studentId={studentId} student={student} />
 
           <hr className={styles.groupDivider} />
 

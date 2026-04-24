@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { Plus, X, Check, ChevronDown, ChevronUp, Square, CheckSquare } from 'lucide-react';
 import { useVisitPlan } from '@/hooks/useVisitPlan';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
-import type { VisitPlanItem } from '@/lib/types';
+import type { VisitPlanItem, Student } from '@/lib/types';
 import styles from './NextClassPlanning.module.css';
 
 interface NextClassPlanningProps {
   studentId: number;
+  student: Student;
 }
 
 function formatTimestamp(iso: string): string {
@@ -16,7 +17,7 @@ function formatTimestamp(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function NextClassPlanning({ studentId }: NextClassPlanningProps) {
+export default function NextClassPlanning({ studentId, student: _student }: NextClassPlanningProps) {
   const { activeItems, completedItems, addItems, markDone, reopen, removeItem } = useVisitPlan(studentId);
   const { flags: flagConfig } = useFlagConfig();
   const { items: checklistConfig } = useChecklistConfig();
