@@ -20,6 +20,7 @@ import TestingSetupSection, { type TestingState } from '@/components/classroom/T
 import RecordTestForm, { type RecordTestPayload } from '@/components/classroom/RecordTestForm';
 import PermissionsPickupCard from '@/components/classroom/PermissionsPickupCard';
 import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
+import PlanNextVisitModal, { type VisitPlanDraft } from '@/components/classroom/PlanNextVisitModal';
 import type { Contact } from '@/lib/types';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
@@ -245,6 +246,41 @@ export default function StudentDetailPanel({
 
   const handleOpenAddItems = () => {
     setShowAddItems(true);
+  };
+
+  // Phase 6c: adapter for shared PlanNextVisitModal. Writes to
+  // cb_row_assignments.flags (today's session) via the existing onBulkUpdate
+  // prop. Add-only semantics: Save unions selections into the current blob.
+  const handleAssignClassTasks = async (draft: VisitPlanDraft) => {
+    if (!onBulkUpdate) return;
+    const current = (flags ?? {}) as RowAssignmentFlags;
+    const updated: RowAssignmentFlags = { ...current };
+
+    draft.flags.forEach((key) => {
+      (updated as Record<string, unknown>)[key] = true;
+    });
+
+    const hasTesting = draft.testing.math != null || draft.testing.reading != null;
+    if (hasTesting) {
+      updated.taking_test = draft.testing;
+    }
+
+    if (draft.checklist.length > 0) {
+      const existingTasks = { ...(current.tasks || {}) };
+      draft.checklist.forEach((entry) => {
+        existingTasks[entry] = false;
+      });
+      updated.tasks = existingTasks;
+    }
+
+    if (draft.note.trim()) {
+      const existingNotes = getTeacherNotes(current);
+      updated.teacher_notes = [...existingNotes, { text: draft.note.trim(), done: false }];
+      updated.teacher_note = undefined;
+    }
+
+    onBulkUpdate(updated);
+    setShowAddItems(false);
   };
 
   const handleSaveNote = async () => {
@@ -621,6 +657,14 @@ export default function StudentDetailPanel({
           })()}
 
         </div>
+
+        {/* Phase 6c: shared PlanNextVisitModal. Writes to today's cb_row_assignments.flags. */}
+        <PlanNextVisitModal
+          student={student}
+          isOpen={showAddItems}
+          onClose={() => setShowAddItems(false)}
+          onSave={handleAssignClassTasks}
+        />
 
         {/* 7. Classroom Observations */}
         <div>
