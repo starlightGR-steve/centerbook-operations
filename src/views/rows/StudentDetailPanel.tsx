@@ -101,7 +101,6 @@ export default function StudentDetailPanel({
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteSuccess, setNoteSuccess] = useState(false);
-  const [teacherNoteInput, setTeacherNoteInput] = useState('');
   const [showAddItems, setShowAddItems] = useState(false);
 
   // 86agzuwdf §3A: Session info card state. Edit opens AttendanceEditModal,
@@ -135,11 +134,6 @@ export default function StudentDetailPanel({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Reset note input when student changes
-  useEffect(() => {
-    setTeacherNoteInput('');
-  }, [student.id]);
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
@@ -250,7 +244,6 @@ export default function StudentDetailPanel({
   };
 
   const handleOpenAddItems = () => {
-    setTeacherNoteInput('');
     setShowAddItems(true);
   };
 
@@ -627,115 +620,6 @@ export default function StudentDetailPanel({
             return null;
           })()}
 
-          {/* Assign Class Tasks modal (moved inside During Class) */}
-          {showAddItems && (
-            <div className={styles.addItemsOverlay}>
-              <div className={styles.addItemsPanel}>
-                <div className={styles.addItemsPanelHeader}>
-                  <span className={styles.addItemsPanelTitle}>Assign Class Tasks</span>
-                  <button className={styles.addItemsClose} onClick={() => setShowAddItems(false)}>
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <label className={styles.addItemsSectionLabel}>Flags</label>
-                <div className={styles.addItemsGrid}>
-                  {flagConfig.map((fc) => {
-                    const isOn = !!(flags && (flags as Record<string, unknown>)[fc.key]);
-                    return (
-                      <button
-                        key={fc.key}
-                        className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
-                        onClick={() => {
-                          if (!onBulkUpdate) return;
-                          const updated = { ...flags } as RowAssignmentFlags;
-                          if (isOn) {
-                            delete (updated as Record<string, unknown>)[fc.key];
-                          } else {
-                            (updated as Record<string, unknown>)[fc.key] = true;
-                          }
-                          onBulkUpdate(updated);
-                        }}
-                      >
-                        <span className={styles.addItemCircle} style={isOn ? { background: fc.color } : undefined}>
-                          <FlagIcon icon={fc.icon} size={10} />
-                        </span>
-                        <span>{fc.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <label className={styles.addItemsSectionLabel}>Checklist</label>
-                <div className={styles.addItemsGrid}>
-                  {checklistConfig.map((ci) => {
-                    const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
-                    const isOn = val !== undefined && val !== null;
-                    const stayOn = isStayOn(ci.key);
-                    return (
-                      <div key={ci.key} className={styles.addItemRow}>
-                        <button
-                          className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
-                          onClick={() => {
-                            if (!onBulkUpdate) return;
-                            const tasks = { ...(flags?.tasks || {}) } as Record<string, boolean | string | null | undefined>;
-                            if (isOn) {
-                              delete tasks[ci.key];
-                            } else {
-                              tasks[ci.key] = false;
-                            }
-                            onBulkUpdate({ ...flags, tasks } as RowAssignmentFlags);
-                          }}
-                        >
-                          <span className={`${styles.addItemCheck} ${isOn ? styles.addItemCheckOn : ''}`}>
-                            {isOn && <Check size={9} color="var(--white)" />}
-                          </span>
-                          <span>{ci.label}</span>
-                        </button>
-                        <button
-                          className={`${styles.pinBtn} ${stayOn ? styles.pinBtnActive : ''}`}
-                          onClick={() => stayOn
-                            ? removePersistentItem(ci.key)
-                            : addPersistentItem(ci.key, 'checklist')
-                          }
-                          title={stayOn ? 'Repeats daily — click to remove' : 'Set to repeat daily'}
-                          aria-label={stayOn ? 'Remove from daily repeats' : 'Add to daily repeats'}
-                        >
-                          <Pin size={13} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Note for teacher — appends to the notes array */}
-                <label className={styles.addItemsSectionLabel}>Note for Teacher</label>
-                <textarea
-                  className={styles.teacherNoteModalInput}
-                  value={teacherNoteInput}
-                  onChange={(e) => setTeacherNoteInput(e.target.value)}
-                  rows={3}
-                  placeholder="Add a new note for the classroom teacher..."
-                />
-
-                <button
-                  className={styles.addItemsDone}
-                  onClick={() => {
-                    if (onBulkUpdate && flags) {
-                      const existing = getTeacherNotes(flags);
-                      const newNotes = teacherNoteInput.trim()
-                        ? [...existing, { text: teacherNoteInput.trim(), done: false }]
-                        : existing;
-                      onBulkUpdate({ ...flags, teacher_notes: newNotes, teacher_note: undefined } as RowAssignmentFlags);
-                    }
-                    setShowAddItems(false);
-                  }}
-                >
-                  Save &amp; Done
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 7. Classroom Observations */}
