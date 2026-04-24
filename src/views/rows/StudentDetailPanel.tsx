@@ -586,9 +586,15 @@ export default function StudentDetailPanel({
                 {customTaskKeys.map((key) => {
                   const val = (flags?.tasks as Record<string, unknown>)?.[key];
                   const isDone = val === true;
+                  // Label resolution order:
+                  //   1. Legacy shape flags.tasks.custom = "<text>" — value is the label.
+                  //   2. Phase 6c shape flags.tasks["custom:<text>"] = false — strip prefix.
+                  //   3. Unknown key — pretty-print as fallback.
                   const label = typeof val === 'string' && val.length > 0
                     ? val
-                    : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                    : key.startsWith('custom:')
+                      ? key.slice('custom:'.length)
+                      : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
                   return (
                     <button
                       key={key}
@@ -660,6 +666,7 @@ export default function StudentDetailPanel({
           isOpen={showAddItems}
           onClose={() => setShowAddItems(false)}
           onSave={handleAssignClassTasks}
+          title="Add classroom item"
         />
 
         {/* 7. Classroom Observations */}
