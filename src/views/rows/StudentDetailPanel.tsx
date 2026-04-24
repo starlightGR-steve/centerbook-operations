@@ -667,6 +667,7 @@ export default function StudentDetailPanel({
           onClose={() => setShowAddItems(false)}
           onSave={handleAssignClassTasks}
           title="Add classroom item"
+          testingTense="present"
         />
 
         {/* 7. Classroom Observations */}
