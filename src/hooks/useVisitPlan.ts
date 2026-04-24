@@ -14,7 +14,14 @@ export function useVisitPlan(studentId: number | null) {
   const completedItems = (data || []).filter((i) => !!i.completed_at);
 
   const addItems = async (
-    items: Array<{ item_key: string; item_type: string; item_label?: string; notes?: string }>
+    items: Array<{
+      item_key: string;
+      item_type: string;
+      item_label?: string;
+      item_subject?: string;
+      item_level?: string;
+      notes?: string;
+    }>
   ) => {
     await api.visitPlan.create(studentId!, items);
     mutate();

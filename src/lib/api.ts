@@ -664,7 +664,17 @@ export const api = {
       const params = status ? `?status=${status}` : '';
       return directFetch<VisitPlanItem[]>(`/students/${studentId}/visit-plan${params}`);
     },
-    create: (studentId: number, items: Array<{ item_key: string; item_type: string; item_label?: string; notes?: string }>) =>
+    create: (
+      studentId: number,
+      items: Array<{
+        item_key: string;
+        item_type: string;
+        item_label?: string;
+        item_subject?: string;
+        item_level?: string;
+        notes?: string;
+      }>,
+    ) =>
       directFetch(`/students/${studentId}/visit-plan`, {
         method: 'POST',
         body: JSON.stringify({ items }),
