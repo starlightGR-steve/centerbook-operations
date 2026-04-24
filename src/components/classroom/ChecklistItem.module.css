@@ -40,6 +40,7 @@
   line-height: 1.35;
 }
 
+/* Done state (completion mode) — gray-filled box + strikethrough label */
 .rowDone .checkbox {
   background: var(--color-done-bg);
   border-color: var(--color-done-bg);
@@ -49,6 +50,25 @@
 .rowDone .label {
   color: var(--color-done-text);
   text-decoration: line-through;
+}
+
+/* Selected state (selection mode) — accent-filled checkbox signaling
+   "added to the plan". Distinct color from .rowDone so "added" is not confused
+   with "completed". Used by Plan Next Visit modal. */
+.rowSelected .checkbox {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--white);
+}
+
+/* Unselected state (selection mode) — muted label + reduced opacity on the row.
+   Checkbox stays in its default empty-outline rendering. Used by Plan Next Visit modal. */
+.rowUnselected {
+  opacity: 0.5;
+}
+
+.rowUnselected .label {
+  color: var(--neutral);
 }
 
 @media (prefers-reduced-motion: reduce) {

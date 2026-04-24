@@ -50,7 +50,7 @@
 .chip_work_amy .circle { background: var(--color-work-amy); }
 .chip_needs_homework .circle { background: var(--secondary); }
 
-/* Done state — circle goes neutral, label fades + strikethrough */
+/* Done state (completion mode) — circle goes neutral, label fades + strikethrough */
 .chipDone .circle {
   background: var(--color-done-bg);
   color: var(--color-done-text);
@@ -58,6 +58,19 @@
 .chipDone .label {
   color: var(--color-done-text);
   text-decoration: line-through;
+}
+
+/* Unselected state (selection mode) — muted neutral fill + reduced opacity.
+   Semantic intent: "not added to the plan yet". Distinct from .chipDone — no
+   strikethrough, no done-bg gray. Used by Plan Next Visit modal. */
+.chipUnselected {
+  opacity: 0.5;
+}
+.chipUnselected .circle {
+  background: var(--neutral);
+}
+.chipUnselected .label {
+  color: var(--neutral);
 }
 
 /* Compact variant — read-only colored circle with 44x44 hit area, no label. */
