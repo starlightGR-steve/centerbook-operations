@@ -18,6 +18,13 @@ export interface TestingSetupSectionProps {
    * "future" (Plan Next Visit, Phase 6 forward-compat): "Will take Math test"
    */
   tense?: 'present' | 'future';
+  /**
+   * When true, suppress the visible <h4> title (ClipboardCheck + sectionLabel).
+   * The <section> wrapper's aria-label is preserved so screen readers still
+   * announce the section name. Used by Plan Next Visit modal, which wraps this
+   * component in an outer .detailSectionTitle header. Default false.
+   */
+  hideTitle?: boolean;
   onChange: (testingState: TestingState) => void;
 }
 
@@ -39,6 +46,7 @@ export default function TestingSetupSection({
   currentFlags,
   sectionLabel = 'Testing',
   tense = 'present',
+  hideTitle = false,
   onChange,
 }: TestingSetupSectionProps) {
   const subjects = parseSubjects(student.subjects);
@@ -102,10 +110,12 @@ export default function TestingSetupSection({
 
   return (
     <section className={styles.section} aria-label={sectionLabel}>
-      <h4 className={styles.sectionLabel}>
-        <ClipboardCheck size={18} aria-hidden="true" className={styles.sectionLabelIcon} />
-        <span>{sectionLabel}</span>
-      </h4>
+      {!hideTitle && (
+        <h4 className={styles.sectionLabel}>
+          <ClipboardCheck size={18} aria-hidden="true" className={styles.sectionLabelIcon} />
+          <span>{sectionLabel}</span>
+        </h4>
+      )}
       <div className={styles.body}>
         {subjects.includes('Math') && renderRow('math', 'Math')}
         {subjects.includes('Reading') && renderRow('reading', 'Reading')}
