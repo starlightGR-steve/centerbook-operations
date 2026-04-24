@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import type { Student } from '@/lib/types';
 import styles from './RecordTestForm.module.css';
 
@@ -86,7 +87,16 @@ export default function RecordTestForm({
   return (
     <div className={styles.form}>
       <div className={styles.header}>
-        <span className={styles.headerLabel}>Recording test for</span>
+        <span className={styles.title}>Record test result</span>
+        <ChevronDown
+          size={20}
+          aria-hidden="true"
+          className={styles.headerChevron}
+        />
+      </div>
+
+      <div className={styles.field}>
+        <div className={styles.fieldLabel}>Subject</div>
         <div className={styles.subjectRow}>
           {subjectsList.map(([subject, level]) => (
             <button
@@ -130,16 +140,14 @@ export default function RecordTestForm({
         </div>
       )}
 
-      <label className={styles.notesField}>
-        <span className={styles.fieldLabel}>Notes</span>
-        <textarea
-          className={styles.notesInput}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes on the test..."
-          rows={3}
-        />
-      </label>
+      <textarea
+        className={styles.notesInput}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes on the test..."
+        aria-label="Notes on the test"
+        rows={3}
+      />
 
       {showReviewCheckbox && (
         <label className={styles.reviewRow}>
@@ -148,7 +156,7 @@ export default function RecordTestForm({
             checked={needsReview}
             onChange={(e) => setNeedsReview(e.target.checked)}
           />
-          <span>Send to Amy/Bincy for review first</span>
+          <span>Amy/Bincy needs to review</span>
         </label>
       )}
 
@@ -167,7 +175,14 @@ export default function RecordTestForm({
           onClick={handleSubmit}
           disabled={!result || submitting}
         >
-          {submitting ? 'Saving...' : 'Submit'}
+          {submitting ? (
+            'Saving...'
+          ) : (
+            <>
+              Submit
+              <ArrowRight size={16} aria-hidden="true" />
+            </>
+          )}
         </button>
       </div>
     </div>

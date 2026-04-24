@@ -1,8 +1,10 @@
 .form {
   background: var(--white);
   border: 2px solid var(--color-testing);
-  border-radius: var(--radius-card);
-  padding: 1.125rem var(--space-5);
+  /* 0.5rem literal per spec (live-class-row-view-FINAL.html line 532). Flag for 86agz5y1w. */
+  border-radius: 0.5rem;
+  padding: 1.125rem;
+  max-width: 28rem;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -10,16 +12,32 @@
 
 .header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding-bottom: var(--space-3);
+  /* Testing purple at 25% opacity, spec-mandated. Flag for 86agz5y1w. */
+  border-bottom: 1px solid rgba(91, 62, 138, 0.25);
 }
 
-.headerLabel {
-  font-size: var(--text-sm);
+.title {
+  font-size: var(--text-lg);
   font-weight: 700;
   color: var(--color-testing);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+}
+
+/* Default state is EXPANDED: chevron points up (rotated 180deg).
+   Collapse wiring is not implemented yet; chevron is decorative for now. */
+.headerChevron {
+  color: var(--color-testing);
+  flex-shrink: 0;
+  transform: rotate(180deg);
+  transition: transform 0.15s ease;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
 }
 
 .subjectRow {
@@ -36,12 +54,12 @@
   font-size: var(--text-md);
   font-weight: 700;
   color: var(--white);
-  padding: var(--space-1) 0.6875rem;
+  padding: var(--space-2) 0.875rem;
   border: none;
   border-radius: var(--radius-btn);
-  min-height: 1.625rem;
+  min-height: var(--touch-min);
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0.4;
   transition: opacity 150ms ease;
 }
 
@@ -68,13 +86,15 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
 }
 
 .fieldLabel {
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-2);
   padding: 0;
 }
 
@@ -84,77 +104,84 @@
   gap: var(--space-2);
 }
 
+/* Default / unselected chip: white background, gray border, dark text.
+   Active-state color variants are applied via .chip_*.chipSelected combinators below. */
 .resultChip {
   font-family: var(--font-primary);
   font-size: var(--text-md);
   font-weight: 600;
-  padding: var(--space-2) var(--space-4);
+  color: var(--text);
+  padding: var(--space-2_5) var(--space-4);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-btn);
+  background: var(--white);
   cursor: pointer;
   min-height: var(--touch-min);
-  transition: filter 150ms ease, transform 150ms ease;
-  background: var(--white);
+  min-width: 6rem;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.chip_pass {
+.chip_pass.chipSelected {
   background: var(--color-pass-bg);
-  border: 1.5px solid var(--color-pass-border);
+  border-color: var(--color-pass-border);
   color: var(--color-pass-text);
 }
-.chip_retest {
+
+.chip_retest.chipSelected {
   background: var(--color-retest-bg);
-  border: 1.5px solid var(--color-retest-border);
+  border-color: var(--color-retest-border);
   color: var(--color-retest-text);
 }
-.chip_borderline {
+
+.chip_borderline.chipSelected {
   background: var(--color-borderline-bg);
-  border: 1.5px solid var(--color-borderline-border);
+  border-color: var(--color-borderline-border);
   color: var(--color-borderline-text);
 }
-.chip_postpone {
-  background: var(--color-postpone-bg);
-  border: 1.5px solid var(--color-postpone-border);
-  color: var(--color-postpone-text);
-}
 
-.chipSelected {
-  filter: brightness(0.96);
-  box-shadow: 0 0 0 2px currentColor inset;
+.chip_postpone.chipSelected {
+  background: var(--color-postpone-bg);
+  border-color: var(--color-postpone-border);
+  color: var(--color-postpone-text);
 }
 
 .outcomeBox {
   font-size: var(--text-md);
+  font-weight: 500;
   line-height: 1.5;
-  padding: var(--space-3) var(--space-4);
+  padding: 0.875rem var(--space-4);
   border-radius: var(--radius-btn);
-  border-left: 3px solid currentColor;
+  margin-top: 0.875rem;
 }
 
 .outcome_passed {
   background: var(--color-pass-bg);
+  /* Washed border hex, flag for 86agz5y1w */
+  border: 1px solid #a7e3ba;
   color: var(--color-pass-text);
 }
 .outcome_review_retest {
   background: var(--color-retest-bg);
+  /* Washed border hex, flag for 86agz5y1w */
+  border: 1px solid #e8acb0;
   color: var(--color-retest-text);
 }
 .outcome_borderline {
   background: var(--color-borderline-bg);
+  /* Washed border hex, flag for 86agz5y1w */
+  border: 1px solid #f2d385;
   color: var(--color-borderline-text);
 }
 .outcome_postponed {
   background: var(--color-postpone-bg);
+  /* Washed border hex, flag for 86agz5y1w */
+  border: 1px solid #d6d3d1;
   color: var(--color-postpone-text);
 }
 
-.notesField {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
 .notesInput {
-  font-family: var(--font-primary);
+  width: 100%;
+  font-family: inherit;
   font-size: var(--text-md);
   font-weight: 500;
   color: var(--text);
@@ -164,6 +191,10 @@
   padding: var(--space-2_5) var(--space-3);
   min-height: 4.5rem;
   resize: vertical;
+}
+
+.notesInput::placeholder {
+  color: var(--neutral);
 }
 
 .notesInput:focus {
@@ -202,27 +233,32 @@
   font-size: var(--text-md);
   font-weight: 600;
   border-radius: var(--radius-btn);
-  padding: var(--space-2) var(--space-4);
   min-height: var(--touch-min);
-  min-width: 8.75rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cancelBtn {
   background: var(--white);
   border: 1.5px solid var(--border);
   color: var(--neutral);
+  padding: 0 var(--space-4);
+  min-width: 5.5rem;
 }
 
 .submitBtn {
   background: var(--accent);
-  border: 1.5px solid var(--accent);
+  border: none;
   color: var(--white);
+  padding: 0 var(--space-5);
+  min-width: 8.75rem;
+  gap: var(--space-1_5);
 }
 
 .submitBtn:hover:not(:disabled) {
   background: var(--accent-dark);
-  border-color: var(--accent-dark);
 }
 
 .submitBtn:disabled,
