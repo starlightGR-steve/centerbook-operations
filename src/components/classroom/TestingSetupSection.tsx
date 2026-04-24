@@ -1,5 +1,6 @@
 'use client';
 
+import { ClipboardCheck } from 'lucide-react';
 import type { Student, RowAssignmentFlags } from '@/lib/types';
 import { parseSubjects } from '@/lib/types';
 import { ladderFor, defaultLevelFor, type KumonSubject } from '@/lib/kumon-levels';
@@ -11,6 +12,12 @@ export interface TestingSetupSectionProps {
   student: Student;
   currentFlags: RowAssignmentFlags | null | undefined;
   sectionLabel?: string;
+  /**
+   * Toggle label copy.
+   * "present" (Detail Panel, default): "Taking Math test today"
+   * "future" (Plan Next Visit, Phase 6 forward-compat): "Will take Math test"
+   */
+  tense?: 'present' | 'future';
   onChange: (testingState: TestingState) => void;
 }
 
@@ -21,10 +28,17 @@ function readTestingState(flags: RowAssignmentFlags | null | undefined): Testing
   return t;
 }
 
+function buildToggleLabel(subjectLabel: string, tense: 'present' | 'future'): string {
+  return tense === 'future'
+    ? `Will take ${subjectLabel} test`
+    : `Taking ${subjectLabel} test today`;
+}
+
 export default function TestingSetupSection({
   student,
   currentFlags,
-  sectionLabel = 'Taking test today',
+  sectionLabel = 'Testing',
+  tense = 'present',
   onChange,
 }: TestingSetupSectionProps) {
   const subjects = parseSubjects(student.subjects);
@@ -58,11 +72,10 @@ export default function TestingSetupSection({
             <span className={styles.track} aria-hidden="true">
               <span className={styles.thumb} />
             </span>
-            <span className={styles.subjectLabel}>{subjectLabel}</span>
+            <span className={styles.subjectLabel}>
+              {buildToggleLabel(subjectLabel, tense)}
+            </span>
           </label>
-          <span className={`${styles.subjectPill} ${styles[`pill_${subject}`]}`}>
-            {subjectLabel}
-          </span>
         </div>
         {enabled && (
           <div className={styles.levelRow}>
@@ -89,7 +102,10 @@ export default function TestingSetupSection({
 
   return (
     <section className={styles.section} aria-label={sectionLabel}>
-      <h4 className={styles.sectionLabel}>{sectionLabel.toUpperCase()}</h4>
+      <h4 className={styles.sectionLabel}>
+        <ClipboardCheck size={18} aria-hidden="true" className={styles.sectionLabelIcon} />
+        <span>{sectionLabel}</span>
+      </h4>
       <div className={styles.body}>
         {subjects.includes('Math') && renderRow('math', 'Math')}
         {subjects.includes('Reading') && renderRow('reading', 'Reading')}
