@@ -20,6 +20,12 @@ function formatTimestamp(iso: string): string {
 
 const CUSTOM_PREFIX = 'custom:';
 
+function formatSubject(subject: string | null | undefined): string {
+  if (subject === 'math') return 'Math';
+  if (subject === 'reading') return 'Reading';
+  return subject ?? '';
+}
+
 export default function NextClassPlanning({ studentId, student }: NextClassPlanningProps) {
   const { activeItems, completedItems, addItems, markDone, reopen, removeItem } = useVisitPlan(studentId);
   const { flags: flagConfig } = useFlagConfig();
@@ -39,6 +45,11 @@ export default function NextClassPlanning({ studentId, student }: NextClassPlann
     if (item.item_type === 'checklist') return item.item_label || getChecklistLabel(item.item_key);
     if (item.item_type === 'custom') return item.item_label || item.item_key;
     if (item.item_type === 'teacher_note') return 'Note for Teacher';
+    if (item.item_type === 'testing') {
+      const subject = formatSubject(item.item_subject);
+      const level = item.item_level ? ` (${item.item_level})` : '';
+      return `Will take ${subject} test${level}`;
+    }
     return item.item_label || item.item_key;
   };
 
@@ -52,6 +63,8 @@ export default function NextClassPlanning({ studentId, student }: NextClassPlann
       item_key: string;
       item_type: string;
       item_label?: string;
+      item_subject?: string;
+      item_level?: string;
       notes?: string;
     }> = [];
 
@@ -60,6 +73,24 @@ export default function NextClassPlanning({ studentId, student }: NextClassPlann
       const label = flagConfig.find((f) => f.key === key)?.label ?? key;
       items.push({ item_key: key, item_type: 'flag', item_label: label });
     });
+
+    // Testing -- one item per active subject (backend v2.53.0 dedupes by key).
+    if (draft.testing.math) {
+      items.push({
+        item_key: 'test_math',
+        item_type: 'testing',
+        item_subject: 'math',
+        item_level: draft.testing.math,
+      });
+    }
+    if (draft.testing.reading) {
+      items.push({
+        item_key: 'test_reading',
+        item_type: 'testing',
+        item_subject: 'reading',
+        item_level: draft.testing.reading,
+      });
+    }
 
     // Checklist -- split out custom: prefixes
     draft.checklist.forEach((entry) => {
