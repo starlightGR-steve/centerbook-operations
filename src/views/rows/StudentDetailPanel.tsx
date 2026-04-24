@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
   X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
   Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  ChevronDown, ChevronUp, Pin, Pencil, Clock,
+  Pin, Pencil, Clock,
 } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
@@ -19,6 +19,7 @@ import PositionedPortal from '@/components/classroom/PositionedPortal';
 import TestingSetupSection, { type TestingState } from '@/components/classroom/TestingSetupSection';
 import RecordTestForm, { type RecordTestPayload } from '@/components/classroom/RecordTestForm';
 import PermissionsPickupCard from '@/components/classroom/PermissionsPickupCard';
+import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
 import type { Contact } from '@/lib/types';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
@@ -101,7 +102,6 @@ export default function StudentDetailPanel({
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteSuccess, setNoteSuccess] = useState(false);
   const [teacherNoteInput, setTeacherNoteInput] = useState('');
-  const [showDoneNotes, setShowDoneNotes] = useState(false);
   const [showAddItems, setShowAddItems] = useState(false);
 
   // 86agzuwdf §3A: Session info card state. Edit opens AttendanceEditModal,
@@ -139,7 +139,6 @@ export default function StudentDetailPanel({
   // Reset note input when student changes
   useEffect(() => {
     setTeacherNoteInput('');
-    setShowDoneNotes(false);
   }, [student.id]);
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
@@ -463,9 +462,13 @@ export default function StudentDetailPanel({
             )}
           </div>
 
-          {/* 6a. Teacher notes — individual amber alerts */}
+          {/* 6a. Teacher notes — each note rendered as its own spec-compliant TeacherNoteCard.
+              Undone first, then done; all notes visible per Row View FINAL section 4:
+              "each note renders as its own card in a vertical stack. Marking one done
+              does not affect others." */}
           {(() => {
             const allNotes = getTeacherNotes(flags);
+            if (allNotes.length === 0) return null;
             const undone = allNotes.filter((n) => !n.done);
             const done = allNotes.filter((n) => n.done);
             const markNoteDone = (idx: number) => {
@@ -475,38 +478,28 @@ export default function StudentDetailPanel({
               onBulkUpdate({ ...flags, teacher_notes: updated, teacher_note: undefined } as RowAssignmentFlags);
             };
             return (
-              <>
-                {undone.map((note, i) => {
+              <div className={styles.teacherNoteStack}>
+                {undone.map((note) => {
                   const realIdx = allNotes.indexOf(note);
                   return (
-                    <div key={`tn-${realIdx}`} className={styles.teacherNoteBanner}>
-                      <AlertTriangle size={14} className={styles.teacherNoteBannerIcon} />
-                      <p className={styles.teacherNoteBannerText}>{note.text}</p>
-                      <button
-                        className={styles.teacherNoteBannerDone}
-                        onClick={() => markNoteDone(realIdx)}
-                      >
-                        Mark done
-                      </button>
-                    </div>
+                    <TeacherNoteCard
+                      key={`tn-undone-${realIdx}`}
+                      note={note}
+                      onMarkDone={() => markNoteDone(realIdx)}
+                    />
                   );
                 })}
-                {done.length > 0 && (
-                  <button
-                    className={styles.doneNotesToggle}
-                    onClick={() => setShowDoneNotes(!showDoneNotes)}
-                  >
-                    {showDoneNotes ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                    {done.length} completed note{done.length !== 1 ? 's' : ''}
-                  </button>
-                )}
-                {showDoneNotes && done.map((note, i) => (
-                  <div key={`tnd-${i}`} className={styles.teacherNoteDone}>
-                    <Check size={12} className={styles.teacherNoteDoneIcon} />
-                    <span className={styles.teacherNoteDoneText}>{note.text}</span>
-                  </div>
-                ))}
-              </>
+                {done.map((note) => {
+                  const realIdx = allNotes.indexOf(note);
+                  return (
+                    <TeacherNoteCard
+                      key={`tn-done-${realIdx}`}
+                      note={note}
+                      onMarkDone={() => {}}
+                    />
+                  );
+                })}
+              </div>
             );
           })()}
 

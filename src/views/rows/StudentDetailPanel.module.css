@@ -1370,90 +1370,12 @@
   font-style: italic;
 }
 
-/* ── Teacher Note — amber alert banner ── */
-.teacherNoteBanner {
+/* Teacher note stack — vertical column of TeacherNoteCard instances.
+   Component itself lives in src/components/classroom/TeacherNoteCard. */
+.teacherNoteStack {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-2_5) var(--space-3);
-  border-radius: 8px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  margin-bottom: var(--space-1_5);
-}
-
-.teacherNoteBannerIcon {
-  color: #92400e;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.teacherNoteBannerText {
-  flex: 1;
-  margin: 0;
-  font-family: var(--font-primary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text);
-  line-height: 1.5;
-  white-space: pre-line;
-}
-
-.teacherNoteBannerDone {
-  flex-shrink: 0;
-  padding: 3px var(--space-2_5);
-  border-radius: 5px;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #92400e;
-  font-family: var(--font-primary);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-
-.teacherNoteBannerDone:hover {
-  background: rgba(245, 158, 11, 0.25);
-}
-
-.doneNotesToggle {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: none;
-  border: none;
-  color: var(--neutral);
-  font-family: var(--font-primary);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.25rem 0;
-  margin-bottom: 0.375rem;
-}
-
-.teacherNoteDone {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-1_5);
-  padding: var(--space-1_5) var(--space-2_5);
-  margin-bottom: var(--space-1);
-  opacity: 0.5;
-}
-
-.teacherNoteDoneIcon {
-  color: var(--neutral);
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.teacherNoteDoneText {
-  font-family: var(--font-primary);
-  font-size: var(--text-xs);
-  color: var(--neutral);
-  text-decoration: line-through;
-  line-height: 1.4;
 }
 
 /* ── Assign Class Tasks button (in During Class header) ── */
