@@ -22,6 +22,14 @@ export interface PlanNextVisitModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (plan: VisitPlanDraft) => Promise<void>;
+  /** Header title. Defaults to "Plan Next Visit" for Student Record context;
+   *  6c Detail Panel context passes "Add classroom item". */
+  title?: string;
+  /** Testing section tense. Defaults to "future" for the Plan Next Visit flow
+   *  (section header "Testing (next visit)", toggle labels "Will take X test").
+   *  6c Detail Panel passes "present" (header "Testing", toggle labels
+   *  "Taking X test today"). Section title and toggle copy always covary. */
+  testingTense?: 'future' | 'present';
 }
 
 /** Maps configured flag keys to FlagChip types. Unknown keys fall back to null (filtered out). */
@@ -42,7 +50,10 @@ export default function PlanNextVisitModal({
   isOpen,
   onClose,
   onSave,
+  title = 'Plan Next Visit',
+  testingTense = 'future',
 }: PlanNextVisitModalProps) {
+  const testingTitle = testingTense === 'present' ? 'Testing' : 'Testing (next visit)';
   const titleId = useId();
   const containerRef = useFocusTrap(isOpen, onClose);
   const { flags: flagConfig } = useFlagConfig();
@@ -150,7 +161,7 @@ export default function PlanNextVisitModal({
         tabIndex={-1}
       >
         <div className={styles.planModalHeader}>
-          <span id={titleId} className={styles.title}>Plan Next Visit</span>
+          <span id={titleId} className={styles.title}>{title}</span>
           <button
             type="button"
             className={styles.closeBtn}
@@ -178,14 +189,14 @@ export default function PlanNextVisitModal({
         </div>
 
         <div>
-          <div className={styles.detailSectionTitle}>Testing (next visit)</div>
+          <div className={styles.detailSectionTitle}>{testingTitle}</div>
           <TestingSetupSection
             student={student}
             currentFlags={syntheticFlags}
             onChange={setTesting}
-            tense="future"
+            tense={testingTense}
             hideTitle
-            sectionLabel="Testing (next visit)"
+            sectionLabel={testingTitle}
           />
         </div>
 

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
   X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
   Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  Pin, Pencil, Clock,
+  Pencil, Clock,
 } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
@@ -20,6 +20,7 @@ import TestingSetupSection, { type TestingState } from '@/components/classroom/T
 import RecordTestForm, { type RecordTestPayload } from '@/components/classroom/RecordTestForm';
 import PermissionsPickupCard from '@/components/classroom/PermissionsPickupCard';
 import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
+import PlanNextVisitModal, { type VisitPlanDraft } from '@/components/classroom/PlanNextVisitModal';
 import type { Contact } from '@/lib/types';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
@@ -28,7 +29,6 @@ import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
 import { useOutstandingLoans } from '@/hooks/useLibrary';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
-import { usePersistentItems } from '@/hooks/usePersistentItems';
 import styles from './StudentDetailPanel.module.css';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
@@ -101,7 +101,6 @@ export default function StudentDetailPanel({
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteSuccess, setNoteSuccess] = useState(false);
-  const [teacherNoteInput, setTeacherNoteInput] = useState('');
   const [showAddItems, setShowAddItems] = useState(false);
 
   // 86agzuwdf §3A: Session info card state. Edit opens AttendanceEditModal,
@@ -116,9 +115,6 @@ export default function StudentDetailPanel({
   const { data: allLoans } = useOutstandingLoans();
   const { flags: flagConfig } = useFlagConfig();
   const { items: checklistConfig } = useChecklistConfig();
-  const { isStayOn, addItem: addPersistentItem, removeItem: removePersistentItem } = usePersistentItems(
-    isAdmin ? student.id : null
-  );
 
   // Mobile: intercept device back button to close this panel instead of navigating away
   useEffect(() => {
@@ -135,11 +131,6 @@ export default function StudentDetailPanel({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Reset note input when student changes
-  useEffect(() => {
-    setTeacherNoteInput('');
-  }, [student.id]);
 
   const studentLoans = allLoans?.filter((l) => l.student_id === student.id);
   const scheduleDays = parseScheduleDays(student.class_schedule_days);
@@ -250,8 +241,42 @@ export default function StudentDetailPanel({
   };
 
   const handleOpenAddItems = () => {
-    setTeacherNoteInput('');
     setShowAddItems(true);
+  };
+
+  // Phase 6c: adapter for shared PlanNextVisitModal. Writes to
+  // cb_row_assignments.flags (today's session) via the existing onBulkUpdate
+  // prop. Add-only semantics: Save unions selections into the current blob.
+  const handleAssignClassTasks = async (draft: VisitPlanDraft) => {
+    if (!onBulkUpdate) return;
+    const current = (flags ?? {}) as RowAssignmentFlags;
+    const updated: RowAssignmentFlags = { ...current };
+
+    draft.flags.forEach((key) => {
+      (updated as Record<string, unknown>)[key] = true;
+    });
+
+    const hasTesting = draft.testing.math != null || draft.testing.reading != null;
+    if (hasTesting) {
+      updated.taking_test = draft.testing;
+    }
+
+    if (draft.checklist.length > 0) {
+      const existingTasks = { ...(current.tasks || {}) };
+      draft.checklist.forEach((entry) => {
+        existingTasks[entry] = false;
+      });
+      updated.tasks = existingTasks;
+    }
+
+    if (draft.note.trim()) {
+      const existingNotes = getTeacherNotes(current);
+      updated.teacher_notes = [...existingNotes, { text: draft.note.trim(), done: false }];
+      updated.teacher_note = undefined;
+    }
+
+    onBulkUpdate(updated);
+    setShowAddItems(false);
   };
 
   const handleSaveNote = async () => {
@@ -457,7 +482,7 @@ export default function StudentDetailPanel({
             <label className={styles.duringClassHeading}>During Class</label>
             {isAdmin && onBulkUpdate && (
               <button className={styles.assignClassBtn} onClick={handleOpenAddItems}>
-                + Assign Class Tasks
+                + Add classroom item
               </button>
             )}
           </div>
@@ -561,9 +586,15 @@ export default function StudentDetailPanel({
                 {customTaskKeys.map((key) => {
                   const val = (flags?.tasks as Record<string, unknown>)?.[key];
                   const isDone = val === true;
+                  // Label resolution order:
+                  //   1. Legacy shape flags.tasks.custom = "<text>" — value is the label.
+                  //   2. Phase 6c shape flags.tasks["custom:<text>"] = false — strip prefix.
+                  //   3. Unknown key — pretty-print as fallback.
                   const label = typeof val === 'string' && val.length > 0
                     ? val
-                    : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                    : key.startsWith('custom:')
+                      ? key.slice('custom:'.length)
+                      : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
                   return (
                     <button
                       key={key}
@@ -627,116 +658,17 @@ export default function StudentDetailPanel({
             return null;
           })()}
 
-          {/* Assign Class Tasks modal (moved inside During Class) */}
-          {showAddItems && (
-            <div className={styles.addItemsOverlay}>
-              <div className={styles.addItemsPanel}>
-                <div className={styles.addItemsPanelHeader}>
-                  <span className={styles.addItemsPanelTitle}>Assign Class Tasks</span>
-                  <button className={styles.addItemsClose} onClick={() => setShowAddItems(false)}>
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <label className={styles.addItemsSectionLabel}>Flags</label>
-                <div className={styles.addItemsGrid}>
-                  {flagConfig.map((fc) => {
-                    const isOn = !!(flags && (flags as Record<string, unknown>)[fc.key]);
-                    return (
-                      <button
-                        key={fc.key}
-                        className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
-                        onClick={() => {
-                          if (!onBulkUpdate) return;
-                          const updated = { ...flags } as RowAssignmentFlags;
-                          if (isOn) {
-                            delete (updated as Record<string, unknown>)[fc.key];
-                          } else {
-                            (updated as Record<string, unknown>)[fc.key] = true;
-                          }
-                          onBulkUpdate(updated);
-                        }}
-                      >
-                        <span className={styles.addItemCircle} style={isOn ? { background: fc.color } : undefined}>
-                          <FlagIcon icon={fc.icon} size={10} />
-                        </span>
-                        <span>{fc.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <label className={styles.addItemsSectionLabel}>Checklist</label>
-                <div className={styles.addItemsGrid}>
-                  {checklistConfig.map((ci) => {
-                    const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
-                    const isOn = val !== undefined && val !== null;
-                    const stayOn = isStayOn(ci.key);
-                    return (
-                      <div key={ci.key} className={styles.addItemRow}>
-                        <button
-                          className={`${styles.addItemToggle} ${isOn ? styles.addItemToggleOn : ''}`}
-                          onClick={() => {
-                            if (!onBulkUpdate) return;
-                            const tasks = { ...(flags?.tasks || {}) } as Record<string, boolean | string | null | undefined>;
-                            if (isOn) {
-                              delete tasks[ci.key];
-                            } else {
-                              tasks[ci.key] = false;
-                            }
-                            onBulkUpdate({ ...flags, tasks } as RowAssignmentFlags);
-                          }}
-                        >
-                          <span className={`${styles.addItemCheck} ${isOn ? styles.addItemCheckOn : ''}`}>
-                            {isOn && <Check size={9} color="var(--white)" />}
-                          </span>
-                          <span>{ci.label}</span>
-                        </button>
-                        <button
-                          className={`${styles.pinBtn} ${stayOn ? styles.pinBtnActive : ''}`}
-                          onClick={() => stayOn
-                            ? removePersistentItem(ci.key)
-                            : addPersistentItem(ci.key, 'checklist')
-                          }
-                          title={stayOn ? 'Repeats daily — click to remove' : 'Set to repeat daily'}
-                          aria-label={stayOn ? 'Remove from daily repeats' : 'Add to daily repeats'}
-                        >
-                          <Pin size={13} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Note for teacher — appends to the notes array */}
-                <label className={styles.addItemsSectionLabel}>Note for Teacher</label>
-                <textarea
-                  className={styles.teacherNoteModalInput}
-                  value={teacherNoteInput}
-                  onChange={(e) => setTeacherNoteInput(e.target.value)}
-                  rows={3}
-                  placeholder="Add a new note for the classroom teacher..."
-                />
-
-                <button
-                  className={styles.addItemsDone}
-                  onClick={() => {
-                    if (onBulkUpdate && flags) {
-                      const existing = getTeacherNotes(flags);
-                      const newNotes = teacherNoteInput.trim()
-                        ? [...existing, { text: teacherNoteInput.trim(), done: false }]
-                        : existing;
-                      onBulkUpdate({ ...flags, teacher_notes: newNotes, teacher_note: undefined } as RowAssignmentFlags);
-                    }
-                    setShowAddItems(false);
-                  }}
-                >
-                  Save &amp; Done
-                </button>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Phase 6c: shared PlanNextVisitModal. Writes to today's cb_row_assignments.flags. */}
+        <PlanNextVisitModal
+          student={student}
+          isOpen={showAddItems}
+          onClose={() => setShowAddItems(false)}
+          onSave={handleAssignClassTasks}
+          title="Add classroom item"
+          testingTense="present"
+        />
 
         {/* 7. Classroom Observations */}
         <div>
