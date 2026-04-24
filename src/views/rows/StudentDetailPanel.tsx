@@ -457,7 +457,7 @@ export default function StudentDetailPanel({
             <label className={styles.duringClassHeading}>During Class</label>
             {isAdmin && onBulkUpdate && (
               <button className={styles.assignClassBtn} onClick={handleOpenAddItems}>
-                + Assign Class Tasks
+                + Add classroom item
               </button>
             )}
           </div>
