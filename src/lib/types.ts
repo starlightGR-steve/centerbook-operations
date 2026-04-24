@@ -497,6 +497,10 @@ export interface VisitPlanItem {
   item_key: string;
   item_type: string;
   item_label: string | null;
+  /** Present on item_type === 'testing' (backend v2.53.0). */
+  item_subject?: string | null;
+  /** Present on item_type === 'testing' (backend v2.53.0). */
+  item_level?: string | null;
   notes: string | null;
   planned_by: number | null;
   planned_by_name: string | null;
