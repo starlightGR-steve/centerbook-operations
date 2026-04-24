@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
   X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
   Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  Pin, Pencil, Clock,
+  Pencil, Clock,
 } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
@@ -29,7 +29,6 @@ import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import { useClassroomNotes, createClassroomNote } from '@/hooks/useClassroomNotes';
 import { useOutstandingLoans } from '@/hooks/useLibrary';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
-import { usePersistentItems } from '@/hooks/usePersistentItems';
 import styles from './StudentDetailPanel.module.css';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
@@ -116,9 +115,6 @@ export default function StudentDetailPanel({
   const { data: allLoans } = useOutstandingLoans();
   const { flags: flagConfig } = useFlagConfig();
   const { items: checklistConfig } = useChecklistConfig();
-  const { isStayOn, addItem: addPersistentItem, removeItem: removePersistentItem } = usePersistentItems(
-    isAdmin ? student.id : null
-  );
 
   // Mobile: intercept device back button to close this panel instead of navigating away
   useEffect(() => {
