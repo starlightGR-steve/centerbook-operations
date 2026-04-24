@@ -22,6 +22,9 @@ export interface PlanNextVisitModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (plan: VisitPlanDraft) => Promise<void>;
+  /** Header title. Defaults to "Plan Next Visit" for Student Record context;
+   *  6c Detail Panel context passes "Add classroom item". */
+  title?: string;
 }
 
 /** Maps configured flag keys to FlagChip types. Unknown keys fall back to null (filtered out). */
@@ -42,6 +45,7 @@ export default function PlanNextVisitModal({
   isOpen,
   onClose,
   onSave,
+  title = 'Plan Next Visit',
 }: PlanNextVisitModalProps) {
   const titleId = useId();
   const containerRef = useFocusTrap(isOpen, onClose);
@@ -150,7 +154,7 @@ export default function PlanNextVisitModal({
         tabIndex={-1}
       >
         <div className={styles.planModalHeader}>
-          <span id={titleId} className={styles.title}>Plan Next Visit</span>
+          <span id={titleId} className={styles.title}>{title}</span>
           <button
             type="button"
             className={styles.closeBtn}
