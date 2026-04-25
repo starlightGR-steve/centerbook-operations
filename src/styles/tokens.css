@@ -142,4 +142,27 @@
   --panel-width-md: min(480px, 90vw);
   --panel-width-lg: min(640px, 95vw);
   --content-max: min(1200px, 100vw);
+
+  /* Attendance column accents — 86ah0mqee */
+  --color-col-expected:   var(--secondary);
+  --color-col-checkedin:  var(--green);
+  --color-col-awaiting:   var(--accent);
+  --color-col-checkedout: var(--neutral);
+  --color-col-noshow:     var(--red);
+
+  /* Awaiting Pickup body wash (soft peach) */
+  --color-awaiting-bg: rgba(224, 113, 44, 0.05);
+
+  /* Soft tinted circle backgrounds for dialog header badges */
+  --color-success-soft: rgba(34, 197, 94, 0.14);
+  --color-danger-soft:  rgba(239, 68, 68, 0.14);
+  --color-warn-soft:    rgba(234, 179, 8, 0.18);
+
+  /* State surface fills (text colors already exist as --color-warn-text / --color-over-text) */
+  --color-warn-bg: rgba(234, 179, 8, 0.14);
+  --color-over-bg: rgba(239, 68, 68, 0.12);
+
+  /* Dark pill toast */
+  --color-toast-bg:   #1e293b;
+  --color-toast-text: var(--white);
 }
