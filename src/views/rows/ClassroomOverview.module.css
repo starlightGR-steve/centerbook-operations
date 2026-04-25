@@ -231,16 +231,19 @@
 }
 
 
-/* ── Testing table section ── */
+/* ── Testing table section ──
+   V13: recolored from yellow/amber to deep purple. Yellow is now reserved
+   for the timer warning band; testing state owns the deep purple #5b3e8a
+   palette per spec, distinct from the Work with Amy plum #6b5b8a. */
 .testingSection {
   margin-top: var(--space-2_5);
   padding-top: 10px;
-  border-top: 2px solid #eab308;
+  border-top: 2px solid var(--color-testing);
   border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
 
 .testingSectionDropTarget {
-  border: 2px dashed #eab308;
+  border: 2px dashed var(--color-testing);
   border-radius: var(--radius-sm);
   padding: 6px;
   margin-top: var(--space-2);
@@ -258,8 +261,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #92400e;
-  background: rgba(234, 179, 8, 0.15);
+  color: var(--color-testing);
+  background: var(--color-testing-bg);
   padding: var(--space-0_5) var(--space-1_5);
   border-radius: 3px;
 }
@@ -267,7 +270,7 @@
 .testingSectionCount {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: #92400e;
+  color: var(--color-testing);
 }
 
 @media (max-width: 1024px) {
