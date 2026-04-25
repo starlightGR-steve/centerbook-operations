@@ -483,7 +483,7 @@
   font-family: var(--font-primary);
   font-size: clamp(0.75rem, 1.2vw, 0.875rem);
   font-weight: 700;
-  color: var(--secondary);
+  color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
