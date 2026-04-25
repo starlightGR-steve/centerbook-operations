@@ -7,8 +7,7 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  flex: 1 1 17.5rem;
-  min-width: 17.5rem;
+  width: 17.5rem;
   cursor: pointer;
   font-family: var(--font-primary);
   transition: border-color 150ms ease, opacity 150ms ease;
