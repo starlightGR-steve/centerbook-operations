@@ -9,7 +9,7 @@ import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClassroomOverview from './ClassroomOverview';
 import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
-import { useActiveAttendance } from '@/hooks/useAttendance';
+import { useActiveAttendance, updateAttendance } from '@/hooks/useAttendance';
 import { useClassroomAssignmentsActive, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags, getAttendanceIdForStudent } from '@/hooks/useRows';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
@@ -78,7 +78,6 @@ export default function RowsPage() {
   const [overviewStudent, setOverviewStudent] = useState<Student | null>(null);
   const [addToRowLabel, setAddToRowLabel] = useState<string | null>(null);
   const [addToTestingRowLabel, setAddToTestingRowLabel] = useState<string | null>(null);
-  const [rowCompleteIds, setRowCompleteIds] = useState<Set<number>>(new Set());
   const [movingStudent, setMovingStudent] = useState<number | null>(null);
   const [pickerRowLabel, setPickerRowLabel] = useState<string | null>(null);
   const [, setTick] = useState(0);
@@ -150,16 +149,46 @@ export default function RowsPage() {
     return map;
   }, [checkedIn]);
 
+  // Live Class only renders students whose attendance status is 'checked-in'.
+  // Once a teacher taps Done (handleRowCheckout below), the PATCH writes
+  // status='row-complete' and the next SWR repoll drops the student from this
+  // list and surfaces them on the kiosk Attendance board's Awaiting Pickup
+  // column. Treats absent status as 'checked-in' for backward compat with
+  // legacy rows.
   const checkedInStudents = useMemo(() => {
     if (!allStudents || !checkedIn) return [];
-    const ids = new Set(checkedIn.map((a) => a.student_id));
-    return allStudents.filter((s) => ids.has(s.id) && !rowCompleteIds.has(s.id));
-  }, [allStudents, checkedIn, rowCompleteIds]);
+    const activeIds = new Set(
+      checkedIn
+        .filter((a) => (a.status ?? 'checked-in') === 'checked-in')
+        .map((a) => a.student_id),
+    );
+    return allStudents.filter((s) => activeIds.has(s.id));
+  }, [allStudents, checkedIn]);
 
+  // Done in Live Class → PATCH status='row-complete' on the active attendance
+  // row + DELETE the classroom assignment (existing behavior). Optimistic
+  // SWR update on `attendance-active` so the card disappears from this row
+  // without waiting for the network round-trip.
   const handleRowCheckout = useCallback(async (studentId: number) => {
-    setRowCompleteIds((prev) => new Set(prev).add(studentId));
-    await removeStudentFromRow(studentId, today);
-  }, [today]);
+    const att = checkedIn?.find((a) => a.student_id === studentId);
+    if (!att) return;
+    await globalMutate(
+      'attendance-active',
+      (prev: Attendance[] | undefined) =>
+        prev?.map((a) => (a.id === att.id ? { ...a, status: 'row-complete' as const } : a)),
+      false,
+    );
+    try {
+      await Promise.all([
+        updateAttendance(att.id, { status: 'row-complete' }),
+        removeStudentFromRow(studentId, today),
+      ]);
+    } catch (err) {
+      // Revalidate to reconcile if either the PATCH or DELETE failed.
+      await globalMutate('attendance-active');
+      console.error('handleRowCheckout failed', err);
+    }
+  }, [checkedIn, today]);
 
   const handleDragEnd = useCallback(() => setDragStudent(null), []);
 

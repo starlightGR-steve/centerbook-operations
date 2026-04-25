@@ -61,8 +61,8 @@ export async function deleteAttendance(id: number, date?: string): Promise<void>
   await revalidateAll(date);
 }
 
-/** Update an attendance record (undo check-out, adjust times, or change duration) */
-export async function updateAttendance(id: number, data: { check_in?: string; check_out?: string | null; session_duration_minutes?: number }, date?: string): Promise<Attendance> {
+/** Update an attendance record (undo check-out, adjust times, change duration, or write lifecycle status) */
+export async function updateAttendance(id: number, data: { check_in?: string; check_out?: string | null; session_duration_minutes?: number; status?: 'checked-in' | 'row-complete' }, date?: string): Promise<Attendance> {
   const result = await api.attendance.update(id, data);
   await revalidateAll(date);
   return result;
