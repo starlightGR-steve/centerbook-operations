@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate as globalMutate } from 'swr';
-import { AlertCircle, Plus } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useSessionAdjust } from '@/context/SessionAdjustContext';
 import ClassroomOverview from './ClassroomOverview';
 import StudentDetailPanel from './StudentDetailPanel';
@@ -550,31 +550,16 @@ export default function RowsPage() {
       return aRem - bRem;
     });
 
-    // 86ah1fzxr P0-1: iterate full capacity so every seat renders. Occupied
-    // slots fill from left (sorted by time remaining), empty slots fill the
-    // remainder with a tappable dashed "+ Assign Student" affordance.
-    const seats: Array<Student | null> = Array.from(
-      { length: totalCapacity },
-      (_, i) => slideStudents[i] ?? null
-    );
+    // 86ah3f3xp Finding 2B: Row view renders only the students assigned to
+    // this row. Empty seats are no longer surfaced as per-seat "Assign Student"
+    // placeholder cards — that affordance moved to the swipe bar (single
+    // Assign Student button on RowIndicatorBar). totalCapacity stays referenced
+    // upstream where the swipe bar derives its disabled state.
+    void totalCapacity;
 
     return (
       <div className={styles.cardGrid} data-compact={selectedStudent ? '' : undefined}>
-        {seats.map((s, i) => {
-          if (!s) {
-            return (
-              <button
-                key={`empty-${i}`}
-                type="button"
-                className={styles.assignPlaceholder}
-                onClick={() => setPickerRowLabel(flatRow.label)}
-              >
-                <Plus size={24} aria-hidden="true" />
-                <span>Assign Student</span>
-              </button>
-            );
-          }
-
+        {slideStudents.map((s) => {
           const att = attendanceMap.get(s.id);
           const remaining = getAdjustedTimeRemaining(s, att);
           const studentFlagsObj = getStudentFlags(s.id);
@@ -586,8 +571,6 @@ export default function RowsPage() {
             done: n.done,
           }));
 
-          // The Move/Time popovers are portaled to document.body to escape
-          // SwipeShell's overflow clipping; the cardSlot ref is the anchor.
           return (
             <div
               key={s.id}
@@ -604,7 +587,6 @@ export default function RowsPage() {
                 timeRemainingMinutes={remaining}
                 teacherNotes={teacherNotes}
                 onCardTap={() => {
-                  // TODO: Step 6 wires DetailPanel routing; for now toggles existing StudentDetailPanel.
                   setSelectedStudentId(selectedStudentId === s.id ? null : s.id);
                 }}
                 onDone={() => handleRowCheckout(s.id)}
@@ -613,7 +595,6 @@ export default function RowsPage() {
                 onFlagToggle={(k) => toggleFlag(s.id, k)}
                 onChecklistToggle={(k) => toggleTask(s.id, k)}
                 onMedicalTap={() => {
-                  // TODO: Step 6 routes Medical tap to DetailPanel medical section
                   setSelectedStudentId(s.id);
                 }}
               />
@@ -624,12 +605,28 @@ export default function RowsPage() {
     );
   };
 
+  // 86ah3f3xp Finding 2B: derive Assign Student state for the current row
+  // (label + capacity vs occupancy). Empty rows are assignable; full rows
+  // surface "All seats full" on the swipe bar.
+  const currentRowFlat = rows.find((r) => r.id === currentSwipeRow?.id) ?? null;
+  const currentRowOccupancy = currentRowFlat
+    ? (assignments[currentRowFlat.id] ?? []).length
+    : 0;
+  const currentRowCapacity = currentRowFlat
+    ? currentRowFlat.seats + currentRowFlat.testingSeats
+    : 0;
+  const currentRowAllSeatsFull = currentRowFlat
+    ? currentRowOccupancy >= currentRowCapacity
+    : true;
+
   return (
     <div className={styles.page}>
       <SwipeShell
         rows={swipeRows}
         currentRowIndex={safeRowIndex}
         onRowChange={handleRowChange}
+        onAssign={currentRowFlat ? () => setPickerRowLabel(currentRowFlat.label) : undefined}
+        allSeatsFull={currentRowAllSeatsFull}
         topBar={
           currentSwipeRow ? (
             <RowMetaBar

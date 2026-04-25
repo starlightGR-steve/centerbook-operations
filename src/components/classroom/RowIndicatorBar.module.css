@@ -8,6 +8,46 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
+/* 86ah3f3xp Finding 2B: Assign Student button on the swipe bar — left side,
+   alongside the row arrows + dots. Active = teal pill. Disabled = neutral
+   "All seats full" label so Fran sees at a glance the row is at capacity. */
+.assignBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1_5);
+  padding: var(--space-1_5) var(--space-3);
+  min-height: var(--touch-min);
+  border-radius: 999px;
+  border: 1.5px solid var(--secondary);
+  background: var(--white);
+  color: var(--secondary);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-right: auto;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
+.assignBtn:hover:not(:disabled) {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.assignBtn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.assignBtnDisabled,
+.assignBtn:disabled {
+  border-color: #cbd5e0;
+  color: var(--neutral);
+  background: var(--white);
+  cursor: not-allowed;
+}
+
 .navBtn {
   display: inline-flex;
   align-items: center;
