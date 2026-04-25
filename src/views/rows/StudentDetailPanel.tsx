@@ -5,9 +5,7 @@ import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
-  X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
-  Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  Clock,
+  X, BookOpen, Heart, AlertTriangle, Check, ArrowRight, Clock,
 } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
@@ -22,6 +20,7 @@ import PermissionsPickupCard from '@/components/classroom/PermissionsPickupCard'
 import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
 import PlanNextVisitModal, { type VisitPlanDraft } from '@/components/classroom/PlanNextVisitModal';
 import ChecklistItem from '@/components/classroom/ChecklistItem';
+import FlagChip, { type FlagChipType } from '@/components/classroom/FlagChip';
 import type { Contact } from '@/lib/types';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
@@ -49,24 +48,18 @@ function formatRelativeTime(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function FlagIcon({ icon, size = 12 }: { icon: string | undefined; size?: number }) {
-  if (!icon) return <Flag size={size} color="#fff" />;
-  if (icon.startsWith('text:')) {
-    return <span className={styles.flagIconText}>{icon.slice(5)}</span>;
-  }
-  const props = { size, color: '#fff' };
-  switch (icon) {
-    case 'Lightbulb': return <Lightbulb {...props} />;
-    case 'CircleHelp': return <CircleHelp {...props} />;
-    case 'BookOpen': return <BookOpen {...props} />;
-    case 'Star': return <Star {...props} />;
-    case 'AlertCircle': return <AlertCircle {...props} />;
-    case 'Zap': return <Zap {...props} />;
-    case 'Flag': return <Flag {...props} />;
-    case 'Heart': return <Heart {...props} />;
-    case 'UserCheck': return <UserCheck {...props} />;
-    case 'Sparkles': return <Sparkles {...props} />;
-    default: return <Flag {...props} />;
+/**
+ * 86ah3f3xp Finding 5 (second pair, fix-up): map a flagConfig key to the
+ * FlagChip type the Row View card uses. Same switch RowViewCard.tsx and
+ * PlanNextVisitModal.tsx ship — keys outside this set return null and the
+ * Detail Panel skips them, matching Row View's behavior. */
+function flagKeyToType(key: string): FlagChipType | null {
+  switch (key) {
+    case 'new_concept': return 'new_concept';
+    case 'needs_help': return 'needs_help';
+    case 'work_with_amy': return 'work_amy';
+    case 'needs_homework': return 'needs_homework';
+    default: return null;
   }
 }
 
@@ -508,47 +501,38 @@ export default function StudentDetailPanel({
             );
           })()}
 
-          {/* 86ah3f3xp Findings 3H + 5 (first): assigned flags now match the
-              Row View card behavior. Filter shows any flag whose key is on
-              the blob — regardless of truthy / falsy — so a flag toggled off
-              persists as a marked-off (done) row instead of disappearing.
-              taking_test is explicitly excluded: the design replaced it with
-              the Testing section + toggle, so it should never render as a
-              flag chip. */}
+          {/* 86ah3f3xp Findings 3H + 5: assigned flags render via the same
+              shared FlagChip component the Row View card uses (variant
+              "labeled"). Type-specific colored circles — purple New Concept,
+              orange Needs Help, plum Work with Amy, teal Needs Homework —
+              come from FlagChip's CSS, so the two surfaces look identical.
+              Filter shows any flag whose key is on the blob (regardless of
+              truthy / falsy) so a flag toggled off persists as a marked-off
+              row with FlagChip's "done" treatment (gray fill + strike-through).
+              taking_test is excluded; unknown flag keys (no matching FlagChip
+              type) are skipped. */}
           {(() => {
             const flagBlob = flags as Record<string, unknown> | null | undefined;
-            const activeFlags = flagConfig.filter((fc) => {
-              if (fc.key === 'taking_test') return false;
-              return flagBlob ? flagBlob[fc.key] !== undefined : false;
-            });
+            const activeFlags = flagConfig
+              .filter((fc) => fc.key !== 'taking_test')
+              .filter((fc) => flagKeyToType(fc.key) !== null)
+              .filter((fc) => (flagBlob ? flagBlob[fc.key] !== undefined : false));
             if (activeFlags.length === 0) return null;
             return (
               <div className={styles.flagGrid}>
                 {activeFlags.map((fc) => {
+                  const type = flagKeyToType(fc.key)!;
                   const isDone = !flagBlob?.[fc.key];
                   return (
-                    <button
+                    <FlagChip
                       key={fc.key}
-                      className={`${styles.flagToggleRow} ${isDone ? styles.flagToggleRowDone : styles.flagToggleRowActive}`}
-                      onClick={() => onToggleFlag?.(fc.key)}
-                      disabled={!onToggleFlag}
-                    >
-                      <span
-                        className={styles.flagCircleLg}
-                        style={{ background: isDone ? 'var(--color-done-bg)' : '#1E335E' }}
-                      >
-                        <FlagIcon icon={fc.icon} size={12} />
-                      </span>
-                      <span
-                        className={`${styles.flagToggleLabel} ${isDone ? styles.flagToggleLabelDone : ''}`}
-                      >
-                        {fc.label}
-                      </span>
-                      <Check
-                        size={14}
-                        style={{ color: isDone ? 'var(--color-done-text)' : fc.color, flexShrink: 0 }}
-                      />
-                    </button>
+                      type={type}
+                      label={fc.label}
+                      done={isDone}
+                      mode="completion"
+                      variant="labeled"
+                      onToggle={() => onToggleFlag?.(fc.key)}
+                    />
                   );
                 })}
               </div>
