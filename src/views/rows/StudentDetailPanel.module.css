@@ -127,12 +127,30 @@
   border: 1px solid var(--border);
 }
 
-.compactSchedule {
+/* 86ah3f3xp Finding 3C: inline schedule strip — clock icon + per-day entries
+   ("Wed 4:00P · Mon 5:30P · Thu 6:00P") with day bold. Replaces both the
+   compactSchedule text in the meta row and the standalone Schedule list. */
+.scheduleInline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
   font-family: var(--font-primary);
-  font-size: var(--text-2xs);
-  font-weight: 500;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.scheduleInlineIcon {
   color: var(--neutral);
-  padding-left: var(--space-1);
+  flex-shrink: 0;
+}
+
+.scheduleInlineEntry {
+  white-space: nowrap;
+}
+
+.scheduleInlineDay {
+  font-weight: 700;
 }
 
 /* 86agzuwdf §3C: Testing Setup + Record Test wrappers inside During Class. */

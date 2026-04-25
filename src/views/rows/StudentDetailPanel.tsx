@@ -154,21 +154,34 @@ export default function StudentDetailPanel({
           ? 'on'
           : 'off';
 
-  // 86agzuwdf §3A: compact inline schedule for the meta row, e.g. "M·W·F 3:30p · 60m".
-  // Falls back to "No schedule" when schedule_detail is empty/missing.
-  const compactScheduleText = (() => {
-    const entries = scheduleDetail
-      ? Object.entries(scheduleDetail).sort(([, a], [, b]) => a.sort_key - b.sort_key)
-      : [];
-    if (entries.length === 0) return 'No schedule';
-    const dayInitial: Record<string, string> = {
-      Monday: 'M', Tuesday: 'T', Wednesday: 'W', Thursday: 'Th',
-      Friday: 'F', Saturday: 'Sa', Sunday: 'Su',
-    };
-    const days = entries.map(([day]) => dayInitial[day] ?? day.slice(0, 1)).join('·');
-    const firstStart = entries[0][1].start;
-    const duration = entries[0][1].duration;
-    return `${days} ${firstStart} · ${duration}m`;
+  // 86ah3f3xp Finding 3C: schedule appears once below the badges row, with
+  // a clock-icon prefix and per-day "Wed 4:00P · Mon 5:30P" entries (day in
+  // bold). The standalone Schedule section further down is removed — this is
+  // the single source for schedule display.
+  const dayShort: Record<string, string> = {
+    Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu',
+    Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun',
+  };
+  const formatStart = (start: string): string => start.replace(/(AM|PM)$/, (m) => m[0]);
+  const scheduleEntries: Array<{ day: string; start: string; isZoom?: boolean }> = (() => {
+    if (scheduleDetail) {
+      return Object.entries(scheduleDetail)
+        .sort(([, a], [, b]) => a.sort_key - b.sort_key)
+        .map(([day, info]) => ({
+          day: dayShort[day] ?? day.slice(0, 3),
+          start: formatStart(info.start),
+          isZoom: info.is_zoom,
+        }));
+    }
+    if (scheduleDays.length > 0) {
+      return DAYS.filter((d) => scheduleDays.includes(d)).map((d) => ({
+        day: dayShort[d] ?? d.slice(0, 3),
+        start: student.class_time_sort_key
+          ? formatStart(formatTimeKey(student.class_time_sort_key))
+          : '',
+      }));
+    }
+    return [];
   })();
 
   // 86agzuwdf §3C: Testing Setup state mirrors flags.taking_test (single source
@@ -376,8 +389,22 @@ export default function StudentDetailPanel({
               </span>
             );
           })()}
-          <span className={styles.compactSchedule}>{compactScheduleText}</span>
         </div>
+
+        {/* 86ah3f3xp Finding 3C: schedule appears once, in compact form,
+            below the meta row. Clock icon + per-day "Wed 4:00P" with day bold. */}
+        {scheduleEntries.length > 0 && (
+          <div className={styles.scheduleInline}>
+            <Clock size={14} aria-hidden="true" className={styles.scheduleInlineIcon} />
+            {scheduleEntries.map((entry, i) => (
+              <span key={`${entry.day}-${i}`} className={styles.scheduleInlineEntry}>
+                <strong className={styles.scheduleInlineDay}>{entry.day}</strong>{' '}
+                {entry.start}
+                {entry.isZoom && <span className={styles.scheduleZoom}>Zoom</span>}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* 3. Medical / Allergies */}
         {student.medical_notes && student.medical_notes !== 'None' && student.medical_notes.trim() !== '' && (
@@ -445,36 +472,8 @@ export default function StudentDetailPanel({
           <SmsStatusIndicator attendance={attendance} variant="detail" />
         )}
 
-        {/* 5. Schedule — text list using schedule_detail per-day times */}
-        <div>
-          <label className={styles.label}>Schedule</label>
-          {scheduleDetail && Object.keys(scheduleDetail).length > 0 ? (
-            <div className={styles.scheduleList}>
-              {Object.entries(scheduleDetail)
-                .sort(([, a], [, b]) => a.sort_key - b.sort_key)
-                .map(([day, info]) => (
-                  <div key={day} className={styles.scheduleRow}>
-                    <span className={styles.scheduleDay}>{day.slice(0, 3)}</span>
-                    <span className={styles.scheduleTime}>{info.start}</span>
-                    {info.is_zoom && <span className={styles.scheduleZoom}>Zoom</span>}
-                  </div>
-                ))}
-            </div>
-          ) : scheduleDays.length > 0 ? (
-            <div className={styles.scheduleList}>
-              {DAYS.filter((d) => scheduleDays.includes(d)).map((d) => (
-                <div key={d} className={styles.scheduleRow}>
-                  <span className={styles.scheduleDay}>{d.slice(0, 3)}</span>
-                  {student.class_time_sort_key && (
-                    <span className={styles.scheduleTime}>{formatTimeKey(student.class_time_sort_key)}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className={styles.scheduleEmpty}>No schedule set</p>
-          )}
-        </div>
+        {/* 86ah3f3xp Finding 3C: standalone Schedule section removed — schedule
+            now appears once in the inline strip under the meta row. */}
 
         {/* 6. During Class */}
         <div className={styles.duringClassSection}>
