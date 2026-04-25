@@ -2,7 +2,9 @@
   background: var(--white);
   border: 2px solid var(--color-testing);
   border-radius: var(--radius-md);
-  padding: var(--space-4) 1.125rem;
+  /* 86ah3f3xp Finding 3G: tighter padding so the empty state (label + 2
+     toggles, no body content) stops dominating the panel scroll. */
+  padding: var(--space-3) var(--space-4);
   max-width: 28rem;
 }
 
@@ -10,7 +12,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 0 0 0.875rem;
+  /* 86ah3f3xp Finding 3G: pull the label closer to the first toggle. */
+  margin: 0 0 var(--space-2);
   font-size: var(--text-md);
   font-weight: 700;
   color: var(--color-testing);
@@ -37,7 +40,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2_5) 0;
+  /* 86ah3f3xp Finding 3G: tightened from var(--space-2_5) so the two
+     stacked toggles in the empty state read as a tight pair. min-height
+     keeps touch target compliant. */
+  padding: var(--space-1_5) 0;
   min-height: var(--touch-min);
   cursor: pointer;
 }

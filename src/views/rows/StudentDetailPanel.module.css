@@ -34,9 +34,10 @@
 
 .headerName {
   margin: 0;
-  font-size: var(--text-lg);
-  font-weight: 600;
+  font-size: var(--text-2xl);
+  font-weight: 700;
   color: var(--primary);
+  line-height: 1.15;
 }
 
 /* 86agzuwdf §3A: subject pills (math/reading/KC) sit directly under the name. */
@@ -126,12 +127,30 @@
   border: 1px solid var(--border);
 }
 
-.compactSchedule {
+/* 86ah3f3xp Finding 3C: inline schedule strip — clock icon + per-day entries
+   ("Wed 4:00P · Mon 5:30P · Thu 6:00P") with day bold. Replaces both the
+   compactSchedule text in the meta row and the standalone Schedule list. */
+.scheduleInline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
   font-family: var(--font-primary);
-  font-size: var(--text-2xs);
-  font-weight: 500;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.scheduleInlineIcon {
   color: var(--neutral);
-  padding-left: var(--space-1);
+  flex-shrink: 0;
+}
+
+.scheduleInlineEntry {
+  white-space: nowrap;
+}
+
+.scheduleInlineDay {
+  font-weight: 700;
 }
 
 /* 86agzuwdf §3C: Testing Setup + Record Test wrappers inside During Class. */
@@ -170,7 +189,7 @@
   font-weight: 600;
   padding: 3px var(--space-2);
   border-radius: 4px;
-  background: #f76808;
+  background: var(--reading);
   color: var(--white);
 }
 
@@ -482,7 +501,7 @@
   font-family: var(--font-primary);
   font-size: clamp(0.75rem, 1.2vw, 0.875rem);
   font-weight: 700;
-  color: var(--secondary);
+  color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -515,6 +534,19 @@
 .flagToggleRowActive {
   background: var(--base);
   border-color: var(--border);
+}
+
+/* 86ah3f3xp Finding 5: marked-off flag — shown but visually muted with a
+   strike-through label, matching the Row View card "done" pattern. */
+.flagToggleRowDone {
+  background: var(--white);
+  border-color: var(--border);
+}
+
+.flagToggleLabelDone {
+  color: var(--color-done-text);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-done-text);
 }
 
 .flagCircleLg {
@@ -1218,10 +1250,28 @@
   background: rgba(0, 154, 171, 0.06);
 }
 
-/* ── 86agzuwdf §3A: Session info card ──
-   Renders between Medical and Permissions when an attendance record exists.
-   Two rows: Checked in (with Edit button) and Session time (with Time button).
-   Buttons use the teal-outlined secondary style with a 44x44 minimum touch target. */
+/* 86ah3f3xp Finding 3D: collapsed session info — small compact note line
+   on the left, Time button (CardButton variant="time") on the right.
+   Replaces the prior two-row .sessionCard. */
+.sessionLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sessionLineText {
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  color: var(--neutral);
+  line-height: 1.3;
+  min-width: 0;
+}
+
+/* Legacy .sessionCard / .sessionRow / .sessionField / .sessionAction kept
+   below for any consumer that might still reference them — Finding 3D
+   makes them dead inside StudentDetailPanel but defensive against future
+   dependents picking them up by name. */
 .sessionCard {
   background: var(--white);
   border: 1px solid var(--border);

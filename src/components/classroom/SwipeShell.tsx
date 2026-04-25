@@ -18,6 +18,10 @@ export interface SwipeShellProps {
   onRowChange: (newIndex: number) => void;
   /** Top bar — typically a <RowMetaBar /> for the current row. */
   topBar: ReactNode;
+  /** 86ah3f3xp Finding 2B: forwarded to RowIndicatorBar. Tapping triggers
+   *  the assign-student flow for the current row. Disabled when full. */
+  onAssign?: () => void;
+  allSeatsFull?: boolean;
   /** Render prop: returns the per-row content (cards, popovers, placeholder). */
   children: (row: RowSummary, index: number) => ReactNode;
 }
@@ -32,6 +36,8 @@ export default function SwipeShell({
   currentRowIndex,
   onRowChange,
   topBar,
+  onAssign,
+  allSeatsFull,
   children,
 }: SwipeShellProps) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -120,6 +126,8 @@ export default function SwipeShell({
         rows={rows}
         currentIndex={currentRowIndex}
         onChange={onRowChange}
+        onAssign={onAssign}
+        allSeatsFull={allSeatsFull}
       />
       <div className={styles.viewport}>
         <div

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import type { RowSummary } from './SwipeShell';
 import styles from './RowIndicatorBar.module.css';
 
@@ -8,12 +8,18 @@ export interface RowIndicatorBarProps {
   rows: RowSummary[];
   currentIndex: number;
   onChange: (newIndex: number) => void;
+  /** 86ah3f3xp Finding 2B: Assign Student affordance lives on the swipe bar
+   *  for the current row. Tapping opens the picker. Grayed when no open seats. */
+  onAssign?: () => void;
+  allSeatsFull?: boolean;
 }
 
 export default function RowIndicatorBar({
   rows,
   currentIndex,
   onChange,
+  onAssign,
+  allSeatsFull,
 }: RowIndicatorBarProps) {
   const total = rows.length;
   const isFirst = currentIndex <= 0;
@@ -21,6 +27,19 @@ export default function RowIndicatorBar({
 
   return (
     <div className={styles.bar}>
+      {onAssign && (
+        <button
+          type="button"
+          className={`${styles.assignBtn} ${allSeatsFull ? styles.assignBtnDisabled : ''}`}
+          onClick={onAssign}
+          disabled={!!allSeatsFull}
+          aria-label={allSeatsFull ? 'All seats full' : 'Assign student to this row'}
+        >
+          <Plus size={16} aria-hidden="true" />
+          <span>{allSeatsFull ? 'All seats full' : 'Assign Student'}</span>
+        </button>
+      )}
+
       <button
         type="button"
         className={styles.navBtn}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
-import { Edit2, Plus } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
 import WholeClassCard, { type WholeClassTeacherNote } from '@/components/classroom/WholeClassCard';
 import DragLockToggle from '@/components/classroom/DragLockToggle';
@@ -250,8 +250,19 @@ export default function ClassroomOverview({
               >
                 {sectionRows.map((row) => {
                   const rs = assignments[row.id] || [];
-                  const regularStudents = rs.filter((s) => !flagsMap[s.id]?.taking_test);
-                  const testingStudents = rs.filter((s) => !!flagsMap[s.id]?.taking_test);
+                  // 86ah3f3xp (unnumbered): testing is a property of the
+                  // student, not the seat. When the row has a designated
+                  // testing table (testingSeats > 0), testing students fill
+                  // it. When it doesn't, they fall back to the regular
+                  // section so they don't vanish from the board — the
+                  // testing visual on WholeClassCard still applies.
+                  const hasTestingTable = row.testingSeats > 0;
+                  const regularStudents = hasTestingTable
+                    ? rs.filter((s) => !flagsMap[s.id]?.taking_test)
+                    : rs;
+                  const testingStudents = hasTestingTable
+                    ? rs.filter((s) => !!flagsMap[s.id]?.taking_test)
+                    : [];
 
                   const renderCard = (s: Student) => {
                     const att = attendanceMap.get(s.id);
@@ -333,18 +344,30 @@ export default function ClassroomOverview({
                       </div>
 
                       <div className={styles.cardStack} onClick={(e) => e.stopPropagation()}>
-                        {regularStudents.map(renderCard)}
+                        {Array.from({ length: row.seats }).map((_, slotIdx) => {
+                          const s = regularStudents[slotIdx];
+                          if (s) return renderCard(s);
+                          // 86ah3f3xp Finding 1: empty seat card. Restored from
+                          // pre-consolidation behavior — every open seat shows a blank
+                          // card matching WholeClassCard footprint. Clicking opens the
+                          // picker; the card is also a drag target.
+                          return (
+                            <button
+                              key={`empty-${row.id}-${slotIdx}`}
+                              type="button"
+                              className={styles.emptySeat}
+                              onClick={(e) => { e.stopPropagation(); onAddToRow(row.label); }}
+                              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDrop(row.id, false);
+                              }}
+                              aria-label={`Open seat in ${row.label}`}
+                            />
+                          );
+                        })}
                       </div>
-
-                      {rs.length < row.seats && (
-                        <div
-                          className={styles.mobileAddStudent}
-                          onClick={(e) => { e.stopPropagation(); onAddToRow(row.label); }}
-                        >
-                          <Plus size={14} />
-                          <span>Add Student ({row.seats - regularStudents.length} open)</span>
-                        </div>
-                      )}
 
                       {row.testingSeats > 0 && (
                         <div
@@ -374,17 +397,26 @@ export default function ClassroomOverview({
                             </span>
                           </div>
                           <div className={styles.cardStack}>
-                            {testingStudents.map(renderCard)}
+                            {Array.from({ length: row.testingSeats }).map((_, slotIdx) => {
+                              const s = testingStudents[slotIdx];
+                              if (s) return renderCard(s);
+                              return (
+                                <button
+                                  key={`empty-test-${row.id}-${slotIdx}`}
+                                  type="button"
+                                  className={styles.emptySeat}
+                                  onClick={(e) => { e.stopPropagation(); onAddToTestingRow(row.label); }}
+                                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDrop(row.id, true);
+                                  }}
+                                  aria-label={`Open testing seat in ${row.label}`}
+                                />
+                              );
+                            })}
                           </div>
-                          {testingStudents.length < row.testingSeats && (
-                            <div
-                              className={styles.mobileAddStudent}
-                              onClick={(e) => { e.stopPropagation(); onAddToTestingRow(row.label); }}
-                            >
-                              <Plus size={14} />
-                              <span>Add to test table</span>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>

@@ -5,22 +5,22 @@ import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
-  X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
-  Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  Pencil, Clock,
+  X, BookOpen, Heart, AlertTriangle, Check, ArrowRight, Clock,
 } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
-import AttendanceEditModal from '@/components/AttendanceEditModal';
 import TimePopover from '@/components/classroom/TimePopover';
+import CardButton from '@/components/classroom/CardButton';
 import PositionedPortal from '@/components/classroom/PositionedPortal';
 import TestingSetupSection, { type TestingState } from '@/components/classroom/TestingSetupSection';
 import RecordTestForm, { type RecordTestPayload } from '@/components/classroom/RecordTestForm';
 import PermissionsPickupCard from '@/components/classroom/PermissionsPickupCard';
 import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
 import PlanNextVisitModal, { type VisitPlanDraft } from '@/components/classroom/PlanNextVisitModal';
+import ChecklistItem from '@/components/classroom/ChecklistItem';
+import FlagChip, { type FlagChipType } from '@/components/classroom/FlagChip';
 import type { Contact } from '@/lib/types';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
@@ -48,24 +48,18 @@ function formatRelativeTime(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function FlagIcon({ icon, size = 12 }: { icon: string | undefined; size?: number }) {
-  if (!icon) return <Flag size={size} color="#fff" />;
-  if (icon.startsWith('text:')) {
-    return <span className={styles.flagIconText}>{icon.slice(5)}</span>;
-  }
-  const props = { size, color: '#fff' };
-  switch (icon) {
-    case 'Lightbulb': return <Lightbulb {...props} />;
-    case 'CircleHelp': return <CircleHelp {...props} />;
-    case 'BookOpen': return <BookOpen {...props} />;
-    case 'Star': return <Star {...props} />;
-    case 'AlertCircle': return <AlertCircle {...props} />;
-    case 'Zap': return <Zap {...props} />;
-    case 'Flag': return <Flag {...props} />;
-    case 'Heart': return <Heart {...props} />;
-    case 'UserCheck': return <UserCheck {...props} />;
-    case 'Sparkles': return <Sparkles {...props} />;
-    default: return <Flag {...props} />;
+/**
+ * 86ah3f3xp Finding 5 (second pair, fix-up): map a flagConfig key to the
+ * FlagChip type the Row View card uses. Same switch RowViewCard.tsx and
+ * PlanNextVisitModal.tsx ship — keys outside this set return null and the
+ * Detail Panel skips them, matching Row View's behavior. */
+function flagKeyToType(key: string): FlagChipType | null {
+  switch (key) {
+    case 'new_concept': return 'new_concept';
+    case 'needs_help': return 'needs_help';
+    case 'work_with_amy': return 'work_amy';
+    case 'needs_homework': return 'needs_homework';
+    default: return null;
   }
 }
 
@@ -103,9 +97,8 @@ export default function StudentDetailPanel({
   const [noteSuccess, setNoteSuccess] = useState(false);
   const [showAddItems, setShowAddItems] = useState(false);
 
-  // 86agzuwdf §3A: Session info card state. Edit opens AttendanceEditModal,
-  // Time opens the same TimePopover used in Row View, anchored to the Time button.
-  const [editAttendanceOpen, setEditAttendanceOpen] = useState(false);
+  // 86ah3f3xp Finding 3D: session info shrinks to compact notes + a single
+  // Time button. Edit pencil + AttendanceEditModal trigger removed per audit.
   const [timePopoverOpen, setTimePopoverOpen] = useState(false);
   const timeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -154,21 +147,34 @@ export default function StudentDetailPanel({
           ? 'on'
           : 'off';
 
-  // 86agzuwdf §3A: compact inline schedule for the meta row, e.g. "M·W·F 3:30p · 60m".
-  // Falls back to "No schedule" when schedule_detail is empty/missing.
-  const compactScheduleText = (() => {
-    const entries = scheduleDetail
-      ? Object.entries(scheduleDetail).sort(([, a], [, b]) => a.sort_key - b.sort_key)
-      : [];
-    if (entries.length === 0) return 'No schedule';
-    const dayInitial: Record<string, string> = {
-      Monday: 'M', Tuesday: 'T', Wednesday: 'W', Thursday: 'Th',
-      Friday: 'F', Saturday: 'Sa', Sunday: 'Su',
-    };
-    const days = entries.map(([day]) => dayInitial[day] ?? day.slice(0, 1)).join('·');
-    const firstStart = entries[0][1].start;
-    const duration = entries[0][1].duration;
-    return `${days} ${firstStart} · ${duration}m`;
+  // 86ah3f3xp Finding 3C: schedule appears once below the badges row, with
+  // a clock-icon prefix and per-day "Wed 4:00P · Mon 5:30P" entries (day in
+  // bold). The standalone Schedule section further down is removed — this is
+  // the single source for schedule display.
+  const dayShort: Record<string, string> = {
+    Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu',
+    Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun',
+  };
+  const formatStart = (start: string): string => start.replace(/(AM|PM)$/, (m) => m[0]);
+  const scheduleEntries: Array<{ day: string; start: string; isZoom?: boolean }> = (() => {
+    if (scheduleDetail) {
+      return Object.entries(scheduleDetail)
+        .sort(([, a], [, b]) => a.sort_key - b.sort_key)
+        .map(([day, info]) => ({
+          day: dayShort[day] ?? day.slice(0, 3),
+          start: formatStart(info.start),
+          isZoom: info.is_zoom,
+        }));
+    }
+    if (scheduleDays.length > 0) {
+      return DAYS.filter((d) => scheduleDays.includes(d)).map((d) => ({
+        day: dayShort[d] ?? d.slice(0, 3),
+        start: student.class_time_sort_key
+          ? formatStart(formatTimeKey(student.class_time_sort_key))
+          : '',
+      }));
+    }
+    return [];
   })();
 
   // 86agzuwdf §3C: Testing Setup state mirrors flags.taking_test (single source
@@ -376,8 +382,22 @@ export default function StudentDetailPanel({
               </span>
             );
           })()}
-          <span className={styles.compactSchedule}>{compactScheduleText}</span>
         </div>
+
+        {/* 86ah3f3xp Finding 3C: schedule appears once, in compact form,
+            below the meta row. Clock icon + per-day "Wed 4:00P" with day bold. */}
+        {scheduleEntries.length > 0 && (
+          <div className={styles.scheduleInline}>
+            <Clock size={14} aria-hidden="true" className={styles.scheduleInlineIcon} />
+            {scheduleEntries.map((entry, i) => (
+              <span key={`${entry.day}-${i}`} className={styles.scheduleInlineEntry}>
+                <strong className={styles.scheduleInlineDay}>{entry.day}</strong>{' '}
+                {entry.start}
+                {entry.isZoom && <span className={styles.scheduleZoom}>Zoom</span>}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* 3. Medical / Allergies */}
         {student.medical_notes && student.medical_notes !== 'None' && student.medical_notes.trim() !== '' && (
@@ -390,44 +410,25 @@ export default function StudentDetailPanel({
           </div>
         )}
 
-        {/* 3b. Session info — 86agzuwdf §3A. Renders only when an attendance record
-            exists (skipped when the panel is opened from Task Inbox or any other
-            non-classroom surface). Permissions card slots after this in §3B/§3E. */}
+        {/* 86ah3f3xp Findings 3D + 3E: session info collapses to a single
+            compact line plus a Time button styled identically to the Row View
+            card's Time button (CardButton variant="time"). Edit pencil and
+            AttendanceEditModal trigger removed — check-in editing lives on
+            the Attendance kiosk page only. */}
         {attendance && (
-          <div className={styles.sessionCard}>
-            <div className={styles.sessionRow}>
-              <div className={styles.sessionField}>
-                <span className={styles.sessionLabel}>Checked in</span>
-                <span className={styles.sessionValue}>{formatTime(attendance.check_in)}</span>
-              </div>
-              <button
-                type="button"
-                className={styles.sessionAction}
-                onClick={() => setEditAttendanceOpen(true)}
-                aria-label="Edit check-in and check-out times"
-              >
-                <Pencil size={14} aria-hidden="true" />
-                Edit
-              </button>
+          <div className={styles.sessionLine}>
+            <div className={styles.sessionLineText}>
+              <span>Checked in {formatTime(attendance.check_in)}</span>
+              <span aria-hidden="true"> · </span>
+              <span>Session {Number(attendance.session_duration_minutes ?? 0)}m</span>
             </div>
-            <div className={styles.sessionRow}>
-              <div className={styles.sessionField}>
-                <span className={styles.sessionLabel}>Session time</span>
-                <span className={styles.sessionValue}>
-                  {Number(attendance.session_duration_minutes ?? 0)}m
-                </span>
-              </div>
-              <button
-                ref={timeButtonRef}
-                type="button"
-                className={styles.sessionAction}
-                onClick={() => setTimePopoverOpen(true)}
-                aria-label="Adjust session time"
-              >
-                <Clock size={14} aria-hidden="true" />
-                Time
-              </button>
-            </div>
+            <span ref={timeButtonRef}>
+              <CardButton
+                variant="time"
+                label="Time"
+                onPress={() => setTimePopoverOpen(true)}
+              />
+            </span>
           </div>
         )}
 
@@ -445,36 +446,8 @@ export default function StudentDetailPanel({
           <SmsStatusIndicator attendance={attendance} variant="detail" />
         )}
 
-        {/* 5. Schedule — text list using schedule_detail per-day times */}
-        <div>
-          <label className={styles.label}>Schedule</label>
-          {scheduleDetail && Object.keys(scheduleDetail).length > 0 ? (
-            <div className={styles.scheduleList}>
-              {Object.entries(scheduleDetail)
-                .sort(([, a], [, b]) => a.sort_key - b.sort_key)
-                .map(([day, info]) => (
-                  <div key={day} className={styles.scheduleRow}>
-                    <span className={styles.scheduleDay}>{day.slice(0, 3)}</span>
-                    <span className={styles.scheduleTime}>{info.start}</span>
-                    {info.is_zoom && <span className={styles.scheduleZoom}>Zoom</span>}
-                  </div>
-                ))}
-            </div>
-          ) : scheduleDays.length > 0 ? (
-            <div className={styles.scheduleList}>
-              {DAYS.filter((d) => scheduleDays.includes(d)).map((d) => (
-                <div key={d} className={styles.scheduleRow}>
-                  <span className={styles.scheduleDay}>{d.slice(0, 3)}</span>
-                  {student.class_time_sort_key && (
-                    <span className={styles.scheduleTime}>{formatTimeKey(student.class_time_sort_key)}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className={styles.scheduleEmpty}>No schedule set</p>
-          )}
-        </div>
+        {/* 86ah3f3xp Finding 3C: standalone Schedule section removed — schedule
+            now appears once in the inline strip under the meta row. */}
 
         {/* 6. During Class */}
         <div className={styles.duringClassSection}>
@@ -528,33 +501,48 @@ export default function StudentDetailPanel({
             );
           })()}
 
-          {/* 6b. Assigned flags only */}
+          {/* 86ah3f3xp Findings 3H + 5: assigned flags render via the same
+              shared FlagChip component the Row View card uses (variant
+              "labeled"). Type-specific colored circles — purple New Concept,
+              orange Needs Help, plum Work with Amy, teal Needs Homework —
+              come from FlagChip's CSS, so the two surfaces look identical.
+              Filter shows any flag whose key is on the blob (regardless of
+              truthy / falsy) so a flag toggled off persists as a marked-off
+              row with FlagChip's "done" treatment (gray fill + strike-through).
+              taking_test is excluded; unknown flag keys (no matching FlagChip
+              type) are skipped. */}
           {(() => {
-            const activeFlags = flagConfig.filter(
-              (fc) => !!(flags && (flags as Record<string, unknown>)[fc.key])
-            );
+            const flagBlob = flags as Record<string, unknown> | null | undefined;
+            const activeFlags = flagConfig
+              .filter((fc) => fc.key !== 'taking_test')
+              .filter((fc) => flagKeyToType(fc.key) !== null)
+              .filter((fc) => (flagBlob ? flagBlob[fc.key] !== undefined : false));
             if (activeFlags.length === 0) return null;
             return (
               <div className={styles.flagGrid}>
-                {activeFlags.map((fc) => (
-                  <button
-                    key={fc.key}
-                    className={`${styles.flagToggleRow} ${styles.flagToggleRowActive}`}
-                    onClick={() => onToggleFlag?.(fc.key)}
-                    disabled={!onToggleFlag}
-                  >
-                    <span className={styles.flagCircleLg} style={{ background: '#1E335E' }}>
-                      <FlagIcon icon={fc.icon} size={12} />
-                    </span>
-                    <span className={styles.flagToggleLabel}>{fc.label}</span>
-                    <Check size={14} style={{ color: fc.color, flexShrink: 0 }} />
-                  </button>
-                ))}
+                {activeFlags.map((fc) => {
+                  const type = flagKeyToType(fc.key)!;
+                  const isDone = !flagBlob?.[fc.key];
+                  return (
+                    <FlagChip
+                      key={fc.key}
+                      type={type}
+                      label={fc.label}
+                      done={isDone}
+                      mode="completion"
+                      variant="labeled"
+                      onToggle={() => onToggleFlag?.(fc.key)}
+                    />
+                  );
+                })}
               </div>
             );
           })()}
 
-          {/* 6c. Assigned checklist items (standard + custom) */}
+          {/* 86ah3f3xp Finding 5 (second): checklist items now use the shared
+              ChecklistItem component in 'completion' mode — same primitive
+              the Row View card and Add classroom item popup render. The prior
+              custom .checklistRow + .checkBox markup mismatched both surfaces. */}
           {(() => {
             const assignedChecklist = checklistConfig.filter((ci) => {
               const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
@@ -568,25 +556,19 @@ export default function StudentDetailPanel({
                 {assignedChecklist.map((ci) => {
                   const isDone = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] === true : false;
                   return (
-                    <button
+                    <ChecklistItem
                       key={ci.key}
-                      className={`${styles.checklistRow} ${isDone ? styles.checklistRowDone : styles.checklistRowAssigned}`}
-                      onClick={() => onToggleTask?.(ci.key)}
-                      disabled={!onToggleTask}
-                    >
-                      <span className={`${styles.checkBox} ${isDone ? styles.checkBoxChecked : styles.checkBoxAssigned}`}>
-                        {isDone && <Check size={9} color="var(--white)" />}
-                      </span>
-                      <span className={`${styles.checklistLabel} ${isDone ? styles.checklistLabelDone : ''}`}>
-                        {ci.label}
-                      </span>
-                    </button>
+                      itemKey={ci.key}
+                      label={ci.label}
+                      done={isDone}
+                      onToggle={() => onToggleTask?.(ci.key)}
+                    />
                   );
                 })}
                 {customTaskKeys.map((key) => {
                   const val = (flags?.tasks as Record<string, unknown>)?.[key];
                   const isDone = val === true;
-                  // Label resolution order:
+                  // Label resolution order matches the legacy code path:
                   //   1. Legacy shape flags.tasks.custom = "<text>" — value is the label.
                   //   2. Phase 6c shape flags.tasks["custom:<text>"] = false — strip prefix.
                   //   3. Unknown key — pretty-print as fallback.
@@ -596,19 +578,13 @@ export default function StudentDetailPanel({
                       ? key.slice('custom:'.length)
                       : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
                   return (
-                    <button
+                    <ChecklistItem
                       key={key}
-                      className={`${styles.checklistRow} ${isDone ? styles.checklistRowDone : styles.checklistRowAssigned}`}
-                      onClick={() => onToggleTask?.(key)}
-                      disabled={!onToggleTask}
-                    >
-                      <span className={`${styles.checkBox} ${isDone ? styles.checkBoxChecked : styles.checkBoxAssigned}`}>
-                        {isDone && <Check size={9} color="var(--white)" />}
-                      </span>
-                      <span className={`${styles.checklistLabel} ${isDone ? styles.checklistLabelDone : ''}`}>
-                        {label}
-                      </span>
-                    </button>
+                      itemKey={key}
+                      label={label}
+                      done={isDone}
+                      onToggle={() => onToggleTask?.(key)}
+                    />
                   );
                 })}
               </div>
@@ -660,7 +636,9 @@ export default function StudentDetailPanel({
 
         </div>
 
-        {/* Phase 6c: shared PlanNextVisitModal. Writes to today's cb_row_assignments.flags. */}
+        {/* Phase 6c: shared PlanNextVisitModal. Writes to today's cb_row_assignments.flags.
+            86ah3f3xp Finding 4: pass currentFlags so the modal opens with the
+            student's existing flags / tests / checklist already selected. */}
         <PlanNextVisitModal
           student={student}
           isOpen={showAddItems}
@@ -668,6 +646,7 @@ export default function StudentDetailPanel({
           onSave={handleAssignClassTasks}
           title="Add classroom item"
           testingTense="present"
+          currentFlags={flags ?? null}
         />
 
         {/* 7. Classroom Observations */}
@@ -755,15 +734,10 @@ export default function StudentDetailPanel({
 
       </div>
 
-      {/* 86agzuwdf §3A: Edit Attendance modal — full-viewport overlay matching the
-          existing UX from AttendancePage / CheckOutPanel / KioskPage call sites. */}
-      {editAttendanceOpen && attendance && (
-        <AttendanceEditModal
-          attendance={attendance}
-          studentName={`${student.first_name} ${student.last_name}`}
-          onClose={() => setEditAttendanceOpen(false)}
-        />
-      )}
+      {/* 86ah3f3xp Finding 3D: Edit Attendance modal removed from the detail
+          panel — the audit-spec'd compact session line replaces it. Editing
+          check-in / check-out times now happens on the Attendance kiosk
+          page only. */}
 
       {/* 86agzuwdf §3A: Time popover — anchored to the Time button via the shared
           PositionedPortal helper. Backdrop dismisses; TimePopover's own internal

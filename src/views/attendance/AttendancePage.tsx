@@ -26,6 +26,7 @@ import { api } from '@/lib/api';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { useClassroomAssignmentsActive, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
+import { stashPendingClassPrep, clearPendingClassPrep } from '@/lib/pendingClassPrep';
 import { useAbsences } from '@/hooks/useAbsences';
 import {
   getTimeRemaining, getSessionDuration, formatTimeKey, formatTime, parseSubjects, normalizeSortKey,
@@ -628,19 +629,30 @@ export default function AttendancePage() {
       return;
     }
 
-    // 86ah0ex1k: synthetic 'Unassigned' row write removed at kiosk check-in.
-    // Row assignment is now an explicit action (Row View / AssignStudentPicker).
-    // The downstream updateStudentFlags(...) PATCH cannot land without an existing
-    // assignment row, so check-in-time class-prep persistence is paused here until
-    // a proper data-flow is built (deferred ticket: handleEditPrep 404 on flags PATCH).
-    // Check-in itself (cb_attendance row) succeeds above; only the prep payload is dropped.
+    // 86ah3f3xp Finding 2A: stash class-prep data so RowsPage.moveStudentToRow
+    // can PATCH it onto the classroom_assignments row when the student is later
+    // assigned to a row in Live Class. The check-in itself (cb_attendance row)
+    // succeeds above. Stash is per-tablet localStorage; multi-tablet sync needs
+    // a backend column (out of scope for the audit pass).
+    const hasPrep =
+      options.selectedFlags.length > 0 ||
+      options.selectedChecklist.length > 0 ||
+      !!options.noteForTeacher ||
+      (options.teacherNotes?.length ?? 0) > 0;
+    if (hasPrep) {
+      stashPendingClassPrep(options.studentId, {
+        flags: options.selectedFlags,
+        checklist: options.selectedChecklist,
+        noteForTeacher: options.noteForTeacher ?? '',
+        teacherNotes: options.teacherNotes ?? [],
+        attendanceId: result.id,
+      });
+    } else {
+      // Clear any leftover stash from a previous session — fresh check-in with
+      // no prep should not inherit stale flags.
+      clearPendingClassPrep(options.studentId);
+    }
     const flagSaveFailed = false;
-    void options.selectedFlags;
-    void options.selectedChecklist;
-    void options.noteForTeacher;
-    void options.teacherNotes;
-    // TODO(86ah0ex1k follow-up): once the explicit-assign flow lands, route
-    // check-in-time class prep into the new attendance_id-bound assignment write.
 
     setCheckInPopupStudent(null);
     // 86ah0mqee bug 4: clear the search bar after a successful check-in so the

@@ -149,19 +149,22 @@
   box-shadow: 0 0 0 2px rgba(0, 154, 171, 0.18);
 }
 
+/* 86ah3f3xp Time edit popup visual: pencil sits in a teal-outlined square
+   to match the design reference (live had a borderless icon-only button
+   that read as too light next to the teal-outlined preset pills). */
 .iconBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: var(--touch-min);
   height: var(--touch-min);
-  background: transparent;
-  border: none;
+  background: var(--white);
+  border: 1.5px solid var(--secondary);
   color: var(--secondary);
   cursor: pointer;
   border-radius: var(--radius-btn);
   flex-shrink: 0;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .iconBtn:hover {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId, useMemo } from 'react';
+import { useState, useId, useMemo, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
@@ -30,6 +30,12 @@ export interface PlanNextVisitModalProps {
    *  6c Detail Panel passes "present" (header "Testing", toggle labels
    *  "Taking X test today"). Section title and toggle copy always covary. */
   testingTense?: 'future' | 'present';
+  /** 86ah3f3xp Finding 4: when supplied, the modal initializes its
+   *  selections (flags, testing state, checklist, note) from the student's
+   *  current row-assignment flags so the user is editing existing state
+   *  instead of starting blank. Plan Next Visit (Student Record) leaves
+   *  this undefined for the legacy "from-scratch" behavior. */
+  currentFlags?: RowAssignmentFlags | null;
 }
 
 /** Maps configured flag keys to FlagChip types. Unknown keys fall back to null (filtered out). */
@@ -52,6 +58,7 @@ export default function PlanNextVisitModal({
   onSave,
   title = 'Plan Next Visit',
   testingTense = 'future',
+  currentFlags,
 }: PlanNextVisitModalProps) {
   const testingTitle = testingTense === 'present' ? 'Testing' : 'Testing (next visit)';
   const titleId = useId();
@@ -65,6 +72,62 @@ export default function PlanNextVisitModal({
   const [customTask, setCustomTask] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // 86ah3f3xp Finding 4: when the modal opens, prime selections from the
+  // student's current row-assignment flags. Without this seed the form opened
+  // blank and the user had to re-pick everything to make a change. Open=>true
+  // transition is the trigger; while open, edits are tracked locally and
+  // applied on Save (callers handle the merge semantics — currently add-only
+  // for the Detail Panel "Add classroom item" call site).
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!currentFlags) {
+      setSelectedFlags(new Set());
+      setTesting({});
+      setSelectedChecklist(new Set());
+      setCustomTask('');
+      setNote('');
+      return;
+    }
+    const blob = currentFlags as Record<string, unknown>;
+    // Flags: only those configured in flagConfig and currently truthy.
+    const seededFlags = new Set<string>();
+    flagConfig.forEach((fc) => {
+      if (fc.key === 'taking_test') return;
+      if (blob[fc.key]) seededFlags.add(fc.key);
+    });
+    setSelectedFlags(seededFlags);
+    // Testing: object form is the only valid state today; legacy boolean true
+    // is treated as "no subjects" (matches TestingSetupSection's read).
+    const tt = blob.taking_test;
+    setTesting(tt && typeof tt === 'object' ? (tt as TestingState) : {});
+    // Checklist: any task key in the blob counts as selected. Custom keys
+    // come prefixed with "custom:" already (per addCustomTask convention).
+    const seededChecklist = new Set<string>();
+    const tasks = (currentFlags.tasks ?? {}) as Record<string, unknown>;
+    Object.keys(tasks).forEach((k) => {
+      // Legacy "custom" string-value shape: convert to "custom:<text>" form
+      // so the modal renders + saves through the canonical path.
+      const v = tasks[k];
+      if (k === 'custom' && typeof v === 'string' && v.length > 0) {
+        seededChecklist.add(`${CUSTOM_PREFIX}${v}`);
+      } else {
+        seededChecklist.add(k);
+      }
+    });
+    setSelectedChecklist(seededChecklist);
+    setCustomTask('');
+    // Note: prefer the array form (only undone notes) over legacy single string.
+    const teacherNotes = currentFlags.teacher_notes;
+    if (Array.isArray(teacherNotes)) {
+      const undone = teacherNotes.filter((n) => !n.done).map((n) => n.text);
+      setNote(undone.join('\n'));
+    } else if (typeof currentFlags.teacher_note === 'string') {
+      setNote(currentFlags.teacher_note);
+    } else {
+      setNote('');
+    }
+  }, [isOpen, currentFlags, flagConfig]);
 
   // Synthesize a RowAssignmentFlags-shaped object so TestingSetupSection can read
   // the current testing selection via its existing `currentFlags.taking_test` path.
