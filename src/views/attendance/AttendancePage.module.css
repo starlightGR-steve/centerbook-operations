@@ -476,8 +476,12 @@
 .content {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  /* 86ah0mqee bug 1: bound the board to the page; column bodies are the
+     scrollers, not the page itself. Surface/Chrome was failing to scroll
+     because nested .content + .colBody scrollers competed for the touch. */
+  overflow: hidden;
   padding: clamp(0.75rem, 2vw, 1.75rem) clamp(1rem, 3vw, 2.25rem);
+  display: flex;
 }
 
 .columns {
@@ -489,6 +493,11 @@
   display: grid;
   gap: clamp(0.625rem, 1.5vw, 1.25rem);
   align-items: stretch;
+  /* 86ah0mqee bug 1: fill the .content viewport so each column's flex
+     children can compute their own height for inner-scroll. */
+  flex: 1;
+  min-height: 0;
+  width: 100%;
 }
 
 .column {
@@ -565,10 +574,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  /* 86ah0mqee bug 1: column bodies own the scroll. flex:1 + min-height:0
+     lets the body shrink to fit its parent .column (sized by the .columns
+     grid row, which fills .content). No more fragile 100dvh calc that
+     mis-sized on Surface when the timeclock panel was open. */
   flex: 1;
-  max-height: calc(100vh - 16rem);
-  max-height: calc(100dvh - 16rem);
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Awaiting Pickup column body — soft peach wash behind cards (cards stay white) */
@@ -1390,8 +1403,19 @@
     grid-template-columns: 1fr;
   }
 
+  /* On mobile the page itself scrolls (single-column stack), so column
+     bodies stop being independent scrollers. */
+  .content {
+    overflow: visible;
+    display: block;
+  }
+
+  .columns {
+    flex: none;
+  }
+
   .colBody {
-    max-height: none;
+    overflow: visible;
   }
 }
 
