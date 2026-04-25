@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
-import { Edit2, Plus } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
 import WholeClassCard, { type WholeClassTeacherNote } from '@/components/classroom/WholeClassCard';
 import DragLockToggle from '@/components/classroom/DragLockToggle';
@@ -333,18 +333,30 @@ export default function ClassroomOverview({
                       </div>
 
                       <div className={styles.cardStack} onClick={(e) => e.stopPropagation()}>
-                        {regularStudents.map(renderCard)}
+                        {Array.from({ length: row.seats }).map((_, slotIdx) => {
+                          const s = regularStudents[slotIdx];
+                          if (s) return renderCard(s);
+                          // 86ah3f3xp Finding 1: empty seat card. Restored from
+                          // pre-consolidation behavior — every open seat shows a blank
+                          // card matching WholeClassCard footprint. Clicking opens the
+                          // picker; the card is also a drag target.
+                          return (
+                            <button
+                              key={`empty-${row.id}-${slotIdx}`}
+                              type="button"
+                              className={styles.emptySeat}
+                              onClick={(e) => { e.stopPropagation(); onAddToRow(row.label); }}
+                              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDrop(row.id, false);
+                              }}
+                              aria-label={`Open seat in ${row.label}`}
+                            />
+                          );
+                        })}
                       </div>
-
-                      {rs.length < row.seats && (
-                        <div
-                          className={styles.mobileAddStudent}
-                          onClick={(e) => { e.stopPropagation(); onAddToRow(row.label); }}
-                        >
-                          <Plus size={14} />
-                          <span>Add Student ({row.seats - regularStudents.length} open)</span>
-                        </div>
-                      )}
 
                       {row.testingSeats > 0 && (
                         <div
@@ -374,17 +386,26 @@ export default function ClassroomOverview({
                             </span>
                           </div>
                           <div className={styles.cardStack}>
-                            {testingStudents.map(renderCard)}
+                            {Array.from({ length: row.testingSeats }).map((_, slotIdx) => {
+                              const s = testingStudents[slotIdx];
+                              if (s) return renderCard(s);
+                              return (
+                                <button
+                                  key={`empty-test-${row.id}-${slotIdx}`}
+                                  type="button"
+                                  className={styles.emptySeat}
+                                  onClick={(e) => { e.stopPropagation(); onAddToTestingRow(row.label); }}
+                                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDrop(row.id, true);
+                                  }}
+                                  aria-label={`Open testing seat in ${row.label}`}
+                                />
+                              );
+                            })}
                           </div>
-                          {testingStudents.length < row.testingSeats && (
-                            <div
-                              className={styles.mobileAddStudent}
-                              onClick={(e) => { e.stopPropagation(); onAddToTestingRow(row.label); }}
-                            >
-                              <Plus size={14} />
-                              <span>Add to test table</span>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>

@@ -230,6 +230,31 @@
   gap: var(--space-2);
 }
 
+/* 86ah3f3xp Finding 1: empty seat card. Width matches WholeClassCard
+   (17.5rem) and padding matches its single-line content height so the
+   row visually resolves to a clean grid of cards regardless of fill. */
+.emptySeat {
+  width: 17.5rem;
+  min-height: calc(var(--space-3) * 2 + 1.875rem);
+  padding: var(--space-3) var(--space-4);
+  background: var(--white);
+  border: 1.5px dashed #d4d4d4;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  font-family: var(--font-primary);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.emptySeat:hover {
+  border-color: var(--secondary);
+  background: var(--secondary-ul);
+}
+
+.emptySeat:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
 
 /* ── Testing table section ──
    V13: recolored from yellow/amber to deep purple. Yellow is now reserved
