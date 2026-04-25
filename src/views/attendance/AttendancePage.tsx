@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import {
   Scan, Search, X, UserCheck, Clock, Pencil, Send, CheckCircle2,
   AlertTriangle, Plus, Check, LogOut, ChevronLeft, ChevronRight, ChevronDown,
-  Trash2, Phone, Bath, ArrowRightLeft, HelpCircle,
+  Trash2, Phone, Bath, RefreshCw, HelpCircle,
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import AttendanceEditModal from '@/components/AttendanceEditModal';
@@ -28,7 +28,7 @@ import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock'
 import { useClassroomAssignmentsActive, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
 import { useAbsences } from '@/hooks/useAbsences';
 import {
-  getTimeRemaining, getSessionDuration, formatTimeKey, formatTime, parseSubjects,
+  getTimeRemaining, getSessionDuration, formatTimeKey, formatTime, parseSubjects, normalizeSortKey,
 } from '@/lib/types';
 import type { Student, Staff, TimeEntry, Attendance } from '@/lib/types';
 import styles from './AttendancePage.module.css';
@@ -59,23 +59,28 @@ function staffDisplayName(staff: Staff): string {
   return staff.full_name || 'Unknown';
 }
 
+/** Resolve scheduled minutes-since-midnight from class_time_sort_key, going through
+ *  normalizeSortKey first so legacy 12-hour-without-AM/PM values (e.g. 430 for
+ *  "4:30 PM") are interpreted correctly. Returns null if no schedule on file. */
+function scheduledMinutesFromKey(student: Student): number | null {
+  const normalized = normalizeSortKey(student.class_time_sort_key);
+  if (normalized === null) return null;
+  return Math.floor(normalized / 100) * 60 + (normalized % 100);
+}
+
 function isNoShow(student: Student): boolean {
-  if (!student.class_time_sort_key) return false;
+  const scheduledMinutes = scheduledMinutesFromKey(student);
+  if (scheduledMinutes === null) return false;
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const scheduledMinutes =
-    Math.floor(student.class_time_sort_key / 100) * 60 +
-    (student.class_time_sort_key % 100);
   return nowMinutes - scheduledMinutes >= 15;
 }
 
 function minutesLate(student: Student): number {
-  if (!student.class_time_sort_key) return 0;
+  const scheduledMinutes = scheduledMinutesFromKey(student);
+  if (scheduledMinutes === null) return 0;
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const scheduledMinutes =
-    Math.floor(student.class_time_sort_key / 100) * 60 +
-    (student.class_time_sort_key % 100);
   return Math.max(0, nowMinutes - scheduledMinutes);
 }
 
@@ -367,11 +372,8 @@ export default function AttendancePage() {
     return result;
   }, [scheduledToday, allAttendanceMap]);
 
-  // Active attendance rows joined with student records (computed once, then split).
-  // Partition rule: still has time remaining → Checked In; session_end_time has passed
-  // (getTimeRemaining <= 0) → Awaiting Pickup. This is the "row-complete" client-side
-  // filter — no new mutation, no new DB column. Tied to Live Class "Done" by way of the
-  // session_end_time clock (matches existing overtime visual, just relocated).
+  // Active attendance rows joined with student records (computed once, then split
+  // by lifecycle status into Checked In vs Awaiting Pickup).
   const activeAttendanceJoined = useMemo(() => {
     if (!activeAttendance || !allStudents) return [];
     return activeAttendance
@@ -383,15 +385,13 @@ export default function AttendancePage() {
       .filter((x): x is { attendance: Attendance; student: Student } => !!x.student);
   }, [activeAttendance, allStudents]);
 
-  // Column 2: Checked In — active, session not yet ended (least-time-remaining first)
+  // Column 2: Checked In — status === 'checked-in' (or absent for legacy rows).
+  // Sorted least-time-remaining first so the cards most in need of attention
+  // (warning yellow → overtime red) bubble up. The clock drives border state
+  // only, never column membership.
   const checkedInStudents = useMemo(() => {
     return activeAttendanceJoined
-      .filter(({ attendance: a, student: s }) =>
-        getTimeRemaining(s.subjects, a.check_in, {
-          scheduleDetail: s.schedule_detail,
-          sessionDurationMinutes: a.session_duration_minutes,
-        }) > 0,
-      )
+      .filter(({ attendance: a }) => (a.status ?? 'checked-in') === 'checked-in')
       .sort((a, b) => {
         const ra = getTimeRemaining(a.student.subjects, a.attendance.check_in, {
           scheduleDetail: a.student.schedule_detail,
@@ -405,15 +405,12 @@ export default function AttendancePage() {
       });
   }, [activeAttendanceJoined]);
 
-  // Column 3: Awaiting Pickup — active, session_end_time has passed (longest-waiting first)
+  // Column 3: Awaiting Pickup — status === 'row-complete' (set when a teacher
+  // taps Done in Live Class, or when staff manually move a card here).
+  // Longest-waiting first.
   const awaitingPickupStudents = useMemo(() => {
     return activeAttendanceJoined
-      .filter(({ attendance: a, student: s }) =>
-        getTimeRemaining(s.subjects, a.check_in, {
-          scheduleDetail: s.schedule_detail,
-          sessionDurationMinutes: a.session_duration_minutes,
-        }) <= 0,
-      )
+      .filter(({ attendance: a }) => a.status === 'row-complete')
       .sort((a, b) => getWaitMinutes(b.attendance, b.student) - getWaitMinutes(a.attendance, a.student));
   }, [activeAttendanceJoined]);
 
@@ -646,6 +643,10 @@ export default function AttendancePage() {
     // check-in-time class prep into the new attendance_id-bound assignment write.
 
     setCheckInPopupStudent(null);
+    // 86ah0mqee bug 4: clear the search bar after a successful check-in so the
+    // next student doesn't have to manually clear stale filter state.
+    setSearchQuery('');
+    setShowSearchDropdown(false);
     setAnnouncement(`${studentName} checked in`);
     setUndoToast({
       id: ++toastIdRef.current,
@@ -702,18 +703,48 @@ export default function AttendancePage() {
     }
   };
 
-  /* ── Move Checked Out → Checked In (clear check_out) ── */
-  const handleMoveToCheckedIn = async (studentId: number, attendanceId: number) => {
+  /* ── Move Checked Out → Checked In or Awaiting Pickup (clear check_out + status) ── */
+  const handleMoveFromCheckedOut = async (
+    studentId: number,
+    attendanceId: number,
+    target: 'checked-in' | 'row-complete',
+  ) => {
     closeMoveMenu();
     const student = allStudents?.find((s) => s.id === studentId);
     const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
+    const label = target === 'row-complete' ? 'Awaiting Pickup' : 'Checked In';
     try {
-      await updateAttendance(attendanceId, { check_out: null });
+      await updateAttendance(attendanceId, { check_out: null, status: target });
       setUndoToast({
         id: ++toastIdRef.current,
-        message: `${name} moved to Checked In`,
+        message: `${name} moved to ${label}`,
         onUndo: async () => {
           await checkOutStudent({ student_id: studentId });
+        },
+      });
+    } catch {
+      setAnnouncement('Failed to move student. Please try again.');
+    }
+  };
+
+  /* ── Status flip for active rows (Checked In ↔ Awaiting Pickup) ── */
+  const handleSetStatus = async (
+    studentId: number,
+    attendanceId: number,
+    target: 'checked-in' | 'row-complete',
+  ) => {
+    closeMoveMenu();
+    const student = allStudents?.find((s) => s.id === studentId);
+    const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
+    const previous = target === 'checked-in' ? 'row-complete' : 'checked-in';
+    const label = target === 'row-complete' ? 'Awaiting Pickup' : 'Checked In';
+    try {
+      await updateAttendance(attendanceId, { status: target });
+      setUndoToast({
+        id: ++toastIdRef.current,
+        message: `${name} moved to ${label}`,
+        onUndo: async () => {
+          await updateAttendance(attendanceId, { status: previous });
         },
       });
     } catch {
@@ -980,22 +1011,20 @@ export default function AttendancePage() {
           { label: 'Mark Excused',         onClick: () => { closeMoveMenu(); setExcuseModalStudent(student); } },
         );
       } else if (sourceKey === 'checkedIn') {
-        const a = activeAttendanceMap.get(student.id) ?? null;
         items.push(
-          { label: 'Move to Awaiting Pickup', onClick: () => { closeMoveMenu(); if (a) setEditAttendance({ attendance: a, studentName }); } },
+          { label: 'Move to Awaiting Pickup', onClick: () => { if (attendanceId !== null) handleSetStatus(student.id, attendanceId, 'row-complete'); } },
           { label: 'Move to Checked Out',     onClick: () => { closeMoveMenu(); handleCheckOut(student.id); } },
           { label: 'Move to No-Show',         onClick: () => { if (attendanceId !== null) handleMoveToExpected(student.id, attendanceId); setExcuseModalStudent(student); } },
         );
       } else if (sourceKey === 'awaiting') {
-        const a = activeAttendanceMap.get(student.id) ?? null;
         items.push(
-          { label: 'Move to Checked In',  onClick: () => { closeMoveMenu(); if (a) setEditAttendance({ attendance: a, studentName }); } },
+          { label: 'Move to Checked In',  onClick: () => { if (attendanceId !== null) handleSetStatus(student.id, attendanceId, 'checked-in'); } },
           { label: 'Move to Checked Out', onClick: () => { closeMoveMenu(); handleCheckOut(student.id); } },
         );
       } else if (sourceKey === 'checkedOut') {
         items.push(
-          { label: 'Move to Awaiting Pickup', onClick: () => { closeMoveMenu(); if (attendanceId !== null) handleMoveToCheckedIn(student.id, attendanceId); } },
-          { label: 'Move to Checked In',      onClick: () => { closeMoveMenu(); if (attendanceId !== null) handleMoveToCheckedIn(student.id, attendanceId); } },
+          { label: 'Move to Awaiting Pickup', onClick: () => { if (attendanceId !== null) handleMoveFromCheckedOut(student.id, attendanceId, 'row-complete'); } },
+          { label: 'Move to Checked In',      onClick: () => { if (attendanceId !== null) handleMoveFromCheckedOut(student.id, attendanceId, 'checked-in'); } },
         );
       } else if (sourceKey === 'noShow') {
         items.push(
@@ -1143,7 +1172,7 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); toggleMoveMenu(menuKey, e); }}
                       aria-label="Move student"
                     >
-                      <ArrowRightLeft size={14} />
+                      <RefreshCw size={14} />
                     </button>
                     {renderMoveMenu('checkedIn', menuKey, s, att.id)}
                     <button
@@ -1217,7 +1246,7 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); toggleMoveMenu(menuKey, e); }}
                       aria-label="Move student"
                     >
-                      <ArrowRightLeft size={14} />
+                      <RefreshCw size={14} />
                     </button>
                     {renderMoveMenu('awaiting', menuKey, s, att.id)}
                     <button
@@ -1268,7 +1297,7 @@ export default function AttendancePage() {
                       onClick={(e) => toggleMoveMenu(menuKey, e)}
                       aria-label="Move student"
                     >
-                      <ArrowRightLeft size={14} />
+                      <RefreshCw size={14} />
                     </button>
                     {renderMoveMenu('checkedOut', menuKey, s, att.id)}
                   </div>
@@ -1330,7 +1359,7 @@ export default function AttendancePage() {
                     onClick={(e) => toggleMoveMenu(menuKey, e)}
                     aria-label="Move student"
                   >
-                    <ArrowRightLeft size={14} />
+                    <RefreshCw size={14} />
                   </button>
                   {renderMoveMenu('noShow', menuKey, s, allAttendanceMap.get(s.id)?.id ?? null)}
                 </div>

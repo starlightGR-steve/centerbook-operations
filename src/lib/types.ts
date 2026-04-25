@@ -174,6 +174,8 @@ export interface Staff {
 
 // ── Attendance (Kiosk) ─────────────────────
 
+export type AttendanceStatus = 'checked-in' | 'row-complete';
+
 export interface Attendance {
   id: number;
   student_id: number;
@@ -185,6 +187,15 @@ export interface Attendance {
   checked_out_by: string | null;
   source: 'kiosk' | 'manual' | 'barcode';
   notes: string | null;
+  /**
+   * Lifecycle status for an active attendance row. Drives column membership on
+   * the kiosk Attendance board: 'checked-in' → Checked In column;
+   * 'row-complete' → Awaiting Pickup column. Server auto-resets to
+   * 'checked-in' when check_out is set, so checked-out records carry whatever
+   * the server returns (typically 'checked-in'). Optional in the type for
+   * defensive reads against legacy rows that pre-date the column.
+   */
+  status?: AttendanceStatus;
   // SMS notification fields
   session_duration_minutes: number; // 30 or 60, derived from subjects
   session_end_time: string | null; // Computed: check_in + duration
@@ -751,11 +762,29 @@ export function parseScheduleDays(days: string | null): string[] {
   return days.split(',').map((d) => d.trim());
 }
 
+/**
+ * Normalize a class_time_sort_key to canonical 24-hour HHMM.
+ *
+ * 86ah0mqee bug 3: some legacy rows store afternoon times as 12-hour-without-AM/PM
+ * (e.g. 430 instead of 1630 for "4:30 PM"). The center operates after school,
+ * so any value with hour in [1, 7] is interpreted as PM and bumped by 1200.
+ * Hour 0 (midnight) and hours 8–11 (legitimate AM) and 12+ (already 24-h) pass
+ * through. All consumers of class_time_sort_key route through this so the
+ * No-Show "Scheduled" line, isNoShow filter, and minutesLate stay in sync.
+ */
+export function normalizeSortKey(key: number | null | undefined): number | null {
+  if (key === null || key === undefined) return null;
+  const h = Math.floor(key / 100);
+  if (h > 0 && h < 8) return key + 1200;
+  return key;
+}
+
 /** Format class_time_sort_key (1530) to display string ("3:30 PM") */
 export function formatTimeKey(key: number | null): string {
-  if (key === null) return '';
-  const h = Math.floor(key / 100);
-  const m = key % 100;
+  const normalized = normalizeSortKey(key);
+  if (normalized === null) return '';
+  const h = Math.floor(normalized / 100);
+  const m = normalized % 100;
   const period = h >= 12 ? 'PM' : 'AM';
   const hour = h % 12 || 12;
   return `${hour}:${String(m).padStart(2, '0')} ${period}`;
