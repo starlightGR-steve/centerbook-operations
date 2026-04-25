@@ -20,30 +20,54 @@ export interface TimePopoverProps {
   onDraftChange?: (state: { durationMinutes: number; checkIn?: string }) => void;
 }
 
-function formatTime12h(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+/**
+ * 86ah3f3xp Time edit popup bug fix: the server returns check_in as a
+ * MySQL datetime string ("YYYY-MM-DD HH:mm:ss", no timezone). `new Date(s)`
+ * with a space separator is non-standard parsing per MDN — Chrome/Firefox
+ * accept it as local time, iOS Safari can be inconsistent. Normalize the
+ * space to "T" so all browsers parse it as a local datetime.
+ */
+function parseAttDateTime(value: string): Date {
+  return new Date(value.includes(' ') ? value.replace(' ', 'T') : value);
 }
 
-function isoToTimeInput(iso: string): string {
-  const d = new Date(iso);
+function formatTime12h(value: string): string {
+  return parseAttDateTime(value).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+function valueToTimeInput(value: string): string {
+  const d = parseAttDateTime(value);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-function timeInputToIso(timeStr: string, baseIso: string): string {
-  const base = new Date(baseIso);
-  const [h, m] = timeStr.split(':').map(Number);
-  const next = new Date(base);
-  next.setHours(h, m, 0, 0);
-  return next.toISOString();
+/**
+ * 86ah3f3xp Time edit popup bug fix: persist times as MySQL datetime in
+ * the center's local time, matching AttendanceEditModal's wire format.
+ *
+ * Was using `Date.toISOString()` which returns UTC. The server stores MySQL
+ * datetime values without timezone metadata, treating whatever it receives
+ * as local. Sending UTC there caused saved times to be off by the local
+ * offset (Eastern → 4–5 hours wrong) — exactly the symptom Nicole reported
+ * ("populated with a different time than I put in").
+ */
+function toLocalSqlDatetime(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+    `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  );
 }
 
-function endIso(checkIn: string, durationMinutes: number): string {
-  return new Date(new Date(checkIn).getTime() + durationMinutes * 60_000).toISOString();
+function endDate(checkIn: string, durationMinutes: number): Date {
+  return new Date(parseAttDateTime(checkIn).getTime() + durationMinutes * 60_000);
 }
 
-function diffMinutes(startIso: string, endTimeIso: string): number {
-  return Math.round((new Date(endTimeIso).getTime() - new Date(startIso).getTime()) / 60_000);
+function diffMinutes(startMs: number, endMs: number): number {
+  return Math.round((endMs - startMs) / 60_000);
 }
 
 export default function TimePopover({
@@ -138,35 +162,43 @@ export default function TimePopover({
 
   const openStartEdit = () => {
     setEditingRow('start');
-    setStartInput(isoToTimeInput(currentCheckIn));
+    setStartInput(valueToTimeInput(currentCheckIn));
     setErrorMessage(null);
   };
 
   const openEndEdit = () => {
     setEditingRow('end');
-    setEndInput(isoToTimeInput(endIso(currentCheckIn, currentDuration)));
+    const end = endDate(currentCheckIn, currentDuration);
+    setEndInput(`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`);
     setErrorMessage(null);
   };
 
   const saveStart = () => {
     if (!startInput) return;
-    const newStart = timeInputToIso(startInput, currentCheckIn);
-    const end = endIso(currentCheckIn, currentDuration);
-    const newDuration = diffMinutes(newStart, end);
+    const base = parseAttDateTime(currentCheckIn);
+    const [h, m] = startInput.split(':').map(Number);
+    const newStartDate = new Date(base);
+    newStartDate.setHours(h, m, 0, 0);
+    const endMs = endDate(currentCheckIn, currentDuration).getTime();
+    const newDuration = diffMinutes(newStartDate.getTime(), endMs);
     if (newDuration <= 0) {
       setErrorMessage('End time must be after start time.');
       return;
     }
-    setCurrentCheckIn(newStart);
+    const newStartWire = toLocalSqlDatetime(newStartDate);
+    setCurrentCheckIn(newStartWire);
     setCurrentDuration(newDuration);
     setEditingRow(null);
-    persist(newDuration, newStart);
+    persist(newDuration, newStartWire);
   };
 
   const saveEnd = () => {
     if (!endInput) return;
-    const newEnd = timeInputToIso(endInput, currentCheckIn);
-    const newDuration = diffMinutes(currentCheckIn, newEnd);
+    const base = parseAttDateTime(currentCheckIn);
+    const [h, m] = endInput.split(':').map(Number);
+    const newEndDate = new Date(base);
+    newEndDate.setHours(h, m, 0, 0);
+    const newDuration = diffMinutes(parseAttDateTime(currentCheckIn).getTime(), newEndDate.getTime());
     if (newDuration <= 0) {
       setErrorMessage('End time must be after start time.');
       return;
@@ -179,7 +211,7 @@ export default function TimePopover({
   if (!isOpen) return null;
 
   const startDisplay = formatTime12h(currentCheckIn);
-  const endDisplay = formatTime12h(endIso(currentCheckIn, currentDuration));
+  const endDisplay = formatTime12h(endDate(currentCheckIn, currentDuration).toISOString());
 
   return (
     <div
