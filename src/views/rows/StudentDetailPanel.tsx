@@ -21,6 +21,7 @@ import RecordTestForm, { type RecordTestPayload } from '@/components/classroom/R
 import PermissionsPickupCard from '@/components/classroom/PermissionsPickupCard';
 import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
 import PlanNextVisitModal, { type VisitPlanDraft } from '@/components/classroom/PlanNextVisitModal';
+import ChecklistItem from '@/components/classroom/ChecklistItem';
 import type { Contact } from '@/lib/types';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
@@ -554,7 +555,10 @@ export default function StudentDetailPanel({
             );
           })()}
 
-          {/* 6c. Assigned checklist items (standard + custom) */}
+          {/* 86ah3f3xp Finding 5 (second): checklist items now use the shared
+              ChecklistItem component in 'completion' mode — same primitive
+              the Row View card and Add classroom item popup render. The prior
+              custom .checklistRow + .checkBox markup mismatched both surfaces. */}
           {(() => {
             const assignedChecklist = checklistConfig.filter((ci) => {
               const val = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] : undefined;
@@ -568,25 +572,19 @@ export default function StudentDetailPanel({
                 {assignedChecklist.map((ci) => {
                   const isDone = flags?.tasks ? (flags.tasks as Record<string, unknown>)[ci.key] === true : false;
                   return (
-                    <button
+                    <ChecklistItem
                       key={ci.key}
-                      className={`${styles.checklistRow} ${isDone ? styles.checklistRowDone : styles.checklistRowAssigned}`}
-                      onClick={() => onToggleTask?.(ci.key)}
-                      disabled={!onToggleTask}
-                    >
-                      <span className={`${styles.checkBox} ${isDone ? styles.checkBoxChecked : styles.checkBoxAssigned}`}>
-                        {isDone && <Check size={9} color="var(--white)" />}
-                      </span>
-                      <span className={`${styles.checklistLabel} ${isDone ? styles.checklistLabelDone : ''}`}>
-                        {ci.label}
-                      </span>
-                    </button>
+                      itemKey={ci.key}
+                      label={ci.label}
+                      done={isDone}
+                      onToggle={() => onToggleTask?.(ci.key)}
+                    />
                   );
                 })}
                 {customTaskKeys.map((key) => {
                   const val = (flags?.tasks as Record<string, unknown>)?.[key];
                   const isDone = val === true;
-                  // Label resolution order:
+                  // Label resolution order matches the legacy code path:
                   //   1. Legacy shape flags.tasks.custom = "<text>" — value is the label.
                   //   2. Phase 6c shape flags.tasks["custom:<text>"] = false — strip prefix.
                   //   3. Unknown key — pretty-print as fallback.
@@ -596,19 +594,13 @@ export default function StudentDetailPanel({
                       ? key.slice('custom:'.length)
                       : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
                   return (
-                    <button
+                    <ChecklistItem
                       key={key}
-                      className={`${styles.checklistRow} ${isDone ? styles.checklistRowDone : styles.checklistRowAssigned}`}
-                      onClick={() => onToggleTask?.(key)}
-                      disabled={!onToggleTask}
-                    >
-                      <span className={`${styles.checkBox} ${isDone ? styles.checkBoxChecked : styles.checkBoxAssigned}`}>
-                        {isDone && <Check size={9} color="var(--white)" />}
-                      </span>
-                      <span className={`${styles.checklistLabel} ${isDone ? styles.checklistLabelDone : ''}`}>
-                        {label}
-                      </span>
-                    </button>
+                      itemKey={key}
+                      label={label}
+                      done={isDone}
+                      onToggle={() => onToggleTask?.(key)}
+                    />
                   );
                 })}
               </div>
