@@ -75,7 +75,7 @@
 }
 
 .timeLeftWarn {
-  color: var(--red);
+  color: var(--color-warn-text);
 }
 
 .empty {
