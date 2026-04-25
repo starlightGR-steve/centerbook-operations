@@ -7,14 +7,14 @@ import Link from 'next/link';
 import {
   X, BookOpen, Heart, AlertTriangle, Check, ArrowRight,
   Lightbulb, CircleHelp, Star, AlertCircle, Zap, Flag, UserCheck, Sparkles,
-  Pencil, Clock,
+  Clock,
 } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import EmptyState from '@/components/ui/EmptyState';
 import SmsStatusIndicator from '@/components/SmsStatusIndicator';
-import AttendanceEditModal from '@/components/AttendanceEditModal';
 import TimePopover from '@/components/classroom/TimePopover';
+import CardButton from '@/components/classroom/CardButton';
 import PositionedPortal from '@/components/classroom/PositionedPortal';
 import TestingSetupSection, { type TestingState } from '@/components/classroom/TestingSetupSection';
 import RecordTestForm, { type RecordTestPayload } from '@/components/classroom/RecordTestForm';
@@ -103,9 +103,8 @@ export default function StudentDetailPanel({
   const [noteSuccess, setNoteSuccess] = useState(false);
   const [showAddItems, setShowAddItems] = useState(false);
 
-  // 86agzuwdf §3A: Session info card state. Edit opens AttendanceEditModal,
-  // Time opens the same TimePopover used in Row View, anchored to the Time button.
-  const [editAttendanceOpen, setEditAttendanceOpen] = useState(false);
+  // 86ah3f3xp Finding 3D: session info shrinks to compact notes + a single
+  // Time button. Edit pencil + AttendanceEditModal trigger removed per audit.
   const [timePopoverOpen, setTimePopoverOpen] = useState(false);
   const timeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -417,44 +416,25 @@ export default function StudentDetailPanel({
           </div>
         )}
 
-        {/* 3b. Session info — 86agzuwdf §3A. Renders only when an attendance record
-            exists (skipped when the panel is opened from Task Inbox or any other
-            non-classroom surface). Permissions card slots after this in §3B/§3E. */}
+        {/* 86ah3f3xp Findings 3D + 3E: session info collapses to a single
+            compact line plus a Time button styled identically to the Row View
+            card's Time button (CardButton variant="time"). Edit pencil and
+            AttendanceEditModal trigger removed — check-in editing lives on
+            the Attendance kiosk page only. */}
         {attendance && (
-          <div className={styles.sessionCard}>
-            <div className={styles.sessionRow}>
-              <div className={styles.sessionField}>
-                <span className={styles.sessionLabel}>Checked in</span>
-                <span className={styles.sessionValue}>{formatTime(attendance.check_in)}</span>
-              </div>
-              <button
-                type="button"
-                className={styles.sessionAction}
-                onClick={() => setEditAttendanceOpen(true)}
-                aria-label="Edit check-in and check-out times"
-              >
-                <Pencil size={14} aria-hidden="true" />
-                Edit
-              </button>
+          <div className={styles.sessionLine}>
+            <div className={styles.sessionLineText}>
+              <span>Checked in {formatTime(attendance.check_in)}</span>
+              <span aria-hidden="true"> · </span>
+              <span>Session {Number(attendance.session_duration_minutes ?? 0)}m</span>
             </div>
-            <div className={styles.sessionRow}>
-              <div className={styles.sessionField}>
-                <span className={styles.sessionLabel}>Session time</span>
-                <span className={styles.sessionValue}>
-                  {Number(attendance.session_duration_minutes ?? 0)}m
-                </span>
-              </div>
-              <button
-                ref={timeButtonRef}
-                type="button"
-                className={styles.sessionAction}
-                onClick={() => setTimePopoverOpen(true)}
-                aria-label="Adjust session time"
-              >
-                <Clock size={14} aria-hidden="true" />
-                Time
-              </button>
-            </div>
+            <span ref={timeButtonRef}>
+              <CardButton
+                variant="time"
+                label="Time"
+                onPress={() => setTimePopoverOpen(true)}
+              />
+            </span>
           </div>
         )}
 
@@ -754,15 +734,10 @@ export default function StudentDetailPanel({
 
       </div>
 
-      {/* 86agzuwdf §3A: Edit Attendance modal — full-viewport overlay matching the
-          existing UX from AttendancePage / CheckOutPanel / KioskPage call sites. */}
-      {editAttendanceOpen && attendance && (
-        <AttendanceEditModal
-          attendance={attendance}
-          studentName={`${student.first_name} ${student.last_name}`}
-          onClose={() => setEditAttendanceOpen(false)}
-        />
-      )}
+      {/* 86ah3f3xp Finding 3D: Edit Attendance modal removed from the detail
+          panel — the audit-spec'd compact session line replaces it. Editing
+          check-in / check-out times now happens on the Attendance kiosk
+          page only. */}
 
       {/* 86agzuwdf §3A: Time popover — anchored to the Time button via the shared
           PositionedPortal helper. Backdrop dismisses; TimePopover's own internal

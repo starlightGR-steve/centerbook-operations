@@ -1237,10 +1237,28 @@
   background: rgba(0, 154, 171, 0.06);
 }
 
-/* ── 86agzuwdf §3A: Session info card ──
-   Renders between Medical and Permissions when an attendance record exists.
-   Two rows: Checked in (with Edit button) and Session time (with Time button).
-   Buttons use the teal-outlined secondary style with a 44x44 minimum touch target. */
+/* 86ah3f3xp Finding 3D: collapsed session info — small compact note line
+   on the left, Time button (CardButton variant="time") on the right.
+   Replaces the prior two-row .sessionCard. */
+.sessionLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sessionLineText {
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  color: var(--neutral);
+  line-height: 1.3;
+  min-width: 0;
+}
+
+/* Legacy .sessionCard / .sessionRow / .sessionField / .sessionAction kept
+   below for any consumer that might still reference them — Finding 3D
+   makes them dead inside StudentDetailPanel but defensive against future
+   dependents picking them up by name. */
 .sessionCard {
   background: var(--white);
   border: 1px solid var(--border);
