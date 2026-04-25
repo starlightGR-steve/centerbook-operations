@@ -250,8 +250,19 @@ export default function ClassroomOverview({
               >
                 {sectionRows.map((row) => {
                   const rs = assignments[row.id] || [];
-                  const regularStudents = rs.filter((s) => !flagsMap[s.id]?.taking_test);
-                  const testingStudents = rs.filter((s) => !!flagsMap[s.id]?.taking_test);
+                  // 86ah3f3xp (unnumbered): testing is a property of the
+                  // student, not the seat. When the row has a designated
+                  // testing table (testingSeats > 0), testing students fill
+                  // it. When it doesn't, they fall back to the regular
+                  // section so they don't vanish from the board — the
+                  // testing visual on WholeClassCard still applies.
+                  const hasTestingTable = row.testingSeats > 0;
+                  const regularStudents = hasTestingTable
+                    ? rs.filter((s) => !flagsMap[s.id]?.taking_test)
+                    : rs;
+                  const testingStudents = hasTestingTable
+                    ? rs.filter((s) => !!flagsMap[s.id]?.taking_test)
+                    : [];
 
                   const renderCard = (s: Student) => {
                     const att = attendanceMap.get(s.id);
