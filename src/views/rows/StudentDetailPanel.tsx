@@ -652,7 +652,9 @@ export default function StudentDetailPanel({
 
         </div>
 
-        {/* Phase 6c: shared PlanNextVisitModal. Writes to today's cb_row_assignments.flags. */}
+        {/* Phase 6c: shared PlanNextVisitModal. Writes to today's cb_row_assignments.flags.
+            86ah3f3xp Finding 4: pass currentFlags so the modal opens with the
+            student's existing flags / tests / checklist already selected. */}
         <PlanNextVisitModal
           student={student}
           isOpen={showAddItems}
@@ -660,6 +662,7 @@ export default function StudentDetailPanel({
           onSave={handleAssignClassTasks}
           title="Add classroom item"
           testingTense="present"
+          currentFlags={flags ?? null}
         />
 
         {/* 7. Classroom Observations */}
