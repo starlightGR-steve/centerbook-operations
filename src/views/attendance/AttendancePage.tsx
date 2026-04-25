@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Scan, Search, X, UserCheck, Clock, Pencil, Send, CheckCircle2,
-  AlertTriangle, CalendarPlus, Plus, Check, ArrowRight, ChevronDown,
+  AlertTriangle, Plus, Check, LogOut, ChevronLeft, ChevronRight, ChevronDown,
+  Trash2, Phone, Bath, ArrowRightLeft, HelpCircle,
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import AttendanceEditModal from '@/components/AttendanceEditModal';
@@ -15,7 +16,7 @@ import type { CheckInOptions } from '@/views/kiosk/CheckInPopup';
 import CheckOutConfirmPopup from '@/views/kiosk/CheckOutConfirmPopup';
 import UndoToast from '@/components/ui/UndoToast';
 import type { UndoToastItem } from '@/components/ui/UndoToast';
-import { useStudents } from '@/hooks/useStudents';
+import { useStudents, useStudentContacts } from '@/hooks/useStudents';
 import {
   useAttendance, useActiveAttendance,
   checkInStudent, checkOutStudent, deleteAttendance, updateAttendance,
@@ -104,8 +105,73 @@ function parseExistingFlags(flags: unknown): { flags: string[]; checklist: strin
   return { flags: flagKeys, checklist, teacherNote };
 }
 
-/* ── Mobile tab names ── */
-type MobileTab = 'expected' | 'checkedIn' | 'checkedOut' | 'noShow';
+/* ── Column identifiers (used for tabs + collapse persistence) ── */
+type ColumnKey = 'expected' | 'checkedIn' | 'awaiting' | 'checkedOut' | 'noShow';
+type MobileTab = ColumnKey;
+
+const COLLAPSE_STORAGE_KEY = 'attendance.collapsedColumns';
+const DEFAULT_COLLAPSED: ColumnKey[] = ['expected', 'noShow'];
+
+function loadCollapsed(): Set<ColumnKey> {
+  if (typeof window === 'undefined') return new Set(DEFAULT_COLLAPSED);
+  try {
+    const raw = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    if (raw === null) return new Set(DEFAULT_COLLAPSED);
+    const parsed = JSON.parse(raw) as ColumnKey[];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set(DEFAULT_COLLAPSED);
+  }
+}
+
+/* ── Permission / preference helpers ── */
+/* Read graceful-fallback fields; backend ships these under task 86agxw8n3.
+ * Until then, return 'unknown' so cards render the amber "Not Set" state. */
+type CheckoutPreference =
+  | { kind: 'parent' }
+  | { kind: 'independent'; exit: 'front' | 'back' | 'unknown' }
+  | { kind: 'unknown' };
+
+function getCheckoutPreference(student: Student): CheckoutPreference {
+  const pref = (student as Student & { checkout_preference?: string }).checkout_preference;
+  const exit = (student as Student & { exit_direction?: string }).exit_direction;
+  if (pref === 'parent_pickup' || pref === 'parent') return { kind: 'parent' };
+  if (pref === 'independent') {
+    if (exit === 'front') return { kind: 'independent', exit: 'front' };
+    if (exit === 'back') return { kind: 'independent', exit: 'back' };
+    return { kind: 'independent', exit: 'unknown' };
+  }
+  return { kind: 'unknown' };
+}
+
+type BathroomPref = 'independent' | 'supervised' | 'unknown';
+function getBathroomPreference(student: Student): BathroomPref {
+  const v = (student as Student & { bathroom_preference?: string }).bathroom_preference;
+  if (v === 'independent') return 'independent';
+  if (v === 'supervised') return 'supervised';
+  return 'unknown';
+}
+
+type SmsConsent = 'on' | 'opted_out' | 'no_reply';
+/** Defaults to 'no_reply' when sms_opt_in isn't surfaced. The StudentContact
+ * shape doesn't carry sms_opt_in today; landing here cleanly is the graceful
+ * fallback called out in blocker 2. */
+function getSmsConsent(contact: Record<string, unknown> | null | undefined): SmsConsent {
+  if (!contact) return 'no_reply';
+  const v = contact.sms_opt_in;
+  if (v === 1) return 'on';
+  if (v === 0) return 'opted_out';
+  return 'no_reply';
+}
+
+/** Wait time in minutes since session_end_time / now-vs-overtime moment. */
+function getWaitMinutes(att: Attendance, student: Student): number {
+  const remaining = getTimeRemaining(student.subjects, att.check_in, {
+    scheduleDetail: student.schedule_detail,
+    sessionDurationMinutes: att.session_duration_minutes,
+  });
+  return Math.max(0, -remaining);
+}
 
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
@@ -142,10 +208,8 @@ export default function AttendancePage() {
     attendance: Attendance; studentName: string;
   } | null>(null);
 
-  // No-show inline panels
-  const [missedYouConfirm, setMissedYouConfirm] = useState<string | null>(null);
+  // No-show / Awaiting Pickup SMS state
   const [sentMissedYou, setSentMissedYou] = useState<Set<string>>(new Set());
-  const [sendingMissedYou, setSendingMissedYou] = useState<Set<string>>(new Set());
 
   // Excused absence modal
   const [excuseModalStudent, setExcuseModalStudent] = useState<Student | null>(null);
@@ -165,6 +229,50 @@ export default function AttendancePage() {
   } | null>(null);
   const [moveCheckInTime, setMoveCheckInTime] = useState('');
   const [moveCheckOutTime, setMoveCheckOutTime] = useState('');
+
+  // Column collapse persistence (per tablet — no client-side user id available)
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<ColumnKey>>(() => loadCollapsed());
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        COLLAPSE_STORAGE_KEY,
+        JSON.stringify(Array.from(collapsedColumns)),
+      );
+    } catch { /* ignore quota / disabled storage */ }
+  }, [collapsedColumns]);
+  const toggleColumn = (key: ColumnKey) => {
+    setCollapsedColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  // Text-parent dropdown anchor
+  const [textMenuOpen, setTextMenuOpen] = useState<string | null>(null);
+  const [textMenuPos, setTextMenuPos] = useState<{ top: number; right: number } | null>(null);
+
+  // SMS popup
+  const [smsPopup, setSmsPopup] = useState<{ student: Student; mode: 'pickup' | 'bathroom' } | null>(null);
+
+  // Check-out confirmation (tap-checkout safety dialog).
+  // openedAtMs is captured at open-time so the rendered "elapsed minutes" and
+  // "check-out time" stay stable across re-renders (React purity rule).
+  const [checkOutConfirm, setCheckOutConfirm] = useState<{
+    student: Student;
+    attendance: Attendance;
+    openedAtMs: number;
+  } | null>(null);
+
+  // Remove from board (destructive confirmation + toast)
+  const [removeConfirm, setRemoveConfirm] = useState<{
+    student: Student;
+    attendanceId: number | null;
+  } | null>(null);
+  const [removeToast, setRemoveToast] = useState<string | null>(null);
+  const removeToastTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -259,8 +367,12 @@ export default function AttendancePage() {
     return result;
   }, [scheduledToday, allAttendanceMap]);
 
-  // Column 2: Checked In — all active check-ins (check_out IS NULL) regardless of date
-  const checkedInStudents = useMemo(() => {
+  // Active attendance rows joined with student records (computed once, then split).
+  // Partition rule: still has time remaining → Checked In; session_end_time has passed
+  // (getTimeRemaining <= 0) → Awaiting Pickup. This is the "row-complete" client-side
+  // filter — no new mutation, no new DB column. Tied to Live Class "Done" by way of the
+  // session_end_time clock (matches existing overtime visual, just relocated).
+  const activeAttendanceJoined = useMemo(() => {
     if (!activeAttendance || !allStudents) return [];
     return activeAttendance
       .filter((a) => a.check_out === null)
@@ -268,11 +380,44 @@ export default function AttendancePage() {
         attendance: a,
         student: a.student || allStudents.find((s) => s.id === a.student_id),
       }))
-      .filter((x) => !!x.student)
-      .sort((a, b) => (a.attendance.check_in || '').localeCompare(b.attendance.check_in || ''));
+      .filter((x): x is { attendance: Attendance; student: Student } => !!x.student);
   }, [activeAttendance, allStudents]);
 
-  // Column 3: Checked Out — today's records with check_out set, excluding active check-ins
+  // Column 2: Checked In — active, session not yet ended (least-time-remaining first)
+  const checkedInStudents = useMemo(() => {
+    return activeAttendanceJoined
+      .filter(({ attendance: a, student: s }) =>
+        getTimeRemaining(s.subjects, a.check_in, {
+          scheduleDetail: s.schedule_detail,
+          sessionDurationMinutes: a.session_duration_minutes,
+        }) > 0,
+      )
+      .sort((a, b) => {
+        const ra = getTimeRemaining(a.student.subjects, a.attendance.check_in, {
+          scheduleDetail: a.student.schedule_detail,
+          sessionDurationMinutes: a.attendance.session_duration_minutes,
+        });
+        const rb = getTimeRemaining(b.student.subjects, b.attendance.check_in, {
+          scheduleDetail: b.student.schedule_detail,
+          sessionDurationMinutes: b.attendance.session_duration_minutes,
+        });
+        return ra - rb;
+      });
+  }, [activeAttendanceJoined]);
+
+  // Column 3: Awaiting Pickup — active, session_end_time has passed (longest-waiting first)
+  const awaitingPickupStudents = useMemo(() => {
+    return activeAttendanceJoined
+      .filter(({ attendance: a, student: s }) =>
+        getTimeRemaining(s.subjects, a.check_in, {
+          scheduleDetail: s.schedule_detail,
+          sessionDurationMinutes: a.session_duration_minutes,
+        }) <= 0,
+      )
+      .sort((a, b) => getWaitMinutes(b.attendance, b.student) - getWaitMinutes(a.attendance, a.student));
+  }, [activeAttendanceJoined]);
+
+  // Column 4: Checked Out — today's records with check_out set, excluding active check-ins
   const checkedOutStudents = useMemo(() => {
     if (!allAttendance || !allStudents) return [];
     return allAttendance
@@ -281,7 +426,7 @@ export default function AttendancePage() {
         attendance: a,
         student: a.student || allStudents.find((s) => s.id === a.student_id),
       }))
-      .filter((x) => !!x.student);
+      .filter((x): x is { attendance: Attendance; student: Student } => !!x.student);
   }, [allAttendance, allStudents, activeAttendanceMap]);
 
   // Excused student IDs from absence records
@@ -294,14 +439,6 @@ export default function AttendancePage() {
   const noShowStudents = useMemo(
     () => scheduledToday.filter(
       (s) => isNoShow(s) && !allAttendanceMap.has(s.id) && !excusedIds.has(s.id)
-    ),
-    [scheduledToday, allAttendanceMap, excusedIds]
-  );
-
-  // Excused students shown below no-show column
-  const excusedList = useMemo(
-    () => scheduledToday.filter(
-      (s) => !allAttendanceMap.has(s.id) && excusedIds.has(s.id)
     ),
     [scheduledToday, allAttendanceMap, excusedIds]
   );
@@ -350,8 +487,12 @@ export default function AttendancePage() {
     [expectedStudents, matchesSearch]
   );
   const filteredCheckedIn = useMemo(
-    () => checkedInStudents.filter((x) => matchesSearch(`${x.student!.first_name} ${x.student!.last_name}`)),
+    () => checkedInStudents.filter((x) => matchesSearch(`${x.student.first_name} ${x.student.last_name}`)),
     [checkedInStudents, matchesSearch]
+  );
+  const filteredAwaiting = useMemo(
+    () => awaitingPickupStudents.filter((x) => matchesSearch(`${x.student.first_name} ${x.student.last_name}`)),
+    [awaitingPickupStudents, matchesSearch]
   );
   const filteredCheckedOut = useMemo(
     () => checkedOutStudents.filter((x) => matchesSearch(`${x.student!.first_name} ${x.student!.last_name}`)),
@@ -360,10 +501,6 @@ export default function AttendancePage() {
   const filteredNoShow = useMemo(
     () => noShowStudents.filter((s) => matchesSearch(`${s.first_name} ${s.last_name}`)),
     [noShowStudents, matchesSearch]
-  );
-  const filteredExcused = useMemo(
-    () => excusedList.filter((s) => matchesSearch(`${s.first_name} ${s.last_name}`)),
-    [excusedList, matchesSearch]
   );
 
   /* ── Barcode scan handler ── */
@@ -592,10 +729,9 @@ export default function AttendancePage() {
     await clockOutStaff({ staff_id: staffId });
   };
 
-  /* ── We Missed You ── */
+  /* ── Send pickup-reminder / missed-you SMS ── */
   const handleMissedYou = async (student: Student) => {
     const sid = String(student.id);
-    setSendingMissedYou((prev) => new Set(prev).add(sid));
     try {
       const res = await fetch('/api/attendance/missed-you', {
         method: 'POST',
@@ -608,9 +744,6 @@ export default function AttendancePage() {
       }
     } catch {
       // silent
-    } finally {
-      setSendingMissedYou((prev) => { const next = new Set(prev); next.delete(sid); return next; });
-      setMissedYouConfirm(null);
     }
   };
 
@@ -626,6 +759,61 @@ export default function AttendancePage() {
     if (mins <= 0) return styles.overtime;
     if (mins <= 5) return styles.warning;
     return '';
+  };
+
+  const waitClass = (mins: number): string => {
+    if (mins >= 10) return styles.overtime;
+    if (mins >= 5) return styles.warning;
+    return '';
+  };
+
+  const dismissRemoveToast = () => {
+    if (removeToastTimerRef.current) clearTimeout(removeToastTimerRef.current);
+    setRemoveToast(null);
+  };
+
+  /* ── Confirmed remove from board (destructive) ── */
+  const confirmRemoveFromBoard = async () => {
+    if (!removeConfirm) return;
+    const { student, attendanceId } = removeConfirm;
+    const name = `${student.first_name} ${student.last_name}`;
+    setRemoveConfirm(null);
+    try {
+      if (attendanceId !== null) {
+        await deleteAttendance(attendanceId);
+        try { await removeStudentFromRow(student.id); } catch { /* noop */ }
+      }
+    } catch {
+      setAnnouncement('Failed to remove. Please try again.');
+      return;
+    }
+    setRemoveToast(`${name} removed from attendance board`);
+    if (removeToastTimerRef.current) clearTimeout(removeToastTimerRef.current);
+    removeToastTimerRef.current = setTimeout(() => setRemoveToast(null), 4000);
+  };
+
+  /* ── Confirmed checkout from card tap (safety-dialog flow) ── */
+  const confirmCheckOutFromDialog = async () => {
+    if (!checkOutConfirm) return;
+    const studentId = checkOutConfirm.student.id;
+    setCheckOutConfirm(null);
+    await handleCheckOut(studentId);
+  };
+
+  /* ── Text Parent dropdown trigger ── */
+  const toggleTextMenu = (menuKey: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (textMenuOpen === menuKey) {
+      setTextMenuOpen(null);
+      setTextMenuPos(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTextMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setTextMenuOpen(menuKey);
+  };
+  const closeTextMenu = () => {
+    setTextMenuOpen(null);
+    setTextMenuPos(null);
   };
 
   /* ── Move between columns ── */
@@ -690,6 +878,497 @@ export default function AttendancePage() {
   };
 
   const isLoading = !allStudents || !allAttendance;
+
+  /* ═══════════════════════════════════════════
+     BOARD RENDERER (factored out of the JSX so refs/closures land cleanly
+     in handler scope rather than being captured by an inline IIFE).
+     ═══════════════════════════════════════════ */
+  const renderBoard = () => {
+    const COLUMN_ORDER: ColumnKey[] = ['expected', 'checkedIn', 'awaiting', 'checkedOut', 'noShow'];
+    const COLUMN_META: Record<ColumnKey, { label: string; count: number; modifier: string }> = {
+      expected:   { label: 'Expected',         count: filteredExpected.length,   modifier: styles.colExpected },
+      checkedIn:  { label: 'Checked In',       count: filteredCheckedIn.length,  modifier: styles.colCheckedIn },
+      awaiting:   { label: 'Awaiting Pickup',  count: filteredAwaiting.length,   modifier: styles.colAwaiting },
+      checkedOut: { label: 'Checked Out',      count: filteredCheckedOut.length, modifier: styles.colCheckedOut },
+      noShow:     { label: 'No-Show',          count: filteredNoShow.length,     modifier: styles.colNoShow },
+    };
+
+    const gridTemplate = COLUMN_ORDER
+      .map((k) => (collapsedColumns.has(k) ? 'var(--strip-w)' : '1fr'))
+      .join(' ');
+
+    const renderHeader = (key: ColumnKey, collapsed: boolean) => {
+      const meta = COLUMN_META[key];
+      return (
+        <button
+          type="button"
+          className={`${styles.colHeader} ${meta.modifier}`}
+          onClick={() => toggleColumn(key)}
+          aria-expanded={!collapsed}
+          aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${meta.label}`}
+        >
+          <span className={styles.colHeaderCaret}>
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </span>
+          <span className={styles.colHeaderLabel}>{meta.label}</span>
+          <span className={styles.colBadge}>{meta.count}</span>
+        </button>
+      );
+    };
+
+    const renderStrip = (key: ColumnKey) => {
+      const meta = COLUMN_META[key];
+      return (
+        <button
+          key={key}
+          type="button"
+          className={`${styles.column} ${styles.strip} ${meta.modifier}`}
+          onClick={() => toggleColumn(key)}
+          aria-expanded={false}
+          aria-label={`Expand ${meta.label}`}
+        >
+          <span className={styles.stripCaret}><ChevronRight size={14} /></span>
+          <span className={styles.stripLabel}>{meta.label}</span>
+          <span className={styles.stripBadge}>{meta.count}</span>
+        </button>
+      );
+    };
+
+    const renderPermissionStack = (s: Student) => {
+      const pref = getCheckoutPreference(s);
+      if (pref.kind === 'parent') {
+        return <p className={styles.permLine}>Parent Pickup</p>;
+      }
+      if (pref.kind === 'independent') {
+        return (
+          <>
+            <p className={styles.permLine}>Independent</p>
+            {pref.exit === 'unknown' ? (
+              <p className={`${styles.permSub} ${styles.permWarn}`}>Exit Not Set</p>
+            ) : (
+              <p className={styles.permSub}>{pref.exit === 'front' ? 'Exit Front' : 'Exit Back'}</p>
+            )}
+          </>
+        );
+      }
+      return <p className={`${styles.permLine} ${styles.permWarn}`}>Checkout Not Set</p>;
+    };
+
+    const renderSentBadge = (att: Attendance) => {
+      if (!att.sms_10min_sent || !att.sms_10min_sent_at) return null;
+      return (
+        <span className={styles.sentInline}>
+          <Check size={11} /> Sent {formatTime(att.sms_10min_sent_at)}
+        </span>
+      );
+    };
+
+    const renderMoveMenu = (
+      sourceKey: ColumnKey,
+      menuKey: string,
+      student: Student,
+      attendanceId: number | null,
+    ) => {
+      if (moveMenuOpen !== menuKey || !moveMenuPos) return null;
+      const studentName = `${student.first_name} ${student.last_name}`;
+      const items: Array<{ label: string; onClick: () => void }> = [];
+
+      if (sourceKey === 'expected') {
+        items.push(
+          { label: 'Move to Checked In',   onClick: () => handleMoveWithTime('checkedIn', student.id, studentName) },
+          { label: 'Move to Checked Out',  onClick: () => handleMoveWithTime('checkedOut', student.id, studentName) },
+          { label: 'Mark Excused',         onClick: () => { closeMoveMenu(); setExcuseModalStudent(student); } },
+        );
+      } else if (sourceKey === 'checkedIn') {
+        const a = activeAttendanceMap.get(student.id) ?? null;
+        items.push(
+          { label: 'Move to Awaiting Pickup', onClick: () => { closeMoveMenu(); if (a) setEditAttendance({ attendance: a, studentName }); } },
+          { label: 'Move to Checked Out',     onClick: () => { closeMoveMenu(); handleCheckOut(student.id); } },
+          { label: 'Move to No-Show',         onClick: () => { if (attendanceId !== null) handleMoveToExpected(student.id, attendanceId); setExcuseModalStudent(student); } },
+        );
+      } else if (sourceKey === 'awaiting') {
+        const a = activeAttendanceMap.get(student.id) ?? null;
+        items.push(
+          { label: 'Move to Checked In',  onClick: () => { closeMoveMenu(); if (a) setEditAttendance({ attendance: a, studentName }); } },
+          { label: 'Move to Checked Out', onClick: () => { closeMoveMenu(); handleCheckOut(student.id); } },
+        );
+      } else if (sourceKey === 'checkedOut') {
+        items.push(
+          { label: 'Move to Awaiting Pickup', onClick: () => { closeMoveMenu(); if (attendanceId !== null) handleMoveToCheckedIn(student.id, attendanceId); } },
+          { label: 'Move to Checked In',      onClick: () => { closeMoveMenu(); if (attendanceId !== null) handleMoveToCheckedIn(student.id, attendanceId); } },
+        );
+      } else if (sourceKey === 'noShow') {
+        items.push(
+          { label: 'Move to Checked In',  onClick: () => handleMoveWithTime('checkedIn', student.id, studentName) },
+          { label: 'Move to Checked Out', onClick: () => handleMoveWithTime('checkedOut', student.id, studentName) },
+        );
+      }
+
+      return createPortal(
+        <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
+          {items.map((item, i) => (
+            <button key={i} className={styles.moveMenuItem} onClick={(e) => { e.stopPropagation(); item.onClick(); }}>
+              <ChevronRight size={12} className={styles.moveMenuChevron} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+          {sourceKey !== 'expected' && (
+            <>
+              <div className={styles.moveMenuDivider} />
+              <button
+                className={`${styles.moveMenuItem} ${styles.moveMenuItemDanger}`}
+                onClick={(e) => { e.stopPropagation(); closeMoveMenu(); setRemoveConfirm({ student, attendanceId }); }}
+              >
+                <Trash2 size={12} />
+                <span>Remove from board</span>
+              </button>
+            </>
+          )}
+        </div>,
+        document.body,
+      );
+    };
+
+    const renderTextMenu = (menuKey: string, student: Student) => {
+      if (textMenuOpen !== menuKey || !textMenuPos) return null;
+      const bath = getBathroomPreference(student);
+      const bathDisabled = bath === 'independent';
+      return createPortal(
+        <div className={styles.textMenu} style={{ top: textMenuPos.top, right: textMenuPos.right }}>
+          <button
+            className={styles.textMenuItem}
+            onClick={(e) => { e.stopPropagation(); closeTextMenu(); setSmsPopup({ student, mode: 'pickup' }); }}
+          >
+            <span className={`${styles.textMenuIcon} ${styles.textMenuIconPickup}`}><Clock size={14} /></span>
+            <span>Send pickup reminder</span>
+          </button>
+          <button
+            className={`${styles.textMenuItem} ${bathDisabled ? styles.textMenuItemDisabled : ''}`}
+            disabled={bathDisabled}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (bathDisabled) return;
+              closeTextMenu();
+              setSmsPopup({ student, mode: 'bathroom' });
+            }}
+          >
+            <span className={`${styles.textMenuIcon} ${styles.textMenuIconBath}`}><Bath size={14} /></span>
+            <span className={styles.textMenuItemBody}>
+              Send bathroom text
+              {bathDisabled && <span className={styles.textMenuItemSub}>Student goes independently</span>}
+            </span>
+          </button>
+        </div>,
+        document.body,
+      );
+    };
+
+    const renderColumnBody = (key: ColumnKey) => {
+      switch (key) {
+        case 'expected':
+          if (filteredExpected.length === 0) return <p className={styles.emptyCol}>All students accounted for.</p>;
+          return filteredExpected.map((s) => (
+            <div key={s.id} className={styles.attendanceCard}>
+              <div className={styles.cardTop}>
+                <a
+                  href={`/students/${s.id}`}
+                  className={styles.cardName}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {s.first_name} {s.last_name}
+                </a>
+                <span className={styles.cardScheduled}>{formatTimeKey(s.class_time_sort_key)}</span>
+              </div>
+              <div className={styles.cardActionsRow}>
+                <button
+                  className={styles.btnExcused}
+                  onClick={() => setExcuseModalStudent(s)}
+                >
+                  Excused
+                </button>
+                <button
+                  className={styles.btnPlusCircle}
+                  onClick={() => setCheckInPopupStudent(s)}
+                  aria-label={`Check in ${s.first_name} ${s.last_name}`}
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            </div>
+          ));
+
+        case 'checkedIn':
+          if (filteredCheckedIn.length === 0) return <p className={styles.emptyCol}>No students checked in yet.</p>;
+          return filteredCheckedIn.map(({ attendance: att, student: s }) => {
+            const remaining = getRemaining(s, att.check_in, att.session_duration_minutes);
+            const stateClass = remainingClass(remaining);
+            const menuKey = `checkedin-${att.id}`;
+            const studentName = `${s.first_name} ${s.last_name}`;
+            const timerValue = remaining > 0 ? remaining : Math.abs(remaining);
+            const timerUnit = remaining > 0 ? 'min' : 'over';
+            return (
+              <div
+                key={att.id}
+                className={`${styles.attendanceCard} ${styles.cardTappable} ${stateClass}`}
+                onClick={() => handleEditPrep(s)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEditPrep(s); } }}
+              >
+                <div className={styles.cardTop}>
+                  <span className={styles.cardName}>{studentName}</span>
+                  <span className={styles.cardTimer}>
+                    <span className={styles.cardTimerNum}>{timerValue}</span>
+                    <span className={styles.cardTimerUnit}>{timerUnit}</span>
+                  </span>
+                </div>
+                <div className={styles.cardMeta}>
+                  <div className={styles.permStack}>{renderPermissionStack(s)}</div>
+                  {renderSentBadge(att)}
+                </div>
+                <div className={styles.cardActionsRow}>
+                  <span className={styles.cardTimeLine}>
+                    In {formatTime(att.check_in)}
+                    <button
+                      className={styles.editBtnInline}
+                      onClick={(e) => { e.stopPropagation(); setEditAttendance({ attendance: att, studentName }); }}
+                      aria-label={`Edit attendance for ${studentName}`}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                  </span>
+                  <div className={styles.cardCircleActions}>
+                    <button
+                      className={styles.iconCircleBtn}
+                      onClick={(e) => { e.stopPropagation(); toggleMoveMenu(menuKey, e); }}
+                      aria-label="Move student"
+                    >
+                      <ArrowRightLeft size={14} />
+                    </button>
+                    {renderMoveMenu('checkedIn', menuKey, s, att.id)}
+                    <button
+                      className={`${styles.iconCircleBtn} ${styles.iconCircleBtnSuccess}`}
+                      onClick={(e) => { e.stopPropagation(); setCheckOutConfirm({ student: s, attendance: att, openedAtMs: Date.now() }); }}
+                      aria-label={`Check out ${studentName}`}
+                    >
+                      <LogOut size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          });
+
+        case 'awaiting':
+          if (filteredAwaiting.length === 0) return <p className={styles.emptyCol}>No one waiting for pickup.</p>;
+          return filteredAwaiting.map(({ attendance: att, student: s }) => {
+            const wait = getWaitMinutes(att, s);
+            const stateClass = waitClass(wait);
+            const menuKey = `awaiting-${att.id}`;
+            const textKey = `text-${att.id}`;
+            const studentName = `${s.first_name} ${s.last_name}`;
+            return (
+              <div key={att.id} className={`${styles.attendanceCard} ${stateClass}`}>
+                <div className={styles.cardTop}>
+                  <a
+                    href={`/students/${s.id}`}
+                    className={styles.cardName}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {studentName}
+                  </a>
+                  {wait < 5 ? (
+                    <span className={styles.doneBadge}>DONE</span>
+                  ) : (
+                    <span className={styles.cardTimer}>
+                      <span className={styles.cardTimerNum}>{wait}</span>
+                      <span className={styles.cardTimerUnit}>WAIT</span>
+                    </span>
+                  )}
+                </div>
+                <div className={styles.cardMeta}>
+                  <div className={styles.permStack}>{renderPermissionStack(s)}</div>
+                  {renderSentBadge(att)}
+                </div>
+                <div className={styles.cardActionsRow}>
+                  <span className={styles.cardTimeLine}>
+                    In {formatTime(att.check_in)}
+                    <button
+                      className={styles.editBtnInline}
+                      onClick={(e) => { e.stopPropagation(); setEditAttendance({ attendance: att, studentName }); }}
+                      aria-label={`Edit attendance for ${studentName}`}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                  </span>
+                  <div className={styles.cardCircleActions}>
+                    <button
+                      className={styles.btnTextOutlined}
+                      onClick={(e) => { e.stopPropagation(); toggleTextMenu(textKey, e); }}
+                      aria-label={`Text ${studentName}'s parent`}
+                    >
+                      <Send size={12} />
+                      <span>Text</span>
+                      <ChevronDown size={12} className={textMenuOpen === textKey ? styles.caretOpen : ''} />
+                    </button>
+                    {renderTextMenu(textKey, s)}
+                    <button
+                      className={styles.iconCircleBtn}
+                      onClick={(e) => { e.stopPropagation(); toggleMoveMenu(menuKey, e); }}
+                      aria-label="Move student"
+                    >
+                      <ArrowRightLeft size={14} />
+                    </button>
+                    {renderMoveMenu('awaiting', menuKey, s, att.id)}
+                    <button
+                      className={`${styles.iconCircleBtn} ${styles.iconCircleBtnSuccess}`}
+                      onClick={(e) => { e.stopPropagation(); setCheckOutConfirm({ student: s, attendance: att, openedAtMs: Date.now() }); }}
+                      aria-label={`Check out ${studentName}`}
+                    >
+                      <LogOut size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          });
+
+        case 'checkedOut':
+          if (filteredCheckedOut.length === 0) return <p className={styles.emptyCol}>No students checked out yet.</p>;
+          return filteredCheckedOut.map(({ attendance: att, student: s }) => {
+            const menuKey = `checkedout-${att.id}`;
+            const studentName = `${s.first_name} ${s.last_name}`;
+            return (
+              <div key={att.id} className={styles.attendanceCard}>
+                <div className={styles.cardTop}>
+                  <a
+                    href={`/students/${s.id}`}
+                    className={styles.cardName}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {studentName}
+                  </a>
+                </div>
+                <div className={styles.cardActionsRow}>
+                  <div className={styles.timesStack}>
+                    <span>In {formatTime(att.check_in)}</span>
+                    <span>Out {formatTime(att.check_out!)}
+                      <button
+                        className={styles.editBtnInline}
+                        onClick={() => setEditAttendance({ attendance: att, studentName })}
+                        aria-label={`Edit attendance for ${studentName}`}
+                      >
+                        <Pencil size={12} />
+                      </button>
+                    </span>
+                  </div>
+                  <div className={styles.cardCircleActions}>
+                    <button
+                      className={styles.iconCircleBtn}
+                      onClick={(e) => toggleMoveMenu(menuKey, e)}
+                      aria-label="Move student"
+                    >
+                      <ArrowRightLeft size={14} />
+                    </button>
+                    {renderMoveMenu('checkedOut', menuKey, s, att.id)}
+                  </div>
+                </div>
+              </div>
+            );
+          });
+
+        case 'noShow':
+          if (filteredNoShow.length === 0) return <p className={styles.emptyCol}>No no-shows.</p>;
+          return filteredNoShow.map((s) => {
+            const sid = String(s.id);
+            const isSent = sentMissedYou.has(sid);
+            const late = minutesLate(s);
+            const menuKey = `noshow-${s.id}`;
+            const textKey = `text-noshow-${s.id}`;
+            const studentName = `${s.first_name} ${s.last_name}`;
+            return (
+              <div key={s.id} className={styles.attendanceCard}>
+                <div className={styles.cardTop}>
+                  <a
+                    href={`/students/${s.id}`}
+                    className={styles.cardName}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {studentName}
+                  </a>
+                  <span className={styles.cardTimer}>
+                    <span className={`${styles.cardTimerNum} ${styles.cardTimerNumDanger}`}>{late}</span>
+                    <span className={`${styles.cardTimerUnit} ${styles.cardTimerUnitDanger}`}>LATE</span>
+                  </span>
+                </div>
+                <p className={styles.cardScheduledLine}>Scheduled {formatTimeKey(s.class_time_sort_key)}</p>
+                <div className={styles.cardActionsRow}>
+                  {isSent ? (
+                    <span className={styles.sentBadge}>
+                      <CheckCircle2 size={12} /> Sent
+                    </span>
+                  ) : (
+                    <button
+                      className={styles.btnTextOutlined}
+                      onClick={(e) => { e.stopPropagation(); toggleTextMenu(textKey, e); }}
+                      aria-label={`Text ${studentName}'s parent`}
+                    >
+                      <Send size={12} />
+                      <span>Text</span>
+                      <ChevronDown size={12} className={textMenuOpen === textKey ? styles.caretOpen : ''} />
+                    </button>
+                  )}
+                  {renderTextMenu(textKey, s)}
+                  <button
+                    className={styles.btnGrayOutlined}
+                    onClick={() => setExcuseModalStudent(s)}
+                  >
+                    Excused
+                  </button>
+                  <button
+                    className={styles.iconCircleBtn}
+                    onClick={(e) => toggleMoveMenu(menuKey, e)}
+                    aria-label="Move student"
+                  >
+                    <ArrowRightLeft size={14} />
+                  </button>
+                  {renderMoveMenu('noShow', menuKey, s, allAttendanceMap.get(s.id)?.id ?? null)}
+                </div>
+              </div>
+            );
+          });
+      }
+    };
+
+    return (
+      <div
+        className={styles.columns}
+        data-testid="attendance-columns"
+        style={{ gridTemplateColumns: gridTemplate } as React.CSSProperties}
+      >
+        {COLUMN_ORDER.map((key) => {
+          const collapsed = collapsedColumns.has(key);
+          const meta = COLUMN_META[key];
+          const mobileHidden = mobileTab !== key ? styles.mobileHidden : '';
+          if (collapsed) {
+            return (
+              <div key={key} className={mobileHidden}>
+                {renderStrip(key)}
+              </div>
+            );
+          }
+          return (
+            <div key={key} className={`${styles.column} ${meta.modifier} ${mobileHidden}`}>
+              {renderHeader(key, false)}
+              <div className={styles.colBody}>
+                {renderColumnBody(key)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   /* ═══════════════════════════════════════════
      RENDER
@@ -827,6 +1506,12 @@ export default function AttendancePage() {
           In ({filteredCheckedIn.length})
         </button>
         <button
+          className={`${styles.mobileTab} ${mobileTab === 'awaiting' ? styles.mobileTabAwaiting : ''}`}
+          onClick={() => setMobileTab('awaiting')}
+        >
+          Pickup ({filteredAwaiting.length})
+        </button>
+        <button
           className={`${styles.mobileTab} ${mobileTab === 'checkedOut' ? styles.mobileTabCheckedOut : ''}`}
           onClick={() => setMobileTab('checkedOut')}
         >
@@ -840,11 +1525,11 @@ export default function AttendancePage() {
         </button>
       </div>
 
-      {/* ── Zone D: Four-Column Grid ── */}
+      {/* ── Zone D: Five-Column Board ── */}
       <div className={styles.content}>
         {isLoading ? (
           <div className={styles.skeletonGrid}>
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <div key={i} className={styles.skeletonCol}>
                 <div className={styles.skeletonHeader} />
                 {[0, 1, 2].map((j) => <div key={j} className={styles.skeletonCard} />)}
@@ -852,336 +1537,11 @@ export default function AttendancePage() {
             ))}
           </div>
         ) : (
-          <div className={styles.columns} data-testid="attendance-columns">
-
-            {/* ── Column 1: Expected (orange) ── */}
-            <div className={`${styles.column} ${mobileTab !== 'expected' ? styles.mobileHidden : ''}`}>
-              <div className={`${styles.colHeader} ${styles.colHeaderExpected}`}>
-                <Clock size={16} />
-                <span>Expected</span>
-                <span className={styles.colBadge}>{filteredExpected.length}</span>
-              </div>
-              <div className={styles.colBody}>
-                {filteredExpected.length === 0 ? (
-                  <p className={styles.emptyCol}>All students accounted for.</p>
-                ) : (
-                  filteredExpected.map((s) => {
-                    const menuKey = `expected-${s.id}`;
-                    return (
-                      <div key={s.id} className={styles.attendanceCard}>
-                        <button
-                          className={styles.cardClickableInner}
-                          onClick={() => setCheckInPopupStudent(s)}
-                          aria-label={`Check in ${s.first_name} ${s.last_name}`}
-                        >
-                          <div className={styles.cardTop}>
-                            <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                            <span className={styles.checkInCircle}>
-                              <Plus size={12} color="#fff" />
-                            </span>
-                          </div>
-                          <p className={styles.cardTime}>
-                            Scheduled {formatTimeKey(s.class_time_sort_key)}
-                          </p>
-                        </button>
-                        <div className={styles.cardBottom}>
-                          <div />
-                          <div className={styles.moveWrap}>
-                            <button
-                              className={styles.moveTrigger}
-                              onClick={(e) => toggleMoveMenu(menuKey, e)}
-                            >
-                              Move <ChevronDown size={12} />
-                            </button>
-                            {moveMenuOpen === menuKey && moveMenuPos && createPortal(
-                              <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
-                                  Checked In
-                                </button>
-                                <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`)}>
-                                  Checked Out
-                                </button>
-                                <button className={styles.moveMenuItem} onClick={() => { closeMoveMenu(); setExcuseModalStudent(s); }}>
-                                  Mark Excused
-                                </button>
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* ── Column 2: Checked In (green) ── */}
-            <div className={`${styles.column} ${mobileTab !== 'checkedIn' ? styles.mobileHidden : ''}`}>
-              <div className={`${styles.colHeader} ${styles.colHeaderCheckedIn}`}>
-                <CheckCircle2 size={16} />
-                <span>Checked In</span>
-                <span className={styles.colBadge}>{filteredCheckedIn.length}</span>
-              </div>
-              <div className={styles.colBody}>
-                {filteredCheckedIn.length === 0 ? (
-                  <p className={styles.emptyCol}>No students checked in yet.</p>
-                ) : (
-                  filteredCheckedIn.map(({ attendance: att, student: s }) => {
-                    if (!s) return null;
-                    const remaining = getRemaining(s, att.check_in, att.session_duration_minutes);
-                    const remClass = remainingClass(remaining);
-                    const menuKey = `checkedin-${att.id}`;
-                    return (
-                      <div
-                        key={att.id}
-                        className={`${styles.attendanceCard} ${remClass}`}
-                        onClick={() => handleEditPrep(s)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <div className={styles.cardTop}>
-                          <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                          <div className={styles.cardActions}>
-                            <button
-                              className={styles.editBtn}
-                              onClick={(e) => { e.stopPropagation(); setEditAttendance({ attendance: att, studentName: `${s.first_name} ${s.last_name}` }); }}
-                              aria-label={`Edit attendance for ${s.first_name} ${s.last_name}`}
-                            >
-                              <Pencil size={12} />
-                            </button>
-                            <button
-                              className={styles.checkOutArrowBtn}
-                              onClick={(e) => { e.stopPropagation(); handleCheckOut(att.student_id); }}
-                              aria-label={`Check out ${s.first_name} ${s.last_name}`}
-                            >
-                              <span className={styles.checkOutArrowInner}>
-                                <ArrowRight size={12} />
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-                        <p className={styles.cardTime}>
-                          In {formatTime(att.check_in)}
-                        </p>
-                        <div className={styles.cardBottom}>
-                          <span className={`${styles.remainingBadge} ${remClass}`}>
-                            {remaining <= 0 ? `${Math.abs(remaining)}min over` : `${remaining}min left`}
-                          </span>
-                          <div className={styles.moveWrap}>
-                            <button
-                              className={styles.moveTrigger}
-                              onClick={(e) => { e.stopPropagation(); toggleMoveMenu(menuKey, e); }}
-                            >
-                              Move <ChevronDown size={12} />
-                            </button>
-                            {moveMenuOpen === menuKey && moveMenuPos && createPortal(
-                              <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
-                                <button className={styles.moveMenuItem} onClick={(e) => { e.stopPropagation(); handleMoveToExpected(att.student_id, att.id); }}>
-                                  Expected
-                                </button>
-                                <button className={styles.moveMenuItem} onClick={(e) => { e.stopPropagation(); closeMoveMenu(); handleCheckOut(att.student_id); }}>
-                                  Checked Out
-                                </button>
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* ── Column 3: Checked Out (neutral) ── */}
-            <div className={`${styles.column} ${mobileTab !== 'checkedOut' ? styles.mobileHidden : ''}`}>
-              <div className={`${styles.colHeader} ${styles.colHeaderCheckedOut}`}>
-                <Check size={16} />
-                <span>Checked Out</span>
-                <span className={styles.colBadge}>{filteredCheckedOut.length}</span>
-              </div>
-              <div className={styles.colBody}>
-                {filteredCheckedOut.length === 0 ? (
-                  <p className={styles.emptyCol}>No students checked out yet.</p>
-                ) : (
-                  filteredCheckedOut.map(({ attendance: att, student: s }) => {
-                    if (!s) return null;
-                    const menuKey = `checkedout-${att.id}`;
-                    return (
-                      <div key={att.id} className={styles.attendanceCard}>
-                        <div className={styles.cardTop}>
-                          <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                          <button
-                            className={styles.editBtn}
-                            onClick={() => setEditAttendance({ attendance: att, studentName: `${s.first_name} ${s.last_name}` })}
-                            aria-label={`Edit attendance for ${s.first_name} ${s.last_name}`}
-                          >
-                            <Pencil size={12} />
-                          </button>
-                        </div>
-                        <p className={styles.cardTime}>
-                          In {formatTime(att.check_in)} — Out {formatTime(att.check_out!)}
-                        </p>
-                        <div className={styles.cardBottom}>
-                          <div />
-                          <div className={styles.moveWrap}>
-                            <button
-                              className={styles.moveTrigger}
-                              onClick={(e) => toggleMoveMenu(menuKey, e)}
-                            >
-                              Move <ChevronDown size={12} />
-                            </button>
-                            {moveMenuOpen === menuKey && moveMenuPos && createPortal(
-                              <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
-                                <button className={styles.moveMenuItem} onClick={(e) => { e.stopPropagation(); handleMoveToCheckedIn(att.student_id, att.id); }}>
-                                  Checked In
-                                </button>
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* ── Column 4: No-Show (red) ── */}
-            <div className={`${styles.column} ${mobileTab !== 'noShow' ? styles.mobileHidden : ''}`}>
-              <div className={`${styles.colHeader} ${styles.colHeaderNoShow}`}>
-                <AlertTriangle size={16} />
-                <span>No-Show</span>
-                <span className={styles.colBadge}>{filteredNoShow.length}</span>
-              </div>
-              <div className={styles.colBody}>
-                {filteredNoShow.map((s) => {
-                  const sid = String(s.id);
-                  const isSent = sentMissedYou.has(sid);
-                  const isSending = sendingMissedYou.has(sid);
-                  const late = minutesLate(s);
-                  const menuKey = `noshow-${s.id}`;
-                  const noShowAtt = allAttendanceMap.get(s.id);
-
-                  return (
-                    <div key={s.id} className={styles.attendanceCard}>
-                      <div className={styles.cardTop}>
-                        <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                        <div className={styles.cardActions}>
-                          {noShowAtt && (
-                            <button
-                              className={styles.editBtn}
-                              onClick={() => setEditAttendance({ attendance: noShowAtt, studentName: `${s.first_name} ${s.last_name}` })}
-                              aria-label={`Edit attendance for ${s.first_name} ${s.last_name}`}
-                            >
-                              <Pencil size={12} />
-                            </button>
-                          )}
-                          <span className={styles.lateBadge}>{late}min late</span>
-                        </div>
-                      </div>
-                      <p className={styles.cardTime}>
-                        Expected {formatTimeKey(s.class_time_sort_key)}
-                      </p>
-
-                      {/* We Missed You */}
-                      {missedYouConfirm === sid ? (
-                        <div className={styles.missedYouPanel}>
-                          <p className={styles.panelText}>Send &quot;We Missed You&quot; text?</p>
-                          <div className={styles.panelActions}>
-                            <button
-                              className={styles.sendTextBtn}
-                              onClick={() => handleMissedYou(s)}
-                              disabled={isSending}
-                            >
-                              <Send size={12} /> {isSending ? 'Sending...' : 'Send Text'}
-                            </button>
-                            <button className={styles.cancelSmBtn} onClick={() => setMissedYouConfirm(null)}>
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={styles.noShowActions}>
-                          {isSent ? (
-                            <span className={styles.sentBadge}>
-                              <CheckCircle2 size={12} /> Sent
-                            </span>
-                          ) : (
-                            <button
-                              className={styles.missedYouBtn}
-                              onClick={() => setMissedYouConfirm(sid)}
-                            >
-                              <Send size={12} /> We Missed You
-                            </button>
-                          )}
-                          <button
-                            className={styles.excuseBtn}
-                            onClick={() => setExcuseModalStudent(s)}
-                          >
-                            Mark Excused
-                          </button>
-                        </div>
-                      )}
-                      <div className={styles.cardBottom}>
-                        <div />
-                        <div className={styles.moveWrap}>
-                          <button
-                            className={styles.moveTrigger}
-                            onClick={(e) => toggleMoveMenu(menuKey, e)}
-                          >
-                            Move <ChevronDown size={12} />
-                          </button>
-                          {moveMenuOpen === menuKey && moveMenuPos && createPortal(
-                            <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
-                              <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedIn', s.id, `${s.first_name} ${s.last_name}`)}>
-                                Checked In
-                              </button>
-                              <button className={styles.moveMenuItem} onClick={() => handleMoveWithTime('checkedOut', s.id, `${s.first_name} ${s.last_name}`)}>
-                                Checked Out
-                              </button>
-                            </div>,
-                            document.body
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Excused students */}
-                {filteredExcused.map((s) => {
-                  const absence = todayAbsences?.find((a) => a.student_id === s.id);
-                  return (
-                    <div key={s.id} className={`${styles.attendanceCard} ${styles.cardExcused}`}>
-                      <div className={styles.cardTop}>
-                        <h4 className={styles.cardName}>{s.first_name} {s.last_name}</h4>
-                        <span className={styles.excusedBadge}>Excused</span>
-                      </div>
-                      <p className={styles.cardTime}>
-                        {formatTimeKey(s.class_time_sort_key)} — {absence?.reason || 'excused'}
-                      </p>
-                      {absence?.homework_out && (
-                        <p className={styles.excuseDetail}>Homework in pickup bin</p>
-                      )}
-                      {absence?.makeup_scheduled && absence.makeup_date && (
-                        <p className={styles.makeupLine}>
-                          <CalendarPlus size={11} /> Makeup: {absence.makeup_date} {absence.makeup_time || ''}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {filteredNoShow.length === 0 && filteredExcused.length === 0 && (
-                  <p className={styles.emptyCol}>No absences yet.</p>
-                )}
-              </div>
-            </div>
-
-          </div>
+          // renderBoard's onClick handlers reference helpers that mutate
+          // toastIdRef inside their event-handler bodies — not during render.
+          // The react-hooks/refs rule traces those statically and false-positives.
+          // eslint-disable-next-line react-hooks/refs
+          renderBoard()
         )}
       </div>
 
@@ -1279,8 +1639,89 @@ export default function AttendancePage() {
         </Modal>
       )}
 
+      {/* ── Check-out Confirmation Dialog ── */}
+      {checkOutConfirm && (() => {
+        const { student, attendance, openedAtMs } = checkOutConfirm;
+        const studentName = `${student.first_name} ${student.last_name}`;
+        const elapsed = Math.max(0, Math.floor((openedAtMs - new Date(attendance.check_in).getTime()) / 60000));
+        const nowDisplay = new Date(openedAtMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+        return (
+          <Modal
+            open
+            onClose={() => setCheckOutConfirm(null)}
+            title={`Check out ${studentName}?`}
+            maxWidth="380px"
+          >
+            <div className={styles.confirmBody}>
+              <div className={`${styles.confirmIcon} ${styles.confirmIconSuccess}`}>
+                <LogOut size={20} />
+              </div>
+              <p className={styles.confirmText}>
+                {studentName.split(' ')[0]} has been here for <strong>{elapsed} minutes</strong>. Check-out will be recorded at the current time.
+              </p>
+              <div className={styles.confirmContextBox}>
+                <span className={styles.confirmContextLabel}>CHECK-OUT TIME</span>
+                <span className={styles.confirmContextValue}>{nowDisplay}</span>
+              </div>
+              <div className={styles.confirmActions}>
+                <button className={styles.btnGhost} onClick={() => setCheckOutConfirm(null)}>Cancel</button>
+                <button className={styles.btnSuccess} onClick={confirmCheckOutFromDialog}>Check Out</button>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
+
+      {/* ── Remove from Board Confirmation Dialog ── */}
+      {removeConfirm && (() => {
+        const studentName = `${removeConfirm.student.first_name} ${removeConfirm.student.last_name}`;
+        return (
+          <Modal
+            open
+            onClose={() => setRemoveConfirm(null)}
+            title={`Remove ${studentName} from today's attendance?`}
+            maxWidth="400px"
+          >
+            <div className={styles.confirmBody}>
+              <div className={`${styles.confirmIcon} ${styles.confirmIconDanger}`}>
+                <AlertTriangle size={20} />
+              </div>
+              <p className={styles.confirmText}>
+                {studentName.split(' ')[0]} will no longer appear on the attendance board. Use this when a record was created in error (wrong student scanned, wrong button pressed). This does not cancel her session or remove her from the class schedule.
+              </p>
+              <div className={styles.confirmActions}>
+                <button className={styles.btnGhost} onClick={() => setRemoveConfirm(null)}>Cancel</button>
+                <button className={styles.btnDanger} onClick={confirmRemoveFromBoard}>Remove</button>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
+
+      {/* ── SMS Popup (3 consent states) ── */}
+      {smsPopup && (
+        <SmsPopup
+          student={smsPopup.student}
+          mode={smsPopup.mode}
+          onClose={() => setSmsPopup(null)}
+          onSend={async () => {
+            await handleMissedYou(smsPopup.student);
+            setSmsPopup(null);
+          }}
+        />
+      )}
+
       {/* ── Undo Toast ── */}
       <UndoToast item={undoToast} onDismiss={() => setUndoToast(null)} />
+
+      {/* ── Remove-from-Board Confirmation Toast (separate from Undo) ── */}
+      {removeToast && createPortal(
+        <div className={styles.removeToast} role="status" onClick={dismissRemoveToast}>
+          <CheckCircle2 size={14} />
+          <span>{removeToast}</span>
+        </div>,
+        document.body,
+      )}
 
       {/* Close move menu on outside click */}
       {moveMenuOpen && createPortal(
@@ -1288,10 +1729,121 @@ export default function AttendancePage() {
         document.body
       )}
 
+      {/* Close text menu on outside click */}
+      {textMenuOpen && createPortal(
+        <div className={styles.moveBackdrop} onClick={closeTextMenu} />,
+        document.body,
+      )}
+
       {/* Close search dropdown on outside click */}
       {showSearchDropdown && (
         <div className={styles.walkInBackdrop} onClick={() => setShowSearchDropdown(false)} />
       )}
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SMS POPUP — 3 consent states (on / opted_out / no_reply)
+   ═══════════════════════════════════════════ */
+
+interface SmsPopupProps {
+  student: Student;
+  mode: 'pickup' | 'bathroom';
+  onClose: () => void;
+  onSend: () => void;
+}
+
+function SmsPopup({ student, mode, onClose, onSend }: SmsPopupProps) {
+  const { data: contacts } = useStudentContacts(student.id);
+  const pickupParent = useMemo(() => {
+    if (!contacts || contacts.length === 0) return null;
+    const primary = contacts.find((c) => c.is_primary_contact);
+    return primary ?? contacts[0];
+  }, [contacts]);
+
+  const consent = getSmsConsent(pickupParent as Record<string, unknown> | null);
+  const firstName = student.first_name;
+  const fullParentName = pickupParent ? `${pickupParent.first_name} ${pickupParent.last_name}` : '—';
+  const phone = pickupParent?.phone ?? '';
+
+  const subtitle = mode === 'pickup'
+    ? `Pickup reminder for ${firstName} ${student.last_name}`
+    : `Bathroom text for ${firstName} ${student.last_name}`;
+
+  const messagePreview = mode === 'pickup'
+    ? `Hi ${pickupParent?.first_name ?? ''}, this is a reminder that ${firstName} is ready to be picked up at Kumon Grand Rapids North.`
+    : `Hi ${pickupParent?.first_name ?? ''}, ${firstName} is using the restroom at Kumon Grand Rapids North.`;
+
+  return (
+    <Modal open onClose={onClose} title={`Text ${firstName}'s parent`} subtitle={subtitle} maxWidth="420px">
+      <div className={styles.smsBody}>
+        <div className={`${styles.parentBlock} ${styles[`parentBlock_${consent}`]}`}>
+          <div className={styles.parentBlockText}>
+            <span className={styles.parentBlockLabel}>PICKUP PARENT</span>
+            <span className={styles.parentBlockName}>{fullParentName}</span>
+            {phone && <span className={styles.parentBlockPhone}>{phone}</span>}
+          </div>
+          <span className={`${styles.consentBadge} ${styles[`consentBadge_${consent}`]}`}>
+            {consent === 'on' && (<><Check size={11} /> SMS on</>)}
+            {consent === 'opted_out' && 'Opted out'}
+            {consent === 'no_reply' && 'No reply'}
+          </span>
+        </div>
+
+        {consent === 'on' && (
+          <div className={styles.smsPreview}>
+            <span className={styles.smsPreviewLabel}>MESSAGE PREVIEW</span>
+            <p className={styles.smsPreviewBody}>{messagePreview}</p>
+          </div>
+        )}
+
+        {consent === 'opted_out' && (
+          <>
+            <div className={styles.callBlock}>
+              <Phone size={16} />
+              <div>
+                <div className={styles.callBlockTitle}>Call {fullParentName}</div>
+                {phone && <div className={styles.callBlockPhone}>{phone}</div>}
+              </div>
+            </div>
+            <p className={styles.smsHelperWarn}>
+              The Ops app can&rsquo;t place phone calls. Staff use the office phone to call this number.
+            </p>
+          </>
+        )}
+
+        {consent === 'no_reply' && (
+          <>
+            <p className={styles.smsHelper}>We don&rsquo;t have SMS consent on file yet.</p>
+            <button
+              className={styles.btnOutlined}
+              onClick={() => {
+                /* TODO(86agxw8n3): wire to existing SMS consent capture flow once it ships. */
+                onClose();
+              }}
+            >
+              <HelpCircle size={14} /> Get SMS consent
+            </button>
+            {phone && (
+              <p className={styles.smsHelperSm}>
+                Or use the office phone to call <strong>{phone}</strong> directly.
+              </p>
+            )}
+          </>
+        )}
+
+        <div className={styles.confirmActions}>
+          <button className={styles.btnGhost} onClick={onClose}>
+            {consent === 'opted_out' ? 'Close' : 'Cancel'}
+          </button>
+          {consent === 'on' && (
+            <button className={styles.btnAccent} onClick={onSend}>
+              <Send size={14} /> Send Text
+            </button>
+          )}
+        </div>
+      </div>
+    </Modal>
   );
 }
