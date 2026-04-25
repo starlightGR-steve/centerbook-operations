@@ -170,7 +170,7 @@
   font-weight: 600;
   padding: 3px var(--space-2);
   border-radius: 4px;
-  background: #f76808;
+  background: var(--reading);
   color: var(--white);
 }
 
