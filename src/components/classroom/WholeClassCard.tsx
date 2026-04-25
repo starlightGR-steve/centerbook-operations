@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { Heart, Flag } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { parseSubjects } from '@/lib/types';
 import { useFlagConfig } from '@/hooks/useFlagConfig';
@@ -162,7 +162,17 @@ export default function WholeClassCard({
 
       {showRedFlag && (
         <span className={styles.redFlagTab} aria-label="Needs attention">
-          <Flag size={18} fill="currentColor" strokeWidth={0} />
+          <svg
+            viewBox="0 0 24 32"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M2 2 L22 2 L22 20 L2 20 Z" />
+            <line x1="2" y1="2" x2="2" y2="32" strokeWidth="2" />
+          </svg>
         </span>
       )}
 

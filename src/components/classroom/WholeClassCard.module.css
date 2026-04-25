@@ -131,6 +131,11 @@
   z-index: 2;
 }
 
+.redFlagTab svg {
+  width: 100%;
+  height: 100%;
+}
+
 /* Content group — wraps name, subject letters, medical, flag chips */
 .contentGroup {
   display: flex;
