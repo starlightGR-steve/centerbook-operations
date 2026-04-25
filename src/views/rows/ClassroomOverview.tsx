@@ -220,7 +220,7 @@ export default function ClassroomOverview({
         <button className={styles.setupBtn} onClick={onSetup}>
           <Edit2 size={16} /> Classroom Setup
         </button>
-        <ClockDisplay size="sm" />
+        <ClockDisplay size="sm" variant="muted" />
       </header>
 
       <div className={styles.content}>

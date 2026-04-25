@@ -6,6 +6,10 @@ import { Clock } from 'lucide-react';
 interface ClockDisplayProps {
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
+  /** 'brand' (default): teal icon + primary-blue 700-weight text.
+   *  'muted': neutral-gray icon + neutral-gray 600-weight text. Used by the
+   *  Live Classroom top bar per Whole Class V13 spec. */
+  variant?: 'brand' | 'muted';
 }
 
 const SIZES = {
@@ -14,7 +18,17 @@ const SIZES = {
   lg: { fontSize: '22px', iconSize: 20 },
 };
 
-export default function ClockDisplay({ size = 'md', showIcon = true }: ClockDisplayProps) {
+const MUTED_SIZES = {
+  sm: { fontSize: 'var(--text-base)', iconSize: 14 },
+  md: { fontSize: 'var(--text-md)', iconSize: 16 },
+  lg: { fontSize: 'var(--text-lg)', iconSize: 18 },
+};
+
+export default function ClockDisplay({
+  size = 'md',
+  showIcon = true,
+  variant = 'brand',
+}: ClockDisplayProps) {
   const [time, setTime] = useState('');
 
   useEffect(() => {
@@ -32,16 +46,20 @@ export default function ClockDisplay({ size = 'md', showIcon = true }: ClockDisp
     return () => clearInterval(id);
   }, []);
 
-  const s = SIZES[size];
+  const isMuted = variant === 'muted';
+  const s = isMuted ? MUTED_SIZES[size] : SIZES[size];
+  const iconColor = isMuted ? 'var(--neutral)' : 'var(--secondary)';
+  const textColor = isMuted ? 'var(--neutral)' : 'var(--primary)';
+  const fontWeight = isMuted ? 600 : 700;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      {showIcon && <Clock size={s.iconSize} color="var(--secondary)" />}
+      {showIcon && <Clock size={s.iconSize} color={iconColor} />}
       <span
         style={{
           fontSize: s.fontSize,
-          fontWeight: 700,
-          color: 'var(--primary)',
+          fontWeight,
+          color: textColor,
           fontVariantNumeric: 'tabular-nums',
         }}
       >
