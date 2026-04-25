@@ -536,6 +536,19 @@
   border-color: var(--border);
 }
 
+/* 86ah3f3xp Finding 5: marked-off flag — shown but visually muted with a
+   strike-through label, matching the Row View card "done" pattern. */
+.flagToggleRowDone {
+  background: var(--white);
+  border-color: var(--border);
+}
+
+.flagToggleLabelDone {
+  color: var(--color-done-text);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-done-text);
+}
+
 .flagCircleLg {
   width: 1.75rem;
   height: 1.75rem;

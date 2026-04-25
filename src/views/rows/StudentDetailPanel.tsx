@@ -507,28 +507,49 @@ export default function StudentDetailPanel({
             );
           })()}
 
-          {/* 6b. Assigned flags only */}
+          {/* 86ah3f3xp Findings 3H + 5 (first): assigned flags now match the
+              Row View card behavior. Filter shows any flag whose key is on
+              the blob — regardless of truthy / falsy — so a flag toggled off
+              persists as a marked-off (done) row instead of disappearing.
+              taking_test is explicitly excluded: the design replaced it with
+              the Testing section + toggle, so it should never render as a
+              flag chip. */}
           {(() => {
-            const activeFlags = flagConfig.filter(
-              (fc) => !!(flags && (flags as Record<string, unknown>)[fc.key])
-            );
+            const flagBlob = flags as Record<string, unknown> | null | undefined;
+            const activeFlags = flagConfig.filter((fc) => {
+              if (fc.key === 'taking_test') return false;
+              return flagBlob ? flagBlob[fc.key] !== undefined : false;
+            });
             if (activeFlags.length === 0) return null;
             return (
               <div className={styles.flagGrid}>
-                {activeFlags.map((fc) => (
-                  <button
-                    key={fc.key}
-                    className={`${styles.flagToggleRow} ${styles.flagToggleRowActive}`}
-                    onClick={() => onToggleFlag?.(fc.key)}
-                    disabled={!onToggleFlag}
-                  >
-                    <span className={styles.flagCircleLg} style={{ background: '#1E335E' }}>
-                      <FlagIcon icon={fc.icon} size={12} />
-                    </span>
-                    <span className={styles.flagToggleLabel}>{fc.label}</span>
-                    <Check size={14} style={{ color: fc.color, flexShrink: 0 }} />
-                  </button>
-                ))}
+                {activeFlags.map((fc) => {
+                  const isDone = !flagBlob?.[fc.key];
+                  return (
+                    <button
+                      key={fc.key}
+                      className={`${styles.flagToggleRow} ${isDone ? styles.flagToggleRowDone : styles.flagToggleRowActive}`}
+                      onClick={() => onToggleFlag?.(fc.key)}
+                      disabled={!onToggleFlag}
+                    >
+                      <span
+                        className={styles.flagCircleLg}
+                        style={{ background: isDone ? 'var(--color-done-bg)' : '#1E335E' }}
+                      >
+                        <FlagIcon icon={fc.icon} size={12} />
+                      </span>
+                      <span
+                        className={`${styles.flagToggleLabel} ${isDone ? styles.flagToggleLabelDone : ''}`}
+                      >
+                        {fc.label}
+                      </span>
+                      <Check
+                        size={14}
+                        style={{ color: isDone ? 'var(--color-done-text)' : fc.color, flexShrink: 0 }}
+                      />
+                    </button>
+                  );
+                })}
               </div>
             );
           })()}
