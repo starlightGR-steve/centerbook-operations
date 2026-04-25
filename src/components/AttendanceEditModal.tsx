@@ -68,7 +68,14 @@ export default function AttendanceEditModal({ attendance, studentName, onClose }
   };
 
   return (
-    <Modal open onClose={onClose} title="Edit Attendance" subtitle={studentName} maxWidth="360px">
+    <Modal
+      open
+      onClose={onClose}
+      title="Edit Attendance"
+      subtitle={studentName}
+      maxWidth="360px"
+      disableBackdropClose
+    >
       <div className={styles.form}>
         <div className={styles.field}>
           <label className={styles.label}>Check-in Time</label>

@@ -12,6 +12,13 @@ interface ModalProps {
   subtitle?: string;
   children: React.ReactNode;
   maxWidth?: string;
+  /**
+   * Suppress the backdrop-click close. Use when the dialog hosts native
+   * controls (e.g. <input type="time">) whose dismissal click can land on
+   * the overlay and incorrectly tear down the dialog. The X button and
+   * Escape key remain functional.
+   */
+  disableBackdropClose?: boolean;
 }
 
 export default function Modal({
@@ -21,6 +28,7 @@ export default function Modal({
   subtitle,
   children,
   maxWidth,
+  disableBackdropClose,
 }: ModalProps) {
   const titleId = useId();
   const containerRef = useFocusTrap(open, onClose);
@@ -31,6 +39,7 @@ export default function Modal({
     <div
       className={styles.overlay}
       onMouseDown={(e) => {
+        if (disableBackdropClose) return;
         // Only close if the click target is the overlay itself (not a child or native picker)
         if (e.target === e.currentTarget) onClose();
       }}
