@@ -425,12 +425,16 @@ export default function StudentDetailPanel({
           </div>
         )}
 
-        {/* 86agzuwdf §3B: Permissions & Pickup card. Same attendance gate as Session info. */}
+        {/* 86agzuwdf §3B: Permissions & Pickup card. Same attendance gate as Session info.
+            86ah3duvq Phase 2: pass through the primary parent so the bathroom button
+            can render its three-state SmsTriggerButton (PDF section 4). */}
         {attendance && (
           <PermissionsPickupCard
             studentId={student.id}
+            studentFirstName={student.first_name}
             attendanceId={attendance.id}
             staffId={staffId}
+            primaryParent={primaryContact ?? null}
           />
         )}
 
