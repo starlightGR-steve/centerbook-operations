@@ -49,6 +49,8 @@ import type {
   CenterSettings,
   ScheduleOverride,
   VisitPlanItem,
+  SmsConsentHistoryEntry,
+  UpdateSmsConsentRequest,
 } from './types';
 
 // ── Configuration ──────────────────────────
@@ -224,6 +226,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params),
       }),
+    /** PATCH the three-state SMS consent status. Backend appends a row to
+     *  cb_sms_consent_history on every successful change. */
+    updateSmsConsent: (id: number, data: UpdateSmsConsentRequest) =>
+      directFetch<Contact>(`/contacts/${id}/sms-consent`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    /** Fetch the immutable consent history log for a contact (newest-first). */
+    smsConsentHistory: (id: number) =>
+      directFetch<SmsConsentHistoryEntry[]>(`/contacts/${id}/sms-consent/history`),
   },
 
   // ── Student-Contact Links ──
