@@ -270,6 +270,19 @@ export interface Attendance {
   sms_10min_sent_at: string | null; // When the SMS was sent
   sms_recipient_phone: string | null; // Cached from primary contact
   sms_recipient_name: string | null; // Cached from primary contact
+  /**
+   * Lifecycle of the automatic 5-minute pickup SMS.
+   *   pending             — window hasn't fired yet (or student not active)
+   *   sent                — message went out successfully (existing green
+   *                         check + "Sent 3:45 PM" notice still applies)
+   *   blocked_no_consent  — primary parent's sms_consent_status === no_reply
+   *   blocked_opted_out   — primary parent's sms_consent_status === opted_out
+   *
+   * The two blocked variants surface inline on the Attendance card as an
+   * amber call prompt; field is irrelevant once the student moves to
+   * Checked Out.
+   */
+  sms_send_status?: 'pending' | 'sent' | 'blocked_no_consent' | 'blocked_opted_out';
   created_at: string;
   // Joined fields (populated by API)
   student?: Student;
@@ -375,7 +388,16 @@ export type CbTaskType =
   | 'checkin_call'
   | 'form_followup'
   | 'no_show_followup'
-  | 'general';
+  | 'general'
+  /**
+   * Informational tasks (PDF section 12). Backend creates these for events
+   * that staff should be aware of but don't need to action — e.g. an
+   * inbound STOP reply auto-opts a parent out and surfaces a low-priority
+   * info_sms_opted_out task. Renders with the teal-bordered "Info" variant
+   * in the inbox; auto-cleared via expires_at.
+   */
+  | 'info_sms_opted_out'
+  | 'info_sms_opted_in';
 
 export type CbTaskStatus = 'open' | 'complete';
 
@@ -392,6 +414,12 @@ export interface CbTask {
   status: CbTaskStatus;
   recurrence_rule: string | null;
   completed_at: string | null;
+  /**
+   * ISO datetime after which the task is excluded server-side. Used by
+   * info_* tasks (auto-cleanup after ~7 days) so old STOP-reply notices
+   * don't accumulate in the inbox. Null for regular actionable tasks.
+   */
+  expires_at?: string | null;
   created_at: string;
   updated_at: string;
 }
