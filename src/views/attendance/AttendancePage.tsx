@@ -697,22 +697,20 @@ export default function AttendancePage() {
 
   /* ── Move to No-Show (delete attendance record) ──
    *  No-Show is schedule-derived (scheduledToday + isNoShow + no attendance row +
-   *  not excused), so the only mechanic is to clear the attendance row and let
-   *  the column logic re-include the student. If the student isn't yet 15 min
-   *  past their scheduled time, they land in Expected instead — the toast
-   *  reflects whichever column will actually surface them. */
+   *  not excused), so the mechanic is to clear the attendance row and let the
+   *  column logic re-include the student. Toast copy is hardcoded to the
+   *  destination Fran picked — don't infer from derived state. */
   const handleMoveToNoShow = async (studentId: number, attendanceId: number) => {
     closeMoveMenu();
     const student = allStudents?.find((s) => s.id === studentId);
     const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
-    const targetLabel = student && isNoShow(student) ? 'No-Show' : 'Expected';
     try {
       await deleteAttendance(attendanceId);
       // Backend auto-clears row assignments; remove from local cache too
       try { await removeStudentFromRow(studentId); } catch { /* noop */ }
       setUndoToast({
         id: ++toastIdRef.current,
-        message: `${name} moved to ${targetLabel}`,
+        message: `${name} moved to No-Show`,
         onUndo: async () => {
           const duration = student
             ? getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail })
