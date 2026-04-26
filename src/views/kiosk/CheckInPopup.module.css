@@ -648,18 +648,21 @@
   box-sizing: border-box;
 }
 
+/* The option is a flex column so when expanded the inline consent block
+   (.captureBlock) stacks BELOW the header row (.pickupOptionRow). Earlier
+   it was a flex row, which meant the captureBlock landed as a narrow
+   sibling next to the header — text wrapped at 1 char per line, buttons
+   never had room to lay out horizontally. Padding moved into the inner
+   row so unexpanded options keep their hit area without nesting padding. */
 .pickupOption {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  flex-direction: column;
+  align-items: stretch;
   border-radius: var(--radius-sm);
   cursor: pointer;
   min-height: var(--touch-min);
   transition: background-color 150ms ease;
 }
-.pickupOption:hover { background: var(--secondary-ul); }
 .pickupOption:focus-visible {
   outline: 2px solid var(--secondary);
   outline-offset: -2px;
@@ -719,7 +722,6 @@
 .pickupOptionExpanded {
   border: 1.5px solid var(--secondary);
   background: var(--secondary-ul);
-  padding-bottom: 0;
 }
 
 .pickupOptionExpanded .pickupOptionRow:hover {
@@ -788,14 +790,15 @@
   overflow-wrap: anywhere;
 }
 
-/* Grid auto-fit with a 7rem column floor: the three buttons sit side by
-   side when the popover can fit 3 × 7rem + gaps; collapse to 2-up at
-   ~16rem; stack vertically below ~9rem. No horizontal scroll at any
-   width. */
+/* Three buttons in a row, sized to share the available width evenly. flex
+   with min-width:0 + flex-basis:0 lets them shrink below their intrinsic
+   content width (the labels are short enough that "Yes, opt in" still
+   fits at ~80px). flex-wrap kicks in only when the popover is genuinely
+   tighter than 3 × min-button-width, which is the iPad-portrait edge case. */
 .captureActions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
-  gap: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1_5);
   width: 100%;
 }
 
@@ -803,17 +806,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1_5);
-  padding: 0.4375rem 0.5rem;
-  width: 100%;
-  min-width: 0;
+  gap: var(--space-1);
+  padding: 0.4375rem 0.375rem;
+  /* flex-basis: 0 means each button starts from zero and grows equally;
+     flex-shrink: 1 + min-width: 0 lets the label ellipsis-fit if absurdly
+     narrow. min-content floor keeps icon + first word visible. */
+  flex: 1 1 0;
+  min-width: 4.5rem;
   min-height: var(--touch-min);
   border-radius: var(--radius-btn);
   border: 1.5px solid var(--border);
   background: var(--white);
   color: var(--text);
   font-family: var(--font-primary);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
