@@ -21,7 +21,8 @@ import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
 import PlanNextVisitModal, { type VisitPlanDraft } from '@/components/classroom/PlanNextVisitModal';
 import ChecklistItem from '@/components/classroom/ChecklistItem';
 import FlagChip, { type FlagChipType } from '@/components/classroom/FlagChip';
-import type { Contact } from '@/lib/types';
+import type { Contact, SmsConsentStatus } from '@/lib/types';
+import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
 import type { AppRole } from '@/lib/auth';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { getTeacherNotes, formatTime } from '@/lib/types';
@@ -130,22 +131,19 @@ export default function StudentDetailPanel({
   const subjects = parseSubjects(student.subjects);
   const scheduleDetail = student.schedule_detail;
 
-  // 86agzuwdf §3A: SMS-on-file pill in meta row reads from the FULL Contact
-  // (StudentContact returned by /students/{id}/contacts doesn't carry sms_opt_in).
-  // SWR-keyed per primary_contact_id; deduped 10s.
+  // SMS consent badge in the meta row — three-state per the SMS Consent
+  // Design System PDF (sections 2 + 3). Reads from the primary communication
+  // parent's Contact record. Returns undefined while the SWR key resolves so
+  // the badge renders nothing instead of a wrong fallback.
   const { data: primaryContact } = useSWR<Contact | null>(
     student.primary_contact_id ? `contact-${student.primary_contact_id}` : null,
     async () => student.primary_contact_id ? api.contacts.get(student.primary_contact_id) : null,
     { dedupingInterval: 10_000, revalidateOnFocus: false }
   );
-  const primaryContactSmsState: 'on' | 'off' | 'unknown' =
-    !student.primary_contact_id
-      ? 'off'
-      : primaryContact === undefined
-        ? 'unknown'
-        : primaryContact?.sms_opt_in === 1
-          ? 'on'
-          : 'off';
+  const primaryContactConsent: SmsConsentStatus | undefined =
+    primaryContact === undefined
+      ? undefined
+      : (primaryContact?.sms_consent_status as SmsConsentStatus | undefined) ?? 'no_reply';
 
   // 86ah3f3xp Finding 3C: schedule appears once below the badges row, with
   // a clock-icon prefix and per-day "Wed 4:00P · Mon 5:30P" entries (day in
@@ -371,17 +369,12 @@ export default function StudentDetailPanel({
             <span className={styles.posBadge}>{student.classroom_position}</span>
           )}
           <span className={styles.gradeBadge}>Grade {student.grade_level || '—'}</span>
-          {(() => {
-            // SMS pill — only renders once we know whether the primary contact opted in.
-            // Skips silently when there is no primary contact id (no SWR fetch keyed).
-            if (primaryContactSmsState === 'unknown') return null;
-            const on = primaryContactSmsState === 'on';
-            return (
-              <span className={on ? styles.smsPillOn : styles.smsPillOff}>
-                {on ? 'SMS on' : 'SMS off'}
-              </span>
-            );
-          })()}
+          {/* Three-state SMS consent badge — large variant per PDF section 3
+              (Live Class detail panel). Renders nothing while the contact
+              fetch is still resolving so the meta row doesn't flicker. */}
+          {primaryContactConsent && (
+            <SMSConsentBadge status={primaryContactConsent} size="large" />
+          )}
         </div>
 
         {/* 86ah3f3xp Finding 3C: schedule appears once, in compact form,
