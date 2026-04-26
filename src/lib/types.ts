@@ -393,11 +393,16 @@ export type CbTaskType =
    * Informational tasks (PDF section 12). Backend creates these for events
    * that staff should be aware of but don't need to action — e.g. an
    * inbound STOP reply auto-opts a parent out and surfaces a low-priority
-   * info_sms_opted_out task. Renders with the teal-bordered "Info" variant
+   * info_sms_optout task. Renders with the teal-bordered "Info" variant
    * in the inbox; auto-cleared via expires_at.
+   *
+   * String values match the backend exactly (no `_ed_` infix). Verified
+   * against the response of POST /sms/inbound-event with action=stop;
+   * info_sms_optin is the presumed inverse for action=start (not yet
+   * triggered live but follows the same naming).
    */
-  | 'info_sms_opted_out'
-  | 'info_sms_opted_in';
+  | 'info_sms_optout'
+  | 'info_sms_optin';
 
 export type CbTaskStatus = 'open' | 'complete';
 

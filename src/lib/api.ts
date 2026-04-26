@@ -425,6 +425,14 @@ export const api = {
       directFetch<void>(`/tasks/${id}`, { method: 'DELETE' }),
     forCreator: (staffId: number) =>
       directFetch<CbTask[]>(`/tasks?created_by=${staffId}`),
+    /**
+     * Fetch all open tasks regardless of assignee — used to surface
+     * broadcast info_* tasks (e.g. STOP-reply notices) that have no
+     * assigned_to and would otherwise be missed by forAssignee.
+     * Consumers filter client-side to type.startsWith('info_') &&
+     * assigned_to == null.
+     */
+    allOpen: () => directFetch<CbTask[]>('/tasks?status=open'),
   },
 
   // ── Journal ──

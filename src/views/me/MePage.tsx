@@ -28,8 +28,8 @@ const TASK_TYPE_LABELS: Record<CbTaskType, string> = {
   form_followup: 'Form Follow-up',
   no_show_followup: 'No-show Follow-up',
   general: 'General',
-  info_sms_opted_out: 'Info',
-  info_sms_opted_in: 'Info',
+  info_sms_optout: 'Info',
+  info_sms_optin: 'Info',
 };
 
 function timeAgo(dateStr: string): string {
@@ -104,6 +104,21 @@ export default function MePage() {
   const { data: tasks, error: tasksError, isLoading: tasksLoading } = useSWR<CbTask[]>(
     swrKey,
     () => api.tasks.forAssignee(staffIdNum),
+    { dedupingInterval: 10000 }
+  );
+
+  // 86ah3duvq Phase 2 hotfix: broadcast info_* tasks (STOP-reply notices
+  // and similar) are created server-side with assigned_to=null so they're
+  // visible to all staff. The forAssignee fetch above filters them out
+  // because /tasks?assigned_to={id} excludes nulls. Pull all open tasks
+  // separately and filter client-side; the merged list flows into the
+  // inbox tab below.
+  const { data: broadcastInfoTasks } = useSWR<CbTask[]>(
+    staffId ? 'broadcast-info-tasks' : null,
+    async () => {
+      const all = await api.tasks.allOpen();
+      return all.filter((t) => t.type.startsWith('info_') && t.assigned_to == null);
+    },
     { dedupingInterval: 5000, revalidateOnFocus: true }
   );
 
@@ -129,8 +144,14 @@ export default function MePage() {
 
   // Tab data
   const inboxTasks = useMemo(
-    () => [...(tasks || []).filter((t) => t.assigned_to === staffIdNum && t.created_by !== staffIdNum)].sort(sortTasks),
-    [tasks, staffIdNum]
+    () => {
+      const personal = (tasks || []).filter((t) => t.assigned_to === staffIdNum && t.created_by !== staffIdNum);
+      // Merge in broadcast info tasks (assigned_to=null) so STOP-reply
+      // notices etc. surface in the inbox alongside personal items.
+      const broadcast = broadcastInfoTasks || [];
+      return [...personal, ...broadcast].sort(sortTasks);
+    },
+    [tasks, broadcastInfoTasks, staffIdNum]
   );
   const mineTasks = useMemo(
     () => [...(tasks || []).filter((t) => t.created_by === staffIdNum)].sort(sortTasks),
@@ -488,10 +509,13 @@ export default function MePage() {
               <div className={styles.taskList}>
                 {currentTabTasks.map((task) => {
                   const done = task.status === 'complete';
-                  const creatorName = task.created_by !== staffIdNum
+                  // 86ah3duvq Phase 2 hotfix: info_* tasks have created_by =
+                  // assigned_to = null (system-generated, no actor). Skip the
+                  // "From: Staff #null" / "To: Staff #null" rendering.
+                  const creatorName = task.created_by != null && task.created_by !== staffIdNum
                     ? (staffMap.get(task.created_by) ?? `Staff #${task.created_by}`)
                     : null;
-                  const assigneeName = task.assigned_to !== staffIdNum
+                  const assigneeName = task.assigned_to != null && task.assigned_to !== staffIdNum
                     ? (staffMap.get(task.assigned_to) ?? `Staff #${task.assigned_to}`)
                     : null;
                   const studentInfo = task.student_id ? studentMap.get(task.student_id) : null;
