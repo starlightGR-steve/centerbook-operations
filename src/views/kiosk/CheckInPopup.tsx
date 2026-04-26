@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import {
-  X, Heart, Check, Send, AlertTriangle, ExternalLink,
+  X, Heart, Check, Send, AlertTriangle, ExternalLink, ChevronDown,
 } from 'lucide-react';
+import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
+import type { SmsConsentStatus } from '@/lib/types';
 import { api } from '@/lib/api';
 import { parseSubjects, parseScheduleDays, formatTimeKey, getSessionDuration } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
@@ -126,6 +128,23 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
 
   const selectedContact = contacts?.find((c) => c.id === pickupContactId);
 
+  // 86ah3duvq Phase 1 (PDF section 6): per-parent SMS consent badges in the
+  // dropdown require a custom popover — native <option> can't render JSX.
+  // Phase 2 will add the "+" capture button per row to this same component;
+  // the dropdown shape here is the foundation for that work.
+  const [pickupOpen, setPickupOpen] = useState(false);
+  const pickupRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!pickupOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (pickupRef.current && !pickupRef.current.contains(e.target as Node)) {
+        setPickupOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [pickupOpen]);
+
   const toggleChecklist = (item: string) => {
     setSelectedChecklist((prev) =>
       prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
@@ -220,21 +239,68 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
           {/* ── Pickup & Session ── */}
           <h3 className={styles.sectionHeading}>Pickup &amp; Session</h3>
           <div className={styles.row3}>
-            {/* Pickup Contact */}
+            {/* Pickup Contact — custom dropdown so each option can carry its
+                SMS consent badge (PDF section 6, default view). Phase 1 is
+                badge display only; Phase 2 will add the "+" capture button. */}
             <div className={styles.col}>
               <span className={styles.colLabel}>Pickup Text Goes To</span>
-              <select
-                className={styles.contactSelect}
-                value={pickupContactId ?? ''}
-                onChange={(e) => setPickupContactId(Number(e.target.value) || null)}
-              >
-                <option value="">Select contact...</option>
-                {contacts?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {student.first_name}&apos;s {c.relationship_to_students || 'Contact'} ({c.first_name}) {c.is_primary_contact ? '- Primary' : ''}
-                  </option>
-                ))}
-              </select>
+              <div ref={pickupRef} className={styles.pickupDropdown}>
+                <button
+                  type="button"
+                  className={styles.pickupTrigger}
+                  onClick={() => setPickupOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={pickupOpen}
+                >
+                  <span className={styles.pickupTriggerLabel}>
+                    {selectedContact ? (
+                      <>
+                        {student.first_name}&apos;s {selectedContact.relationship_to_students || 'Contact'} ({selectedContact.first_name})
+                        {selectedContact.is_primary_contact ? ' - Primary' : ''}
+                      </>
+                    ) : 'Select contact...'}
+                  </span>
+                  {selectedContact && (
+                    <SMSConsentBadge
+                      status={(selectedContact as { sms_consent_status?: SmsConsentStatus }).sms_consent_status ?? 'no_reply'}
+                      size="medium"
+                    />
+                  )}
+                  <ChevronDown size={14} className={pickupOpen ? styles.pickupCaretOpen : ''} aria-hidden="true" />
+                </button>
+                {pickupOpen && (
+                  <ul className={styles.pickupOptions} role="listbox">
+                    {(contacts ?? []).length === 0 && (
+                      <li className={styles.pickupEmpty}>No contacts on file.</li>
+                    )}
+                    {contacts?.map((c) => {
+                      const status = (c as { sms_consent_status?: SmsConsentStatus }).sms_consent_status ?? 'no_reply';
+                      return (
+                        <li
+                          key={c.id}
+                          role="option"
+                          aria-selected={c.id === pickupContactId}
+                          className={`${styles.pickupOption} ${c.id === pickupContactId ? styles.pickupOptionSelected : ''}`}
+                          onClick={() => {
+                            setPickupContactId(c.id);
+                            setPickupOpen(false);
+                          }}
+                        >
+                          <span className={styles.pickupOptionText}>
+                            <span className={styles.pickupOptionName}>{c.first_name} {c.last_name}</span>
+                            <span className={styles.pickupOptionSub}>
+                              {c.relationship_to_students || 'Contact'}
+                              {c.is_primary_contact ? ' · Primary' : ''}
+                              {c.phone ? ` · ${c.phone}` : ''}
+                            </span>
+                          </span>
+                          <SMSConsentBadge status={status} size="medium" />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
               {selectedContact?.phone && (
                 <span className={styles.phoneText}>{selectedContact.phone}</span>
               )}
