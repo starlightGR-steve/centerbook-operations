@@ -196,6 +196,18 @@ export interface Attendance {
    * defensive reads against legacy rows that pre-date the column.
    */
   status?: AttendanceStatus;
+  /**
+   * Class-prep collected at check-in (or edited from a Checked-In card before
+   * the student is assigned to a row in Live Class). Server merges this into
+   * cb_row_assignments.flags on POST /classroom/assignments and clears the
+   * field. Shape matches RowAssignmentFlags so the merge is a straight spread.
+   *
+   * NOTE on wire format: GET /attendance returns this as a JSON-encoded string
+   * (same convention as cb_row_assignments.flags). useAttendance normalizes to
+   * the parsed object before SWR consumers read it. POST /attendance/checkin
+   * returns it already parsed, so the optimistic-cache push doesn't re-parse.
+   */
+  pending_class_prep?: RowAssignmentFlags | null;
   // SMS notification fields
   session_duration_minutes: number; // 30 or 60, derived from subjects
   session_end_time: string | null; // Computed: check_in + duration
@@ -213,6 +225,10 @@ export interface CheckInRequest {
   source: 'kiosk' | 'manual' | 'barcode';
   checked_in_by?: string;
   session_duration_minutes: number; // Frontend sends this based on subjects
+  /** Optional class-prep payload (flags / checklist tasks / teacher notes)
+   *  collected by CheckInPopup. Server stores on cb_attendance.pending_class_prep
+   *  and merges into the classroom_assignments.flags row on assignment. */
+  pending_class_prep?: RowAssignmentFlags;
 }
 
 export interface CheckOutRequest {

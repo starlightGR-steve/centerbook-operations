@@ -11,7 +11,6 @@ import StudentDetailPanel from './StudentDetailPanel';
 import { useStudents } from '@/hooks/useStudents';
 import { useActiveAttendance, updateAttendance } from '@/hooks/useAttendance';
 import { useClassroomAssignmentsActive, useClassroomTeachers, buildOverridesMap, buildFlagsMap, assignStudentToRow, assignTeacherToRow, removeStudentFromRow, updateStudentFlags, getAttendanceIdForStudent } from '@/hooks/useRows';
-import { readPendingClassPrep, clearPendingClassPrep } from '@/lib/pendingClassPrep';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
 import { useClassroomConfig } from '@/hooks/useClassroomConfig';
@@ -234,6 +233,11 @@ export default function RowsPage() {
     const label = rowIdToLabel[rowId];
     if (!label) return;
     const attId = getAttId(studentId);
+    // mu-plugin v2.55.0: server merges cb_attendance.pending_class_prep into
+    // the new classroom_assignments row and clears the field. The frontend
+    // doesn't need to drain anything client-side anymore — the assignment
+    // POST does the merge. SWR will repoll classroom-assignments-active and
+    // pick up the merged flags within the next interval.
     await assignStudentToRow({
       student_id: studentId,
       row_label: label,
@@ -241,40 +245,10 @@ export default function RowsPage() {
       assigned_by: 'Staff',
       attendance_id: attId,
     });
-    // 86ah3f3xp Finding 2A: drain any class-prep that was captured at check-in
-    // before this student had a row assignment. Apply on top of the live flags
-    // (testing toggle below) so the check-in payload survives the assignment.
-    const pending = readPendingClassPrep(studentId);
-    const pendingApplies = !!pending && (!pending.attendanceId || pending.attendanceId === attId);
-    let currentFlags = getStudentFlags(studentId);
-    if (pending && pendingApplies) {
-      const merged: RowAssignmentFlags = { ...currentFlags };
-      pending.flags.forEach((k) => { (merged as Record<string, unknown>)[k] = true; });
-      const tasks: Record<string, boolean | string | null | undefined> = { ...(currentFlags.tasks ?? {}) };
-      pending.checklist.forEach((k) => {
-        if (k.startsWith('__custom__:')) tasks.custom = k.slice(11);
-        else tasks[k] = false;
-      });
-      if (Object.keys(tasks).length > 0) merged.tasks = tasks;
-      if (pending.teacherNotes && pending.teacherNotes.length > 0) {
-        merged.teacher_notes = pending.teacherNotes;
-      } else if (pending.noteForTeacher) {
-        merged.teacher_note = pending.noteForTeacher;
-      }
-      try {
-        await updateStudentFlags(studentId, merged, today, attId);
-        currentFlags = merged;
-        clearPendingClassPrep(studentId);
-      } catch (err) {
-        console.error('moveStudentToRow: failed to apply pending class prep', err);
-        // Leave the stash in place so a retry assignment can still apply it.
-      }
-    } else if (pending && !pendingApplies) {
-      // Stash was for a different attendance row (student checked out + back in
-      // before assignment). Drop it.
-      clearPendingClassPrep(studentId);
-    }
-    // Auto-flag: set taking_test when moved to testing seat, clear when moved to regular
+    // Auto-flag: set taking_test when moved to testing seat, clear when moved
+    // to regular. Re-read flags after the assignment because the server merge
+    // may have just populated them from pending_class_prep.
+    const currentFlags = getStudentFlags(studentId);
     if (isTesting && !currentFlags.taking_test) {
       await updateStudentFlags(studentId, { ...currentFlags, taking_test: true }, today, attId);
     } else if (!isTesting && currentFlags.taking_test) {

@@ -26,7 +26,7 @@ import { api } from '@/lib/api';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock, clockInStaff, clockOutStaff } from '@/hooks/useTimeclock';
 import { useClassroomAssignmentsActive, updateStudentFlags, removeStudentFromRow } from '@/hooks/useRows';
-import { stashPendingClassPrep, clearPendingClassPrep } from '@/lib/pendingClassPrep';
+import { buildClassPrepFlags, hasAnyClassPrep } from '@/lib/classPrep';
 import { useAbsences } from '@/hooks/useAbsences';
 import {
   getTimeRemaining, getSessionDuration, formatTimeKey, formatTime, parseSubjects, normalizeSortKey,
@@ -552,12 +552,19 @@ export default function AttendancePage() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  /* ── Edit class prep for already-checked-in student ── */
+  /* ── Edit class prep for already-checked-in student ──
+   *  Two sources:
+   *    1. classroom_assignments.flags — if the student has been assigned to
+   *       a row in Live Class. Prep was merged here at assignment time.
+   *    2. cb_attendance.pending_class_prep — if no assignment exists yet,
+   *       this is where check-in-time prep still lives.
+   *  handleCheckInConfirm in edit mode dispatches the save target the same way. */
   const handleEditPrep = (student: Student) => {
     const assignment = assignments?.find((a) => a.student_id === student.id);
     const currentAttendance = activeAttendanceMap.get(student.id);
+    const sourceFlags = assignment?.flags ?? currentAttendance?.pending_class_prep ?? null;
     setCheckInEditPrep({
-      ...parseExistingFlags(assignment?.flags),
+      ...parseExistingFlags(sourceFlags),
       session_duration_minutes: currentAttendance?.session_duration_minutes ?? null,
     });
     setCheckInPopupStudent(student);
@@ -567,27 +574,34 @@ export default function AttendancePage() {
   const handleCheckInConfirm = async (options: CheckInOptions) => {
     // Edit mode: only update flags, don't create a new check-in record
     if (checkInEditPrep) {
-      const flags: Record<string, unknown> = {};
-      options.selectedFlags.forEach((key) => { flags[key] = true; });
-      const tasks: Record<string, unknown> = {};
-      options.selectedChecklist.forEach((key) => {
-        if (key.startsWith('__custom__:')) tasks.custom = key.slice(11);
-        else tasks[key] = false;
-      });
-      if (Object.keys(tasks).length > 0) flags.tasks = tasks;
-      if (options.teacherNotes && options.teacherNotes.length > 0) {
-        flags.teacher_notes = options.teacherNotes;
-      } else if (options.noteForTeacher) {
-        flags.teacher_note = options.noteForTeacher;
-      }
-      // 86ah0ex1k: pass attendance_id so the PATCH targets the active session-bound
-      // assignment row directly under v2.51.0+; backend falls back to date-scoped
-      // lookup when omitted.
-      const editAttId = activeAttendanceMap.get(options.studentId)?.id;
+      const prepInput = {
+        selectedFlags: options.selectedFlags,
+        selectedChecklist: options.selectedChecklist,
+        noteForTeacher: options.noteForTeacher,
+        teacherNotes: options.teacherNotes,
+      };
+      const flags = buildClassPrepFlags(prepInput);
+      // Dispatch the save based on whether the student has been assigned to
+      // a row yet. If yes, classroom_assignments.flags is the live source of
+      // truth (server cleared pending_class_prep at assignment time). If no,
+      // we PATCH the attendance row's pending_class_prep so the data survives
+      // until assignment.
+      const editAttendance = activeAttendanceMap.get(options.studentId);
+      const editAttId = editAttendance?.id;
+      const editAssignment = assignments?.find((a) => a.student_id === options.studentId);
       try {
-        await updateStudentFlags(options.studentId, flags, undefined, editAttId);
+        if (editAssignment) {
+          // 86ah0ex1k: pass attendance_id so the PATCH targets the active
+          // session-bound assignment row directly under v2.51.0+; backend
+          // falls back to date-scoped lookup when omitted.
+          await updateStudentFlags(options.studentId, flags, undefined, editAttId);
+        } else if (editAttId !== undefined) {
+          // Cross-tablet path: write to cb_attendance.pending_class_prep so a
+          // teacher on a different tablet sees the edit on their next SWR poll.
+          await updateAttendance(editAttId, { pending_class_prep: flags });
+        }
       } catch (err) {
-        console.error('handleEditPrep: failed to update flags', err);
+        console.error('handleEditPrep: failed to save edit', err);
       }
       // Bug 86agkv2wu fix: Update Class Prep also persists session_duration_minutes when changed.
       // Number() coercion both sides: WordPress returns numeric columns as strings, so a raw
@@ -615,6 +629,17 @@ export default function AttendancePage() {
       ? `${checkInPopupStudent.first_name} ${checkInPopupStudent.last_name}`
       : 'Student';
 
+    // Cross-tablet class-prep persistence ships server-side as of mu-plugin
+    // v2.55.0. The popup payload goes directly on the check-in body; the
+    // backend stores it on cb_attendance.pending_class_prep, then merges into
+    // cb_row_assignments.flags on POST /classroom/assignments. No more
+    // per-tablet localStorage staging.
+    const prepInput = {
+      selectedFlags: options.selectedFlags,
+      selectedChecklist: options.selectedChecklist,
+      noteForTeacher: options.noteForTeacher,
+      teacherNotes: options.teacherNotes,
+    };
     let result: Awaited<ReturnType<typeof checkInStudent>>;
     try {
       result = await checkInStudent({
@@ -622,35 +647,12 @@ export default function AttendancePage() {
         source: 'kiosk',
         checked_in_by: 'kiosk',
         session_duration_minutes: options.sessionMinutes,
+        ...(hasAnyClassPrep(prepInput) ? { pending_class_prep: buildClassPrepFlags(prepInput) } : {}),
       });
     } catch (err) {
       console.error('handleCheckInConfirm: checkInStudent failed', err);
       setCheckInPopupStudent(null);
       return;
-    }
-
-    // 86ah3f3xp Finding 2A: stash class-prep data so RowsPage.moveStudentToRow
-    // can PATCH it onto the classroom_assignments row when the student is later
-    // assigned to a row in Live Class. The check-in itself (cb_attendance row)
-    // succeeds above. Stash is per-tablet localStorage; multi-tablet sync needs
-    // a backend column (out of scope for the audit pass).
-    const hasPrep =
-      options.selectedFlags.length > 0 ||
-      options.selectedChecklist.length > 0 ||
-      !!options.noteForTeacher ||
-      (options.teacherNotes?.length ?? 0) > 0;
-    if (hasPrep) {
-      stashPendingClassPrep(options.studentId, {
-        flags: options.selectedFlags,
-        checklist: options.selectedChecklist,
-        noteForTeacher: options.noteForTeacher ?? '',
-        teacherNotes: options.teacherNotes ?? [],
-        attendanceId: result.id,
-      });
-    } else {
-      // Clear any leftover stash from a previous session — fresh check-in with
-      // no prep should not inherit stale flags.
-      clearPendingClassPrep(options.studentId);
     }
     const flagSaveFailed = false;
 

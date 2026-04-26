@@ -288,7 +288,16 @@ export const api = {
       directFetch<{ deleted: boolean; id: number }>(`/attendance/${id}`, {
         method: 'DELETE',
       }),
-    update: (id: number, data: { check_in?: string; check_out?: string | null; session_duration_minutes?: number; status?: 'checked-in' | 'row-complete' }) =>
+    update: (id: number, data: {
+      check_in?: string;
+      check_out?: string | null;
+      session_duration_minutes?: number;
+      status?: 'checked-in' | 'row-complete';
+      /** Class-prep payload (RowAssignmentFlags-shaped). Sending null clears the
+       *  field; sending an object replaces it whole. Server clears automatically
+       *  on POST /classroom/assignments after merge. */
+      pending_class_prep?: import('./types').RowAssignmentFlags | null;
+    }) =>
       directFetch<Attendance>(`/attendance/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
