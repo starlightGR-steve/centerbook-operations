@@ -1,0 +1,51 @@
+/* Amber call-display block (PDF sections 4, 5, 9, 11). Shared shape so
+   every "no SMS path available — call from office phone" surface reads
+   identically. Color tokens reused from tokens.css; no new ones. */
+
+.block {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--color-warn-border);
+  border-radius: var(--radius-md);
+  background: var(--color-warn-bg);
+  color: var(--color-warn-text);
+  /* Match the minimum height of the primary action it replaces so the
+     row layout doesn't shift between states. */
+  min-height: var(--touch-min);
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  min-width: 0;
+}
+
+.prefix {
+  font-family: var(--font-primary);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.title {
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.phone {
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}

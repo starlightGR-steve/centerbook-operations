@@ -238,6 +238,20 @@ export const api = {
       directFetch<SmsConsentHistoryEntry[]>(`/contacts/${id}/sms-consent/history`),
   },
 
+  // ── SMS triggers (Phase 2) ──
+  sms: {
+    /** Send a bathroom-text to the routed parent for an active session.
+     *  Server gates on the routed parent's sms_consent_status — caller
+     *  should still check status client-side and render the appropriate
+     *  button state per PDF section 4 to avoid the round-trip on opt-out
+     *  / no-reply parents. */
+    bathroomRequest: (data: { student_id: number; attendance_id: number; staff_id?: number }) =>
+      directFetch<{ ok: boolean }>('/sms/bathroom-request', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
   // ── Student-Contact Links ──
   studentContact: {
     link: (data: { student_id: number; contact_id: number; role?: string }) =>
@@ -411,6 +425,14 @@ export const api = {
       directFetch<void>(`/tasks/${id}`, { method: 'DELETE' }),
     forCreator: (staffId: number) =>
       directFetch<CbTask[]>(`/tasks?created_by=${staffId}`),
+    /**
+     * Fetch all open tasks regardless of assignee — used to surface
+     * broadcast info_* tasks (e.g. STOP-reply notices) that have no
+     * assigned_to and would otherwise be missed by forAssignee.
+     * Consumers filter client-side to type.startsWith('info_') &&
+     * assigned_to == null.
+     */
+    allOpen: () => directFetch<CbTask[]>('/tasks?status=open'),
   },
 
   // ── Journal ──

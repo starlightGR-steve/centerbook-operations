@@ -1,0 +1,48 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1_5);
+  min-height: var(--touch-min);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* sms_on — orange primary action per PDF section 4 ("Send bathroom text"). */
+.btnSend {
+  background: var(--accent);
+  color: var(--white);
+  border: 1.5px solid var(--accent);
+}
+.btnSend:hover:not(:disabled) {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+/* no_reply — outlined "Get consent" button. Neutral so it doesn't compete
+   with the primary action visually; tapping opens the capture modal. */
+.btnGhost {
+  background: var(--white);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+}
+.btnGhost:hover:not(:disabled) {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}

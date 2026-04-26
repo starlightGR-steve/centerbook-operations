@@ -8,6 +8,7 @@ import {
   Trash2, Phone, Bath, RefreshCw, HelpCircle,
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import SmsCallDisplay from '@/components/ui/SmsCallDisplay';
 import AttendanceEditModal from '@/components/AttendanceEditModal';
 import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
 import SubjectBadges from '@/components/SubjectBadges';
@@ -999,13 +1000,39 @@ export default function AttendancePage() {
       return <p className={`${styles.permLine} ${styles.permWarn}`}>Checkout Not Set</p>;
     };
 
+    /**
+     * 86ah3duvq Phase 2 (PDF section 11): Attendance card inline SMS status.
+     * Reads cb_attendance.sms_send_status to render one of:
+     *   sent                → existing green-check "Sent 3:45 PM" notice
+     *   blocked_no_consent  → amber call prompt (SmsCallDisplay)
+     *   blocked_opted_out   → amber call prompt (SmsCallDisplay)
+     *   pending or absent   → null
+     * Blocked variants auto-clear when the student moves to Checked Out:
+     * those rows aren't in this column's render list at all so we don't
+     * need to gate explicitly.
+     */
     const renderSentBadge = (att: Attendance) => {
-      if (!att.sms_10min_sent || !att.sms_10min_sent_at) return null;
-      return (
-        <span className={styles.sentInline}>
-          <Check size={11} /> Sent {formatTime(att.sms_10min_sent_at)}
-        </span>
-      );
+      const send = att.sms_send_status;
+      if (send === 'blocked_no_consent' || send === 'blocked_opted_out') {
+        return (
+          <SmsCallDisplay
+            name={att.sms_recipient_name ?? 'parent'}
+            phone={att.sms_recipient_phone}
+            prefixLabel="SMS BLOCKED"
+            className={styles.cardCallDisplay}
+          />
+        );
+      }
+      // The legacy sms_10min_sent flag still drives the green check until
+      // the backend's sms_send_status='sent' state ships everywhere.
+      if (att.sms_10min_sent && att.sms_10min_sent_at) {
+        return (
+          <span className={styles.sentInline}>
+            <Check size={11} /> Sent {formatTime(att.sms_10min_sent_at)}
+          </span>
+        );
+      }
+      return null;
     };
 
     const renderMoveMenu = (

@@ -770,3 +770,36 @@
     padding: var(--space-4);
   }
 }
+
+/* 86ah3duvq Phase 2 (PDF section 12): info_* task variant.
+   Teal left border + tinted background so staff can see at a glance
+   it's informational, not actionable. No checkbox renders for these
+   (handled in the JSX). */
+.taskItemInfo {
+  border-left: 3px solid var(--secondary);
+  background: var(--secondary-ul);
+}
+
+.taskItemInfo .taskTypeBadge {
+  background: var(--secondary-ul);
+  color: var(--secondary-dark);
+  border: 1px solid var(--secondary);
+}
+
+.taskContactLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: var(--space-1);
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--secondary);
+  text-decoration: none;
+}
+.taskContactLink:hover { text-decoration: underline; }
+.taskContactLink:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}

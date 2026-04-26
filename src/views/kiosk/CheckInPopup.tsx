@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
+import { mutate as globalMutate } from 'swr';
 import {
-  X, Heart, Check, Send, AlertTriangle, ExternalLink, ChevronDown,
+  X, Heart, Check, Send, AlertTriangle, ExternalLink, ChevronDown, Plus, X as XIcon, Pause,
 } from 'lucide-react';
 import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
 import type { SmsConsentStatus } from '@/lib/types';
@@ -130,12 +131,20 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
 
   // 86ah3duvq Phase 1 (PDF section 6): per-parent SMS consent badges in the
   // dropdown require a custom popover — native <option> can't render JSX.
-  // Phase 2 will add the "+" capture button per row to this same component;
-  // the dropdown shape here is the foundation for that work.
   const [pickupOpen, setPickupOpen] = useState(false);
   const pickupRef = useRef<HTMLDivElement>(null);
+  // 86ah3duvq Phase 2: id of the parent whose No-reply row has the inline
+  // consent block expanded. Null when no row is expanded. Reset on dropdown
+  // close so the next open starts collapsed.
+  const [captureExpandedFor, setCaptureExpandedFor] = useState<number | null>(null);
+  // Saving lock per row so a tap on Yes/No/Skip can't double-fire while
+  // the PATCH is in flight.
+  const [capturePending, setCapturePending] = useState(false);
   useEffect(() => {
-    if (!pickupOpen) return;
+    if (!pickupOpen) {
+      setCaptureExpandedFor(null);
+      return;
+    }
     const onDown = (e: MouseEvent) => {
       if (pickupRef.current && !pickupRef.current.contains(e.target as Node)) {
         setPickupOpen(false);
@@ -144,6 +153,39 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [pickupOpen]);
+
+  // 86ah3duvq Phase 2: Yes/No/Skip handlers for the inline capture block.
+  // Yes / No PATCH cb_contacts.sms_consent_status with source 'check_in_popup';
+  // skip just collapses the block. After PATCH, revalidate the per-student
+  // contacts SWR key so the dropdown's badge updates instantly.
+  const handleCapture = async (contactId: number, status: SmsConsentStatus | 'skip') => {
+    if (status === 'skip') {
+      setCaptureExpandedFor(null);
+      return;
+    }
+    if (capturePending) return;
+    setCapturePending(true);
+    try {
+      await api.contacts.updateSmsConsent(contactId, {
+        status,
+        source: 'check_in_popup',
+        notes: 'Captured via check-in popup',
+        recorded_by_staff_id: staffId || null,
+      });
+      // Refresh: the popup's contacts list comes from this SWR key, plus
+      // shared keys downstream surfaces read.
+      await Promise.all([
+        globalMutate(`checkin-contacts-${student.id}`),
+        globalMutate(`contact-${contactId}`),
+        globalMutate('contacts'),
+      ]);
+      setCaptureExpandedFor(null);
+    } catch (err) {
+      console.error('CheckInPopup: capture PATCH failed', err);
+    } finally {
+      setCapturePending(false);
+    }
+  };
 
   const toggleChecklist = (item: string) => {
     setSelectedChecklist((prev) =>
@@ -275,26 +317,90 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
                     )}
                     {contacts?.map((c) => {
                       const status = (c as { sms_consent_status?: SmsConsentStatus }).sms_consent_status ?? 'no_reply';
+                      const isExpanded = captureExpandedFor === c.id;
+                      const showPlus = status === 'no_reply';
                       return (
                         <li
                           key={c.id}
                           role="option"
                           aria-selected={c.id === pickupContactId}
-                          className={`${styles.pickupOption} ${c.id === pickupContactId ? styles.pickupOptionSelected : ''}`}
-                          onClick={() => {
-                            setPickupContactId(c.id);
-                            setPickupOpen(false);
-                          }}
+                          className={`${styles.pickupOption} ${c.id === pickupContactId ? styles.pickupOptionSelected : ''} ${isExpanded ? styles.pickupOptionExpanded : ''}`}
                         >
-                          <span className={styles.pickupOptionText}>
-                            <span className={styles.pickupOptionName}>{c.first_name} {c.last_name}</span>
-                            <span className={styles.pickupOptionSub}>
-                              {c.relationship_to_students || 'Contact'}
-                              {c.is_primary_contact ? ' · Primary' : ''}
-                              {c.phone ? ` · ${c.phone}` : ''}
+                          <div
+                            className={styles.pickupOptionRow}
+                            onClick={() => {
+                              if (isExpanded) return;
+                              setPickupContactId(c.id);
+                              setPickupOpen(false);
+                            }}
+                          >
+                            <span className={styles.pickupOptionText}>
+                              <span className={styles.pickupOptionName}>{c.first_name} {c.last_name}</span>
+                              <span className={styles.pickupOptionSub}>
+                                {c.relationship_to_students || 'Contact'}
+                                {c.is_primary_contact ? ' · Primary' : ''}
+                                {c.phone ? ` · ${c.phone}` : ''}
+                              </span>
                             </span>
-                          </span>
-                          <SMSConsentBadge status={status} size="medium" />
+                            <SMSConsentBadge status={status} size="medium" />
+                            {/* PDF section 6: '+' button only on no_reply rows.
+                                SMS on rows show only the badge; opted_out rows show
+                                only the badge — no re-ask per the locked design. */}
+                            {showPlus && (
+                              <button
+                                type="button"
+                                className={`${styles.captureToggle} ${isExpanded ? styles.captureToggleOpen : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCaptureExpandedFor(isExpanded ? null : c.id);
+                                }}
+                                aria-label={isExpanded ? 'Cancel consent capture' : `Capture SMS consent for ${c.first_name}`}
+                                aria-expanded={isExpanded}
+                              >
+                                {isExpanded ? <XIcon size={16} /> : <Plus size={16} />}
+                              </button>
+                            )}
+                          </div>
+
+                          {isExpanded && (
+                            <div className={styles.captureBlock} onClick={(e) => e.stopPropagation()}>
+                              <p className={styles.captureHeading}>
+                                Ask {c.first_name} about SMS consent
+                              </p>
+                              <p className={styles.captureScript}>
+                                &ldquo;Would you like to receive text notifications about {student.first_name}?&rdquo;
+                              </p>
+                              <div className={styles.captureActions}>
+                                <button
+                                  type="button"
+                                  className={`${styles.captureBtn} ${styles.captureBtnYes}`}
+                                  onClick={() => handleCapture(c.id, 'sms_on')}
+                                  disabled={capturePending}
+                                >
+                                  <Check size={14} aria-hidden="true" />
+                                  Yes, opt in
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`${styles.captureBtn} ${styles.captureBtnNo}`}
+                                  onClick={() => handleCapture(c.id, 'opted_out')}
+                                  disabled={capturePending}
+                                >
+                                  <XIcon size={14} aria-hidden="true" />
+                                  No, opt out
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`${styles.captureBtn} ${styles.captureBtnSkip}`}
+                                  onClick={() => handleCapture(c.id, 'skip')}
+                                  disabled={capturePending}
+                                >
+                                  <Pause size={14} aria-hidden="true" />
+                                  Skip for now
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </li>
                       );
                     })}
@@ -303,6 +409,19 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
               </div>
               {selectedContact?.phone && (
                 <span className={styles.phoneText}>{selectedContact.phone}</span>
+              )}
+              {/* PDF section 6: heads-up banner when an Opted out parent is the
+                  selected pickup. Not a blocker — staff continues check-in. */}
+              {selectedContact && (selectedContact as { sms_consent_status?: SmsConsentStatus }).sms_consent_status === 'opted_out' && (
+                <div className={styles.optedOutBanner} role="note">
+                  <AlertTriangle size={14} aria-hidden="true" />
+                  <span>
+                    <strong>{selectedContact.first_name} has opted out of SMS.</strong>{' '}
+                    Automatic 5-minute pickup text will not send. You will see a
+                    {selectedContact.phone ? ` "Call ${selectedContact.phone}"` : ' "Call"'} prompt on
+                    {' '}{student.first_name}&apos;s attendance card when it is time.
+                  </span>
+                </div>
               )}
             </div>
 

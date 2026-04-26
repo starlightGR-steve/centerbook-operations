@@ -2147,3 +2147,11 @@ a.cardName:hover { text-decoration-color: var(--primary); }
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+
+/* 86ah3duvq Phase 2 (PDF section 11): SmsCallDisplay variant inside the
+   Attendance card. Tighter padding than the modal version so it fits the
+   compact card meta row without dominating the layout. */
+.cardCallDisplay {
+  padding: 0.4375rem 0.625rem;
+  font-size: var(--text-xs);
+}

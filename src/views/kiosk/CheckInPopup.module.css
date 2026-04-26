@@ -642,20 +642,27 @@
   z-index: 10;
   max-height: 18rem;
   overflow-y: auto;
+  /* Defensive: any inline content that misbehaves stays inside the popover
+     bounds rather than producing a horizontal scroll. */
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
+/* The option is a flex column so when expanded the inline consent block
+   (.captureBlock) stacks BELOW the header row (.pickupOptionRow). Earlier
+   it was a flex row, which meant the captureBlock landed as a narrow
+   sibling next to the header — text wrapped at 1 char per line, buttons
+   never had room to lay out horizontally. Padding moved into the inner
+   row so unexpanded options keep their hit area without nesting padding. */
 .pickupOption {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  flex-direction: column;
+  align-items: stretch;
   border-radius: var(--radius-sm);
   cursor: pointer;
   min-height: var(--touch-min);
   transition: background-color 150ms ease;
 }
-.pickupOption:hover { background: var(--secondary-ul); }
 .pickupOption:focus-visible {
   outline: 2px solid var(--secondary);
   outline-offset: -2px;
@@ -692,4 +699,178 @@
   font-size: var(--text-sm);
   color: var(--neutral);
   font-style: italic;
+}
+
+/* PDF section 6 (Phase 2): inline capture row for No-reply parents.
+   The option splits into a header row + an expandable consent block. */
+
+.pickupOptionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  min-height: var(--touch-min);
+  transition: background-color 150ms ease;
+}
+.pickupOption:not(.pickupOptionExpanded) .pickupOptionRow:hover {
+  background: var(--secondary-ul);
+}
+
+.pickupOptionExpanded {
+  border: 1.5px solid var(--secondary);
+  background: var(--secondary-ul);
+}
+
+.pickupOptionExpanded .pickupOptionRow:hover {
+  background: transparent;
+  cursor: default;
+}
+
+.captureToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--white);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 150ms ease;
+}
+.captureToggle:hover { background: var(--secondary-dark); }
+.captureToggle:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+.captureToggleOpen {
+  background: var(--neutral);
+}
+
+.captureBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-3);
+  margin-top: 0;
+  cursor: default;
+  /* Stay inside the parent option's content width regardless of the
+     viewport — the popover is narrow, the dropdown can be a third of the
+     popup width on iPad portrait. min-width:0 lets flex children shrink
+     below their intrinsic content width. */
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.captureHeading {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--secondary-dark);
+  /* Wrap rather than overflow when a long parent first name pushes the
+     line wider than the popover. */
+  overflow-wrap: anywhere;
+}
+
+.captureScript {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  color: var(--text);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+/* Three buttons in a row, sized to share the available width evenly. flex
+   with min-width:0 + flex-basis:0 lets them shrink below their intrinsic
+   content width (the labels are short enough that "Yes, opt in" still
+   fits at ~80px). flex-wrap kicks in only when the popover is genuinely
+   tighter than 3 × min-button-width, which is the iPad-portrait edge case. */
+.captureActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1_5);
+  width: 100%;
+}
+
+.captureBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 0.4375rem 0.375rem;
+  /* flex-basis: 0 means each button starts from zero and grows equally;
+     flex-shrink: 1 + min-width: 0 lets the label ellipsis-fit if absurdly
+     narrow. min-content floor keeps icon + first word visible. */
+  flex: 1 1 0;
+  min-width: 4.5rem;
+  min-height: var(--touch-min);
+  border-radius: var(--radius-btn);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text);
+  font-family: var(--font-primary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.captureBtn:hover:not(:disabled) {
+  border-color: var(--secondary);
+}
+
+.captureBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.captureBtnYes {
+  border-color: var(--green);
+  color: #166534;
+}
+.captureBtnYes:hover:not(:disabled) {
+  background: var(--color-success-soft);
+}
+
+.captureBtnNo {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+.captureBtnNo:hover:not(:disabled) {
+  background: rgba(224, 113, 44, 0.08);
+}
+
+.captureBtnSkip {
+  border-color: var(--border);
+  color: var(--neutral);
+}
+
+/* PDF section 6: warning banner under the dropdown when an Opted out parent
+   is the selected pickup. Heads-up only — not a blocker. */
+.optedOutBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-warn-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-warn-bg);
+  color: var(--color-warn-text);
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.optedOutBanner svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
 }
