@@ -111,8 +111,11 @@ export interface Contact {
   /** ISO datetime of the most recent change. */
   sms_consent_updated_at?: string | null;
   /** Joined display name of the staff member who recorded the change.
-   *  NULL when System recorded (e.g. inbound STOP reply, enrollment form). */
-  sms_consent_recorded_by?: string | null;
+   *  NULL when System recorded (inbound STOP reply, enrollment form, etc.). */
+  recorded_by_staff_name?: string | null;
+  /** Raw staff id — kept for completeness; display surfaces should always
+   *  read recorded_by_staff_name and fall back to "System" when null. */
+  recorded_by_staff_id?: number | null;
   linked_students_count?: number;
   created_at: string;
   updated_at: string;
@@ -130,7 +133,7 @@ export interface SmsConsentHistoryEntry {
   source: string;
   notes: string | null;
   /** Joined staff display name; null when recorded by System. */
-  recorded_by: string | null;
+  recorded_by_staff_name: string | null;
   recorded_by_staff_id: number | null;
   created_at: string;
 }

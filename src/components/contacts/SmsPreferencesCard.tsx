@@ -99,7 +99,7 @@ export default function SmsPreferencesCard({ contact, onAfterSave }: SmsPreferen
         </div>
         <div className={styles.metaItem}>
           <span className={styles.metaLabel}>RECORDED BY</span>
-          <span className={styles.metaValue}>{contact.sms_consent_recorded_by || 'System'}</span>
+          <span className={styles.metaValue}>{contact.recorded_by_staff_name || 'System'}</span>
         </div>
       </div>
 
@@ -139,7 +139,7 @@ export default function SmsPreferencesCard({ contact, onAfterSave }: SmsPreferen
                       {entry.notes || formatSmsConsentSource(entry.source)}
                     </div>
                   </div>
-                  <div className={styles.historyActor}>{entry.recorded_by || 'System'}</div>
+                  <div className={styles.historyActor}>{entry.recorded_by_staff_name || 'System'}</div>
                 </li>
               ))}
             </ol>
