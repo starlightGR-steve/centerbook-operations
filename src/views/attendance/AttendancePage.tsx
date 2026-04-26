@@ -695,18 +695,24 @@ export default function AttendancePage() {
     }
   };
 
-  /* ── Move to Expected (delete attendance record) ── */
-  const handleMoveToExpected = async (studentId: number, attendanceId: number) => {
+  /* ── Move to No-Show (delete attendance record) ──
+   *  No-Show is schedule-derived (scheduledToday + isNoShow + no attendance row +
+   *  not excused), so the only mechanic is to clear the attendance row and let
+   *  the column logic re-include the student. If the student isn't yet 15 min
+   *  past their scheduled time, they land in Expected instead — the toast
+   *  reflects whichever column will actually surface them. */
+  const handleMoveToNoShow = async (studentId: number, attendanceId: number) => {
     closeMoveMenu();
     const student = allStudents?.find((s) => s.id === studentId);
     const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
+    const targetLabel = student && isNoShow(student) ? 'No-Show' : 'Expected';
     try {
       await deleteAttendance(attendanceId);
       // Backend auto-clears row assignments; remove from local cache too
       try { await removeStudentFromRow(studentId); } catch { /* noop */ }
       setUndoToast({
         id: ++toastIdRef.current,
-        message: `${name} moved to Expected`,
+        message: `${name} moved to ${targetLabel}`,
         onUndo: async () => {
           const duration = student
             ? getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail })
@@ -1076,7 +1082,7 @@ export default function AttendancePage() {
         items.push(
           { label: 'Move to Awaiting Pickup', onClick: () => { if (attendanceId !== null) handleSetStatus(student.id, attendanceId, 'row-complete'); } },
           { label: 'Move to Checked Out',     onClick: () => { closeMoveMenu(); handleCheckOut(student.id); } },
-          { label: 'Move to No-Show',         onClick: () => { if (attendanceId !== null) handleMoveToExpected(student.id, attendanceId); setExcuseModalStudent(student); } },
+          { label: 'Move to No-Show',         onClick: () => { if (attendanceId !== null) handleMoveToNoShow(student.id, attendanceId); } },
         );
       } else if (sourceKey === 'awaiting') {
         items.push(
