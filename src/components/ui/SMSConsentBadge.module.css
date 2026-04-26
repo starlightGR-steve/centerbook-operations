@@ -1,0 +1,65 @@
+/* SMS consent badge — three states, two sizes.
+   Per SMS Consent Design System PDF sections 1 + 2. Tokens reused from
+   tokens.css; no new color values introduced. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-primary);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+  /* The badge sits inline next to text and other badges; it doesn't act as a
+     touch target itself (taps go through to the host card / row). Touch
+     compliance is the host's concern. */
+}
+
+.medium {
+  font-size: 0.6875rem;
+  padding: 0.1875rem 0.5rem;
+}
+
+.large {
+  font-size: 0.8125rem;
+  padding: 0.3125rem 0.625rem;
+  border-radius: 0.375rem;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--neutral);
+  flex-shrink: 0;
+}
+
+.label {
+  line-height: 1;
+}
+
+/* SMS on — success-green tone, check icon */
+.state_sms_on {
+  background: var(--color-success-soft);
+  color: #166534;
+}
+
+/* Opted out — warning-amber tone, no icon */
+.state_opted_out {
+  background: var(--color-warn-bg);
+  color: var(--color-warn-text);
+}
+
+/* No reply — neutral-soft tone with a small dot */
+.state_no_reply {
+  background: rgba(87, 114, 124, 0.10);
+  color: var(--neutral);
+}
+.state_no_reply .dot {
+  background: var(--neutral);
+}

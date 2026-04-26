@@ -49,6 +49,12 @@ export interface Student {
   starting_grade_level?: string | null;
   primary_contact_id: number | null;
   billing_contact_id: number | null;
+  /** Denormalized SMS consent status of the primary communication parent.
+   *  Returned by the single-student endpoint (mu-plugin v2.56.0+). The bulk
+   *  /operations/students/all endpoint may not include this field — callers
+   *  that need it across the roster should fall back to joining against the
+   *  contacts list (see StudentsRosterPage). */
+  primary_contact_sms_consent_status?: SmsConsentStatus;
   created_at: string;
   updated_at: string;
   // UI-only fields (populated by mock data, not from API)
@@ -76,6 +82,11 @@ export type SubjectType = 'Math' | 'Reading';
 
 // ── Contacts ───────────────────────────────
 
+/** Three-state SMS consent. The legacy boolean sms_opt_in is kept on Contact
+ *  for backward compatibility but should not be read for display — every
+ *  surface drives off sms_consent_status now (mu-plugin v2.56.0 onward). */
+export type SmsConsentStatus = 'sms_on' | 'opted_out' | 'no_reply';
+
 export interface Contact {
   id: number;
   system_id: string;
@@ -90,10 +101,48 @@ export interface Contact {
   wp_user_id: number | null;
   address_full?: string | null;
   email_opt_in?: 0 | 1;
+  /** Legacy — do not read for display. Kept for compatibility until deprecated. */
   sms_opt_in?: 0 | 1;
+  /** SMS consent state. Source of truth for every read surface. */
+  sms_consent_status?: SmsConsentStatus;
+  /** Free-text source of the most recent change ("Check-in popup",
+   *  "Manual entry", "Inbound STOP reply", etc.). */
+  sms_consent_source?: string | null;
+  /** ISO datetime of the most recent change. */
+  sms_consent_updated_at?: string | null;
+  /** Joined display name of the staff member who recorded the change.
+   *  NULL when System recorded (inbound STOP reply, enrollment form, etc.). */
+  recorded_by_staff_name?: string | null;
+  /** Raw staff id — kept for completeness; display surfaces should always
+   *  read recorded_by_staff_name and fall back to "System" when null. */
+  recorded_by_staff_id?: number | null;
   linked_students_count?: number;
   created_at: string;
   updated_at: string;
+}
+
+/** A single immutable entry from cb_sms_consent_history. Newest-first per
+ *  backend ordering. */
+export interface SmsConsentHistoryEntry {
+  id: number;
+  contact_id: number;
+  /** Verb form of the new status: 'opted_in' / 'opted_out' / 'cleared'. */
+  action: 'opted_in' | 'opted_out' | 'cleared';
+  /** Resulting status after the change. */
+  status: SmsConsentStatus;
+  source: string;
+  notes: string | null;
+  /** Joined staff display name; null when recorded by System. */
+  recorded_by_staff_name: string | null;
+  recorded_by_staff_id: number | null;
+  created_at: string;
+}
+
+export interface UpdateSmsConsentRequest {
+  status: SmsConsentStatus;
+  source: string;
+  notes?: string | null;
+  recorded_by_staff_id?: number | null;
 }
 
 /** Student linked to a contact via GET /contacts/{id}/students */
@@ -111,6 +160,9 @@ export interface LinkedStudent {
   relationship_role: string | null;
   is_primary_contact: boolean;
   is_billing_contact: boolean;
+  /** Denormalized from the contact when relevant. Optional in the type so
+   *  legacy responses don't break. */
+  primary_contact_sms_consent_status?: SmsConsentStatus;
 }
 
 /** Contact linked to a student via GET /students/{id}/contacts */
@@ -125,6 +177,9 @@ export interface StudentContact {
   relationship_role: string | null;
   is_primary_contact: boolean;
   is_billing_contact: boolean;
+  /** Per-contact SMS consent state, joined into the student-contacts response
+   *  by the backend so a single fetch covers a student's parent badges. */
+  sms_consent_status?: SmsConsentStatus;
 }
 
 // ── Families — see Pipeline / Onboarding section for the Family interface ──

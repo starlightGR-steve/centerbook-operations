@@ -190,3 +190,53 @@
     flex-basis: 100%;
   }
 }
+
+/* PDF section 10: SMS status filter row. Mirrors StudentsRosterPage's
+   filter shape so the two surfaces feel the same. */
+.smsFilterWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1_5);
+  flex-shrink: 0;
+}
+
+.smsFilterLabel {
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--neutral);
+}
+
+.filter {
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  padding: 0.4375rem var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--text);
+  min-height: var(--touch-min);
+  cursor: pointer;
+}
+.filter:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 2px rgba(0, 154, 171, 0.12); }
+
+.filterActive {
+  border-color: var(--secondary);
+  background: var(--secondary-ul);
+  color: var(--secondary);
+}
+
+.smsFilterCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.25rem;
+  padding: 0 0.4375rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}

@@ -6,16 +6,25 @@ import useSWR from 'swr';
 import { ChevronUp, ChevronDown, Check, Minus, Plus } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import SearchInput from '@/components/ui/SearchInput';
+import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
 import { api } from '@/lib/api';
-import type { Contact } from '@/lib/types';
+import type { Contact, SmsConsentStatus } from '@/lib/types';
 import styles from './ContactsPage.module.css';
 
-type SortKey = 'name' | 'email' | 'phone' | 'relationship' | 'students' | 'portal';
+type SortKey = 'name' | 'email' | 'phone' | 'relationship' | 'students' | 'portal' | 'sms_status';
 type SortDir = 'asc' | 'desc';
+type SmsFilter = 'All' | SmsConsentStatus;
+
+const SMS_SORT_WEIGHT: Record<SmsConsentStatus, number> = {
+  opted_out: 0,
+  no_reply: 1,
+  sms_on: 2,
+};
 
 export default function ContactsPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [smsFilter, setSmsFilter] = useState<SmsFilter>('All');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
@@ -42,6 +51,10 @@ export default function ContactsPage() {
       );
     }
 
+    if (smsFilter !== 'All') {
+      list = list.filter((c) => (c.sms_consent_status ?? 'no_reply') === smsFilter);
+    }
+
     list = [...list].sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
       switch (sortKey) {
@@ -57,13 +70,23 @@ export default function ContactsPage() {
           return dir * ((a.linked_students_count ?? 0) - (b.linked_students_count ?? 0));
         case 'portal':
           return dir * (Number(a.portal_access_enabled) - Number(b.portal_access_enabled));
+        case 'sms_status': {
+          const wa = SMS_SORT_WEIGHT[(a.sms_consent_status ?? 'no_reply') as SmsConsentStatus];
+          const wb = SMS_SORT_WEIGHT[(b.sms_consent_status ?? 'no_reply') as SmsConsentStatus];
+          return dir * (wa - wb);
+        }
         default:
           return 0;
       }
     });
 
     return list;
-  }, [contacts, search, sortKey, sortDir]);
+  }, [contacts, search, smsFilter, sortKey, sortDir]);
+
+  const smsFilterCount = useMemo(() => {
+    if (smsFilter === 'All') return null;
+    return (contacts ?? []).filter((c) => (c.sms_consent_status ?? 'no_reply') === smsFilter).length;
+  }, [contacts, smsFilter]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -116,6 +139,24 @@ export default function ContactsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className={styles.search}
           />
+          {/* SMS status filter (PDF section 10). Same shape as the
+              students roster filter — count pill shows current matches. */}
+          <span className={styles.smsFilterWrap}>
+            <span className={styles.smsFilterLabel}>SMS status:</span>
+            <select
+              className={`${styles.filter} ${smsFilter !== 'All' ? styles.filterActive : ''}`}
+              value={smsFilter}
+              onChange={(e) => setSmsFilter(e.target.value as SmsFilter)}
+            >
+              <option value="All">All</option>
+              <option value="sms_on">SMS on</option>
+              <option value="opted_out">Opted out</option>
+              <option value="no_reply">No reply</option>
+            </select>
+            {smsFilterCount !== null && (
+              <span className={styles.smsFilterCount}>{smsFilterCount}</span>
+            )}
+          </span>
         </div>
       </div>
 
@@ -139,6 +180,7 @@ export default function ContactsPage() {
                   <ThSort col="relationship" label="Relationship" />
                   <ThSort col="students" label="Students" />
                   <ThSort col="portal" label="Portal" />
+                  <ThSort col="sms_status" label="SMS status" />
                 </tr>
               </thead>
               <tbody>
@@ -195,6 +237,12 @@ export default function ContactsPage() {
                       ) : (
                         <Minus size={14} className={styles.portalNo} />
                       )}
+                    </td>
+                    <td className={styles.cell}>
+                      <SMSConsentBadge
+                        status={(c.sms_consent_status as SmsConsentStatus | undefined) ?? 'no_reply'}
+                        size="medium"
+                      />
                     </td>
                   </tr>
                 ))}

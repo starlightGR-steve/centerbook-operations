@@ -47,7 +47,9 @@ import { usePersistentItems } from '@/hooks/usePersistentItems';
 import { useChecklistConfig } from '@/hooks/useFlagConfig';
 import NextClassPlanning from '@/components/students/NextClassPlanning';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
-import type { CbTaskType, Contact, Absence } from '@/lib/types';
+import type { CbTaskType, Contact, Absence, SmsConsentStatus } from '@/lib/types';
+import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
+import AmberInlineNote from '@/components/ui/AmberInlineNote';
 import styles from './StudentProfilePage.module.css';
 
 const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -536,6 +538,21 @@ export default function StudentProfilePage({ studentId }: Props) {
               <PosBadge position={student.classroom_position} />
             )}
             <SubjectBadges subjects={student.subjects} />
+            {/* Large SMS consent badge for the primary communication parent
+                (PDF section 3). Reads from primary_contact_sms_consent_status
+                that GET /students/{id} now denormalizes. */}
+            {student.primary_contact_sms_consent_status && (
+              <SMSConsentBadge
+                status={student.primary_contact_sms_consent_status as SmsConsentStatus}
+                size="large"
+              />
+            )}
+            {/* Inline amber warning when the primary comm parent is not
+                reachable by SMS (PDF section 8). Hidden when sms_on. */}
+            {(student.primary_contact_sms_consent_status === 'opted_out' ||
+              student.primary_contact_sms_consent_status === 'no_reply') && (
+              <AmberInlineNote>Primary comm parent not reachable by SMS</AmberInlineNote>
+            )}
           </div>
         </div>
       </div>
@@ -1216,6 +1233,15 @@ export default function StudentProfilePage({ studentId }: Props) {
                       )}
                       {c.is_billing_contact && (
                         <Badge variant="math">Billing</Badge>
+                      )}
+                      {/* Medium SMS consent badge per contact (PDF section 3
+                          — Parents/Guardians section). StudentContact carries
+                          sms_consent_status joined by the backend. */}
+                      {c.sms_consent_status && (
+                        <SMSConsentBadge
+                          status={c.sms_consent_status as SmsConsentStatus}
+                          size="medium"
+                        />
                       )}
                     </div>
                   </div>

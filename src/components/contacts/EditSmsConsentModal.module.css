@@ -1,0 +1,174 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.radioGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.radioCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-primary);
+  min-height: var(--touch-min);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.radioCard:hover { border-color: var(--secondary); }
+.radioCard:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.radioCardSelected {
+  border-color: var(--secondary);
+}
+
+.radioCardSelected_sms_on {
+  border-color: var(--green);
+  background: var(--color-success-soft);
+}
+.radioCardSelected_opted_out {
+  border-color: var(--color-warn-border);
+  background: var(--color-warn-bg);
+}
+.radioCardSelected_no_reply {
+  border-color: var(--neutral);
+  background: rgba(87, 114, 124, 0.06);
+}
+
+.radioIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: var(--white);
+  margin-top: 0.125rem;
+}
+.radioIcon_sms_on    { background: var(--green); }
+.radioIcon_opted_out { background: var(--accent); }
+.radioIcon_no_reply  { background: var(--neutral); }
+
+.radioText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.radioTitle {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.radioHint {
+  font-size: var(--text-sm);
+  color: var(--neutral);
+  line-height: 1.3;
+}
+
+.select {
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--text);
+  min-height: var(--touch-min);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+.select:focus { border-color: var(--secondary); box-shadow: 0 0 0 2px rgba(0, 154, 171, 0.12); }
+
+.textarea {
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  min-height: 5rem;
+  transition: border-color 150ms ease;
+}
+.textarea:focus { border-color: var(--secondary); box-shadow: 0 0 0 2px rgba(0, 154, 171, 0.12); }
+
+.error {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  color: var(--red);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.btnGhost {
+  min-height: var(--touch-min);
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--text);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+.btnGhost:hover { border-color: var(--neutral); }
+.btnGhost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnPrimary {
+  min-height: var(--touch-min);
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+.btnPrimary:hover { opacity: 0.92; }
+.btnPrimary:disabled { opacity: 0.5; cursor: not-allowed; }

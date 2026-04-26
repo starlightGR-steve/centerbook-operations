@@ -2,15 +2,19 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import { ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import Badge from '@/components/ui/Badge';
 import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
+import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
+import AmberInlineNote from '@/components/ui/AmberInlineNote';
 import { useAllStudents } from '@/hooks/useStudents';
+import { api } from '@/lib/api';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
-import type { Student } from '@/lib/types';
+import type { Student, Contact, SmsConsentStatus } from '@/lib/types';
 import styles from './StudentsRosterPage.module.css';
 
 type SortKey =
@@ -22,7 +26,19 @@ type SortKey =
   | 'school'
   | 'enrollment_status'
   | 'current_level_math'
-  | 'current_level_reading';
+  | 'current_level_reading'
+  | 'sms_status';
+
+type SmsFilter = 'All' | SmsConsentStatus;
+
+// Sort weight per status — drives the SMS STATUS column. Sorts by "needs
+// attention first" so the outreach queue surfaces at the top: opted_out → 0,
+// no_reply → 1, sms_on → 2.
+const SMS_SORT_WEIGHT: Record<SmsConsentStatus, number> = {
+  opted_out: 0,
+  no_reply: 1,
+  sms_on: 2,
+};
 
 type SortDir = 'asc' | 'desc';
 
@@ -40,7 +56,12 @@ function getBirthMonth(s: Student): number | null {
   return null;
 }
 
-function sortStudents(students: Student[], key: SortKey, dir: SortDir): Student[] {
+function sortStudents(
+  students: Student[],
+  key: SortKey,
+  dir: SortDir,
+  smsByStudent?: Map<number, SmsConsentStatus>,
+): Student[] {
   return [...students].sort((a, b) => {
     let cmp = 0;
     switch (key) {
@@ -71,6 +92,12 @@ function sortStudents(students: Student[], key: SortKey, dir: SortDir): Student[
       case 'current_level_reading':
         cmp = (a.current_level_reading ?? '').localeCompare(b.current_level_reading ?? '');
         break;
+      case 'sms_status': {
+        const wa = SMS_SORT_WEIGHT[smsByStudent?.get(a.id) ?? 'no_reply'];
+        const wb = SMS_SORT_WEIGHT[smsByStudent?.get(b.id) ?? 'no_reply'];
+        cmp = wa - wb;
+        break;
+      }
     }
     return dir === 'asc' ? cmp : -cmp;
   });
@@ -94,8 +121,43 @@ export default function StudentsRosterPage() {
   const [posFilter, setPosFilter] = useState<string>('All');
   const [dayFilter, setDayFilter] = useState<string>('All');
   const [programFilter, setProgramFilter] = useState<string>('All');
+  const [smsFilter, setSmsFilter] = useState<SmsFilter>('All');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  // Bulk /operations/students/all does not denormalize SMS consent today.
+  // Fetch the contacts list once (single ~50-row payload, paginated under
+  // 200) and join client-side. Shares the SWR key with ContactsPage so the
+  // cache is single-source. Alt-parent hint compares primary vs billing.
+  const { data: contacts } = useSWR<Contact[]>(
+    'contacts',
+    () => api.contacts.list(),
+    { dedupingInterval: 30000, revalidateOnFocus: false },
+  );
+
+  const contactById = useMemo(() => {
+    const m = new Map<number, Contact>();
+    (contacts ?? []).forEach((c) => m.set(c.id, c));
+    return m;
+  }, [contacts]);
+
+  // Per-student primary consent — used for column display, filter, and sort.
+  const smsByStudent = useMemo(() => {
+    const m = new Map<number, SmsConsentStatus>();
+    (students ?? []).forEach((s) => {
+      // Prefer the denormalized field on the row when present (single-student
+      // GET ships it). Fall back to the contacts join for the bulk endpoint.
+      const fromRow = (s as Student & { primary_contact_sms_consent_status?: SmsConsentStatus })
+        .primary_contact_sms_consent_status;
+      if (fromRow) {
+        m.set(s.id, fromRow);
+        return;
+      }
+      const c = s.primary_contact_id ? contactById.get(s.primary_contact_id) : undefined;
+      m.set(s.id, (c?.sms_consent_status as SmsConsentStatus | undefined) ?? 'no_reply');
+    });
+    return m;
+  }, [students, contactById]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -149,8 +211,20 @@ export default function StudentsRosterPage() {
       result = result.filter((s) => s.program_type === programFilter);
     }
 
-    return sortStudents(result, sortKey, sortDir);
-  }, [students, search, statusFilter, subjectFilter, posFilter, dayFilter, programFilter, sortKey, sortDir]);
+    if (smsFilter !== 'All') {
+      result = result.filter((s) => (smsByStudent.get(s.id) ?? 'no_reply') === smsFilter);
+    }
+
+    return sortStudents(result, sortKey, sortDir, smsByStudent);
+  }, [students, search, statusFilter, subjectFilter, posFilter, dayFilter, programFilter, smsFilter, sortKey, sortDir, smsByStudent]);
+
+  // Count of students in the currently-selected SMS filter (for the
+  // dropdown's count pill per PDF section 9). When 'All' is selected, the
+  // pill shows nothing — the filter is inactive.
+  const smsFilterCount = useMemo(() => {
+    if (smsFilter === 'All') return null;
+    return (students ?? []).filter((s) => (smsByStudent.get(s.id) ?? 'no_reply') === smsFilter).length;
+  }, [students, smsByStudent, smsFilter]);
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return null;
@@ -170,13 +244,14 @@ export default function StudentsRosterPage() {
   const showing = filtered.length;
   const countLabel = showing === total ? `${total} students` : `Showing ${showing} of ${total} students`;
 
-  const activeFilterCount = [statusFilter, subjectFilter, posFilter, dayFilter, programFilter].filter((f) => f !== 'All').length;
+  const activeFilterCount = [statusFilter, subjectFilter, posFilter, dayFilter, programFilter, smsFilter].filter((f) => f !== 'All').length;
   const clearAllFilters = () => {
     setStatusFilter('All');
     setSubjectFilter('All');
     setPosFilter('All');
     setDayFilter('All');
     setProgramFilter('All');
+    setSmsFilter('All');
   };
 
   return (
@@ -253,6 +328,24 @@ export default function StudentsRosterPage() {
             <option value="Paper">Paper</option>
             <option value="Kumon Connect">Kumon Connect</option>
           </select>
+          {/* SMS status filter (PDF section 9). Custom wrapper so we can
+              render the count pill next to the active option. */}
+          <span className={styles.smsFilterWrap}>
+            <span className={styles.smsFilterLabel}>SMS status:</span>
+            <select
+              className={`${styles.filter} ${smsFilter !== 'All' ? styles.filterActive : ''}`}
+              value={smsFilter}
+              onChange={(e) => setSmsFilter(e.target.value as SmsFilter)}
+            >
+              <option value="All">All</option>
+              <option value="sms_on">SMS on</option>
+              <option value="opted_out">Opted out</option>
+              <option value="no_reply">No reply</option>
+            </select>
+            {smsFilterCount !== null && (
+              <span className={styles.smsFilterCount}>{smsFilterCount}</span>
+            )}
+          </span>
           {activeFilterCount > 0 && (
             <button className={styles.clearFilters} onClick={clearAllFilters}>
               {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} — Clear all
@@ -284,6 +377,7 @@ export default function StudentsRosterPage() {
                   <ThSort col="current_level_reading" label="Read Lvl" />
                   <th className={styles.th}>Schedule</th>
                   <ThSort col="enrollment_status" label="Status" />
+                  <ThSort col="sms_status" label="SMS status" />
                 </tr>
               </thead>
               <tbody>
@@ -348,6 +442,35 @@ export default function StudentsRosterPage() {
                         <Badge variant={statusVariant(s.enrollment_status)}>
                           {s.enrollment_status}
                         </Badge>
+                      </td>
+                      <td className={styles.cell}>
+                        {(() => {
+                          // PDF section 9: medium SMS badge for the primary
+                          // comm parent. Alt-parent hint (amber dot + text)
+                          // appears below when primary is opted_out/no_reply
+                          // AND billing is sms_on. The bulk students endpoint
+                          // exposes only primary + billing contact ids today,
+                          // so the hint is constrained to that pair.
+                          const primary = smsByStudent.get(s.id) ?? 'no_reply';
+                          const billingContact = s.billing_contact_id && s.billing_contact_id !== s.primary_contact_id
+                            ? contactById.get(s.billing_contact_id)
+                            : undefined;
+                          const billingStatus = billingContact?.sms_consent_status as SmsConsentStatus | undefined;
+                          const showAltHint =
+                            (primary === 'opted_out' || primary === 'no_reply') &&
+                            billingStatus === 'sms_on' &&
+                            !!billingContact;
+                          return (
+                            <div className={styles.smsCell}>
+                              <SMSConsentBadge status={primary} size="medium" />
+                              {showAltHint && billingContact && (
+                                <AmberInlineNote className={styles.smsAltHint}>
+                                  {billingContact.first_name} (billing) is SMS on
+                                </AmberInlineNote>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );

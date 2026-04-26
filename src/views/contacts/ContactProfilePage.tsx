@@ -9,6 +9,7 @@ import SubjectBadges from '@/components/SubjectBadges';
 import PosBadge from '@/components/PosBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import LinkPickerModal from '@/components/LinkPickerModal';
+import SmsPreferencesCard from '@/components/contacts/SmsPreferencesCard';
 import { api } from '@/lib/api';
 import { useAllStudents } from '@/hooks/useStudents';
 import type { Contact, LinkedStudent, Student } from '@/lib/types';
@@ -348,30 +349,17 @@ export default function ContactProfilePage({ contactId }: Props) {
               </div>
             )}
 
-            {/* SMS Opt-in */}
-            {isEditing ? (
-              <div className={`${styles.detailItem} ${isChanged('sms_opt_in') ? styles.fieldChanged : ''}`}>
-                <span className={styles.detailLabel}>SMS Opt-in</span>
-                <label className={styles.checkLabel}>
-                  <input
-                    type="checkbox"
-                    checked={getOptIn('sms_opt_in')}
-                    onChange={(e) => setField('sms_opt_in', e.target.checked ? 1 : 0)}
-                    className={styles.checkbox}
-                  />
-                  {getOptIn('sms_opt_in') ? 'Yes' : 'No'}
-                </label>
-              </div>
-            ) : (
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>SMS Opt-in</span>
-                <span className={Number(contact.sms_opt_in) === 1 ? styles.optIn : styles.optOut}>
-                  {Number(contact.sms_opt_in) === 1 ? 'Yes' : 'No'}
-                </span>
-              </div>
-            )}
+            {/* SMS opt-in moved to its own SmsPreferencesCard (PDF section 7).
+                The legacy sms_opt_in boolean stays on the Contact type for
+                backward compat but is no longer surfaced here. */}
           </div>
         </div>
+
+        {/* ── SMS preferences (source of truth for three-state consent) ── */}
+        <SmsPreferencesCard
+          contact={contact}
+          onAfterSave={() => { mutateContact(); }}
+        />
 
         {/* ── Linked Students ── */}
         <div className={styles.section}>
