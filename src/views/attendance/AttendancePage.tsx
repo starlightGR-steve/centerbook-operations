@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { mutate as globalMutate } from 'swr';
 import {
   Scan, Search, X, UserCheck, Clock, Pencil, Send, CheckCircle2,
   AlertTriangle, Plus, Check, LogOut, ChevronLeft, ChevronRight, ChevronDown,
@@ -694,8 +695,12 @@ export default function AttendancePage() {
     }
   };
 
-  /* ── Move to Expected (delete attendance record) ── */
-  const handleMoveToExpected = async (studentId: number, attendanceId: number) => {
+  /* ── Move to No-Show (delete attendance record) ──
+   *  No-Show is schedule-derived (scheduledToday + isNoShow + no attendance row +
+   *  not excused), so the mechanic is to clear the attendance row and let the
+   *  column logic re-include the student. Toast copy is hardcoded to the
+   *  destination Fran picked — don't infer from derived state. */
+  const handleMoveToNoShow = async (studentId: number, attendanceId: number) => {
     closeMoveMenu();
     const student = allStudents?.find((s) => s.id === studentId);
     const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
@@ -705,7 +710,7 @@ export default function AttendancePage() {
       try { await removeStudentFromRow(studentId); } catch { /* noop */ }
       setUndoToast({
         id: ++toastIdRef.current,
-        message: `${name} moved to Expected`,
+        message: `${name} moved to No-Show`,
         onUndo: async () => {
           const duration = student
             ? getSessionDuration(student.subjects, { scheduleDetail: student.schedule_detail })
@@ -718,7 +723,10 @@ export default function AttendancePage() {
     }
   };
 
-  /* ── Move Checked Out → Checked In or Awaiting Pickup (clear check_out + status) ── */
+  /* ── Move Checked Out → Checked In or Awaiting Pickup (clear check_out + status) ──
+   *  The backend re-asserts status='checked-in' whenever check_out flips from a
+   *  set value to null in the same PUT (verified via curl). To honor both
+   *  fields, we send check_out:null first, then PATCH status separately. */
   const handleMoveFromCheckedOut = async (
     studentId: number,
     attendanceId: number,
@@ -729,7 +737,10 @@ export default function AttendancePage() {
     const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
     const label = target === 'row-complete' ? 'Awaiting Pickup' : 'Checked In';
     try {
-      await updateAttendance(attendanceId, { check_out: null, status: target });
+      await updateAttendance(attendanceId, { check_out: null });
+      if (target === 'row-complete') {
+        await updateAttendance(attendanceId, { status: 'row-complete' });
+      }
       setUndoToast({
         id: ++toastIdRef.current,
         message: `${name} moved to ${label}`,
@@ -742,7 +753,10 @@ export default function AttendancePage() {
     }
   };
 
-  /* ── Status flip for active rows (Checked In ↔ Awaiting Pickup) ── */
+  /* ── Status flip for active rows (Checked In ↔ Awaiting Pickup) ──
+   *  Pre-flight optimistic mutate on both attendance caches keeps the UI
+   *  responsive during the network round-trip; updateAttendance does the
+   *  authoritative replace + revalidate after the PUT lands. */
   const handleSetStatus = async (
     studentId: number,
     attendanceId: number,
@@ -753,6 +767,12 @@ export default function AttendancePage() {
     const name = student ? `${student.first_name} ${student.last_name}` : 'Student';
     const previous = target === 'checked-in' ? 'row-complete' : 'checked-in';
     const label = target === 'row-complete' ? 'Awaiting Pickup' : 'Checked In';
+    const flip = (prev: Attendance[] | undefined): Attendance[] | undefined =>
+      prev?.map((a) => (a.id === attendanceId ? { ...a, status: target } : a));
+    await Promise.all([
+      globalMutate(`attendance-${centerToday}`, flip, false),
+      globalMutate('attendance-active', flip, false),
+    ]);
     try {
       await updateAttendance(attendanceId, { status: target });
       setUndoToast({
@@ -763,6 +783,11 @@ export default function AttendancePage() {
         },
       });
     } catch {
+      // Revert the optimistic mutate by revalidating from the server.
+      await Promise.all([
+        globalMutate(`attendance-${centerToday}`),
+        globalMutate('attendance-active'),
+      ]);
       setAnnouncement('Failed to move student. Please try again.');
     }
   };
@@ -1055,7 +1080,7 @@ export default function AttendancePage() {
         items.push(
           { label: 'Move to Awaiting Pickup', onClick: () => { if (attendanceId !== null) handleSetStatus(student.id, attendanceId, 'row-complete'); } },
           { label: 'Move to Checked Out',     onClick: () => { closeMoveMenu(); handleCheckOut(student.id); } },
-          { label: 'Move to No-Show',         onClick: () => { if (attendanceId !== null) handleMoveToExpected(student.id, attendanceId); setExcuseModalStudent(student); } },
+          { label: 'Move to No-Show',         onClick: () => { if (attendanceId !== null) handleMoveToNoShow(student.id, attendanceId); } },
         );
       } else if (sourceKey === 'awaiting') {
         items.push(
@@ -1204,7 +1229,7 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); setEditAttendance({ attendance: att, studentName }); }}
                       aria-label={`Edit attendance for ${studentName}`}
                     >
-                      <Pencil size={12} />
+                      <Pencil size={16} />
                     </button>
                   </span>
                   <div className={styles.cardCircleActions}>
@@ -1213,7 +1238,7 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); toggleMoveMenu(menuKey, e); }}
                       aria-label="Move student"
                     >
-                      <RefreshCw size={14} />
+                      <RefreshCw size={20} />
                     </button>
                     {renderMoveMenu('checkedIn', menuKey, s, att.id)}
                     <button
@@ -1221,7 +1246,7 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); setCheckOutConfirm({ student: s, attendance: att, openedAtMs: Date.now() }); }}
                       aria-label={`Check out ${studentName}`}
                     >
-                      <LogOut size={14} />
+                      <LogOut size={20} />
                     </button>
                   </div>
                 </div>
@@ -1268,7 +1293,7 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); setEditAttendance({ attendance: att, studentName }); }}
                       aria-label={`Edit attendance for ${studentName}`}
                     >
-                      <Pencil size={12} />
+                      <Pencil size={16} />
                     </button>
                   </span>
                   <div className={styles.cardCircleActions}>
@@ -1277,9 +1302,9 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); toggleTextMenu(textKey, e); }}
                       aria-label={`Text ${studentName}'s parent`}
                     >
-                      <Send size={12} />
+                      <Send size={14} />
                       <span>Text</span>
-                      <ChevronDown size={12} className={textMenuOpen === textKey ? styles.caretOpen : ''} />
+                      <ChevronDown size={14} className={textMenuOpen === textKey ? styles.caretOpen : ''} />
                     </button>
                     {renderTextMenu(textKey, s)}
                     <button
@@ -1287,7 +1312,7 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); toggleMoveMenu(menuKey, e); }}
                       aria-label="Move student"
                     >
-                      <RefreshCw size={14} />
+                      <RefreshCw size={20} />
                     </button>
                     {renderMoveMenu('awaiting', menuKey, s, att.id)}
                     <button
@@ -1295,7 +1320,7 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); setCheckOutConfirm({ student: s, attendance: att, openedAtMs: Date.now() }); }}
                       aria-label={`Check out ${studentName}`}
                     >
-                      <LogOut size={14} />
+                      <LogOut size={20} />
                     </button>
                   </div>
                 </div>
@@ -1328,7 +1353,7 @@ export default function AttendancePage() {
                         onClick={() => setEditAttendance({ attendance: att, studentName })}
                         aria-label={`Edit attendance for ${studentName}`}
                       >
-                        <Pencil size={12} />
+                        <Pencil size={16} />
                       </button>
                     </span>
                   </div>
@@ -1338,7 +1363,7 @@ export default function AttendancePage() {
                       onClick={(e) => toggleMoveMenu(menuKey, e)}
                       aria-label="Move student"
                     >
-                      <RefreshCw size={14} />
+                      <RefreshCw size={20} />
                     </button>
                     {renderMoveMenu('checkedOut', menuKey, s, att.id)}
                   </div>
@@ -1375,7 +1400,7 @@ export default function AttendancePage() {
                 <div className={styles.cardActionsRow}>
                   {isSent ? (
                     <span className={styles.sentBadge}>
-                      <CheckCircle2 size={12} /> Sent
+                      <CheckCircle2 size={14} /> Sent
                     </span>
                   ) : (
                     <button
@@ -1383,9 +1408,9 @@ export default function AttendancePage() {
                       onClick={(e) => { e.stopPropagation(); toggleTextMenu(textKey, e); }}
                       aria-label={`Text ${studentName}'s parent`}
                     >
-                      <Send size={12} />
+                      <Send size={14} />
                       <span>Text</span>
-                      <ChevronDown size={12} className={textMenuOpen === textKey ? styles.caretOpen : ''} />
+                      <ChevronDown size={14} className={textMenuOpen === textKey ? styles.caretOpen : ''} />
                     </button>
                   )}
                   {renderTextMenu(textKey, s)}
@@ -1400,7 +1425,7 @@ export default function AttendancePage() {
                     onClick={(e) => toggleMoveMenu(menuKey, e)}
                     aria-label="Move student"
                   >
-                    <RefreshCw size={14} />
+                    <RefreshCw size={20} />
                   </button>
                   {renderMoveMenu('noShow', menuKey, s, allAttendanceMap.get(s.id)?.id ?? null)}
                 </div>
