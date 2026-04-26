@@ -6,6 +6,11 @@ import { Check, X, Circle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { api } from '@/lib/api';
 import type { Contact, SmsConsentStatus } from '@/lib/types';
+import {
+  SMS_CONSENT_SOURCE_LABEL,
+  SMS_CONSENT_SOURCE_WIRE,
+  type SmsConsentSourceUi,
+} from '@/lib/smsConsentSources';
 import styles from './EditSmsConsentModal.module.css';
 
 export interface EditSmsConsentModalProps {
@@ -15,14 +20,6 @@ export interface EditSmsConsentModalProps {
    *  decides whether to close the modal or keep it open. */
   onSaved: () => void | Promise<void>;
 }
-
-type CaptureSource = 'phone_call' | 'manual_entry' | 'other';
-
-const SOURCE_LABEL: Record<CaptureSource, string> = {
-  phone_call: 'Phone call with parent',
-  manual_entry: 'Manual entry',
-  other: 'Other',
-};
 
 const STATUS_OPTIONS: Array<{
   value: SmsConsentStatus;
@@ -46,7 +43,7 @@ export default function EditSmsConsentModal({ contact, onClose, onSaved }: EditS
 
   const initialStatus: SmsConsentStatus = (contact.sms_consent_status as SmsConsentStatus) ?? 'no_reply';
   const [status, setStatus] = useState<SmsConsentStatus>(initialStatus);
-  const [source, setSource] = useState<CaptureSource>('phone_call');
+  const [sourceUi, setSourceUi] = useState<SmsConsentSourceUi>('phone_call');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +54,10 @@ export default function EditSmsConsentModal({ contact, onClose, onSaved }: EditS
     try {
       await api.contacts.updateSmsConsent(contact.id, {
         status,
-        source: SOURCE_LABEL[source],
+        // Send the wire-format enum (phone_call / manual_entry), NOT the
+        // human label — backend validates against a strict enum and 422s
+        // on the label string.
+        source: SMS_CONSENT_SOURCE_WIRE[sourceUi],
         notes: notes.trim() ? notes.trim() : null,
         recorded_by_staff_id: staffId,
       });
@@ -116,12 +116,12 @@ export default function EditSmsConsentModal({ contact, onClose, onSaved }: EditS
           <select
             id="capture-source"
             className={styles.select}
-            value={source}
-            onChange={(e) => setSource(e.target.value as CaptureSource)}
+            value={sourceUi}
+            onChange={(e) => setSourceUi(e.target.value as SmsConsentSourceUi)}
           >
-            <option value="phone_call">{SOURCE_LABEL.phone_call}</option>
-            <option value="manual_entry">{SOURCE_LABEL.manual_entry}</option>
-            <option value="other">{SOURCE_LABEL.other}</option>
+            <option value="phone_call">{SMS_CONSENT_SOURCE_LABEL.phone_call}</option>
+            <option value="manual_entry">{SMS_CONSENT_SOURCE_LABEL.manual_entry}</option>
+            <option value="other">{SMS_CONSENT_SOURCE_LABEL.other}</option>
           </select>
         </div>
 

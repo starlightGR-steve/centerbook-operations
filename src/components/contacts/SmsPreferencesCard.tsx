@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import type { Contact, SmsConsentHistoryEntry, SmsConsentStatus } from '@/lib/types';
+import { formatSmsConsentSource } from '@/lib/smsConsentSources';
 import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
 import EditSmsConsentModal from './EditSmsConsentModal';
 import styles from './SmsPreferencesCard.module.css';
@@ -94,7 +95,7 @@ export default function SmsPreferencesCard({ contact, onAfterSave }: SmsPreferen
       <div className={styles.metaGrid}>
         <div className={styles.metaItem}>
           <span className={styles.metaLabel}>SOURCE</span>
-          <span className={styles.metaValue}>{contact.sms_consent_source || '—'}</span>
+          <span className={styles.metaValue}>{formatSmsConsentSource(contact.sms_consent_source)}</span>
         </div>
         <div className={styles.metaItem}>
           <span className={styles.metaLabel}>RECORDED BY</span>
@@ -134,7 +135,9 @@ export default function SmsPreferencesCard({ contact, onAfterSave }: SmsPreferen
                   <div className={styles.historyTimestamp}>{formatHistoryTimestamp(entry.created_at)}</div>
                   <div className={styles.historyBody}>
                     <div className={styles.historyAction}>{ACTION_VERB[entry.action] ?? entry.action}</div>
-                    <div className={styles.historySource}>{entry.notes || entry.source}</div>
+                    <div className={styles.historySource}>
+                      {entry.notes || formatSmsConsentSource(entry.source)}
+                    </div>
                   </div>
                   <div className={styles.historyActor}>{entry.recorded_by || 'System'}</div>
                 </li>
