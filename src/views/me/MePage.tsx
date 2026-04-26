@@ -28,6 +28,8 @@ const TASK_TYPE_LABELS: Record<CbTaskType, string> = {
   form_followup: 'Form Follow-up',
   no_show_followup: 'No-show Follow-up',
   general: 'General',
+  info_sms_opted_out: 'Info',
+  info_sms_opted_in: 'Info',
 };
 
 function timeAgo(dateStr: string): string {
@@ -144,7 +146,19 @@ export default function MePage() {
 
   const inboxOpenCount = inboxTasks.filter((t) => t.status === 'open').length;
   const mineOpenCount = mineTasks.filter((t) => t.status === 'open').length;
-  const currentTabTasks = taskTab === 'inbox' ? inboxTasks : taskTab === 'mine' ? mineTasks : sentTasks;
+  // 86ah3duvq Phase 2 (PDF section 12): info_* tasks (e.g. STOP-reply
+  // notices) render at the bottom of every tab — they're informational
+  // and shouldn't bury actionable items above them. Stable sort preserves
+  // each upstream derivation's ordering within the two buckets.
+  const sortInfoLast = (arr: CbTask[]) => {
+    const action: CbTask[] = [];
+    const info: CbTask[] = [];
+    for (const t of arr) (t.type.startsWith('info_') ? info : action).push(t);
+    return [...action, ...info];
+  };
+  const currentTabTasks = sortInfoLast(
+    taskTab === 'inbox' ? inboxTasks : taskTab === 'mine' ? mineTasks : sentTasks,
+  );
 
   // Student search
   const filteredStudents = useMemo(() => {
@@ -483,9 +497,16 @@ export default function MePage() {
                   const studentInfo = task.student_id ? studentMap.get(task.student_id) : null;
                   const canDelete = isAdmin || task.created_by === staffIdNum;
 
+                  // 86ah3duvq Phase 2 (PDF section 12): info_* tasks get a
+                  // teal left border + no checkbox + a "View contact →" link
+                  // when contact_id is set. They're informational only.
+                  const isInfoTask = task.type.startsWith('info_');
                   return (
-                    <div key={task.id} className={`${styles.taskItem} ${done ? styles.taskItemDone : ''}`}>
-                      {taskTab !== 'sent' && (
+                    <div
+                      key={task.id}
+                      className={`${styles.taskItem} ${done ? styles.taskItemDone : ''} ${isInfoTask ? styles.taskItemInfo : ''}`}
+                    >
+                      {taskTab !== 'sent' && !isInfoTask && (
                         <button
                           className={done ? styles.taskCheckDone : styles.taskCheck}
                           onClick={() => handleCompleteTask(task)}
@@ -524,6 +545,15 @@ export default function MePage() {
 
                         {task.notes && (
                           <p className={styles.taskNotes}>{task.notes}</p>
+                        )}
+
+                        {isInfoTask && task.contact_id && (
+                          <a
+                            href={`/contacts/${task.contact_id}`}
+                            className={styles.taskContactLink}
+                          >
+                            View contact <ArrowRight size={12} aria-hidden="true" />
+                          </a>
                         )}
 
                         <div className={styles.taskMeta}>

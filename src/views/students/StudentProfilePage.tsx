@@ -100,6 +100,8 @@ const TASK_TYPE_LABELS: Record<CbTaskType, string> = {
   form_followup: 'Form Follow-up',
   no_show_followup: 'No-show',
   general: 'General',
+  info_sms_opted_out: 'Info',
+  info_sms_opted_in: 'Info',
 };
 
 const MATH_LEVELS = ['6A', '5A', '4A', '3A', '2A', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
