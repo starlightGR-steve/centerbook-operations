@@ -693,3 +693,153 @@
   color: var(--neutral);
   font-style: italic;
 }
+
+/* PDF section 6 (Phase 2): inline capture row for No-reply parents.
+   The option splits into a header row + an expandable consent block. */
+
+.pickupOptionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  min-height: var(--touch-min);
+  transition: background-color 150ms ease;
+}
+.pickupOption:not(.pickupOptionExpanded) .pickupOptionRow:hover {
+  background: var(--secondary-ul);
+}
+
+.pickupOptionExpanded {
+  border: 1.5px solid var(--secondary);
+  background: var(--secondary-ul);
+  padding-bottom: 0;
+}
+
+.pickupOptionExpanded .pickupOptionRow:hover {
+  background: transparent;
+  cursor: default;
+}
+
+.captureToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--white);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 150ms ease;
+}
+.captureToggle:hover { background: var(--secondary-dark); }
+.captureToggle:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+.captureToggleOpen {
+  background: var(--neutral);
+}
+
+.captureBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-3);
+  margin-top: 0;
+  cursor: default;
+}
+
+.captureHeading {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--secondary-dark);
+}
+
+.captureScript {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  color: var(--text);
+  font-style: italic;
+}
+
+.captureActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.captureBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1_5);
+  padding: 0.4375rem 0.75rem;
+  min-height: var(--touch-min);
+  border-radius: var(--radius-btn);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text);
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.captureBtn:hover:not(:disabled) {
+  border-color: var(--secondary);
+}
+
+.captureBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.captureBtnYes {
+  border-color: var(--green);
+  color: #166534;
+}
+.captureBtnYes:hover:not(:disabled) {
+  background: var(--color-success-soft);
+}
+
+.captureBtnNo {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+.captureBtnNo:hover:not(:disabled) {
+  background: rgba(224, 113, 44, 0.08);
+}
+
+.captureBtnSkip {
+  border-color: var(--border);
+  color: var(--neutral);
+}
+
+/* PDF section 6: warning banner under the dropdown when an Opted out parent
+   is the selected pickup. Heads-up only — not a blocker. */
+.optedOutBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-warn-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-warn-bg);
+  color: var(--color-warn-text);
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.optedOutBanner svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
