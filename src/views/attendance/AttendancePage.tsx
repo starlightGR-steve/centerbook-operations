@@ -658,6 +658,7 @@ export default function AttendancePage() {
       selectedChecklist: options.selectedChecklist,
       noteForTeacher: options.noteForTeacher,
       teacherNotes: options.teacherNotes,
+      takingTest: options.takingTest,
     };
     let result: Awaited<ReturnType<typeof checkInStudent>>;
     try {
