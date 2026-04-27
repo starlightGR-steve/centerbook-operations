@@ -76,6 +76,17 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
     { revalidateOnFocus: false }
   );
 
+  // Single-student fetch — the bulk /operations/students/all endpoint that
+  // feeds useStudents() (the source of the `student` prop) does NOT include
+  // bathroom_preference / checkout_preference / exit_entrance. Only
+  // /students/{id} returns them. We share the `student-${id}` SWR key so the
+  // capture-modal's globalMutate after PATCH reaches this hook too.
+  const { data: studentDetail } = useSWR<Student>(
+    `student-${student.id}`,
+    () => api.students.get(student.id),
+    { revalidateOnFocus: false }
+  );
+
   // Recent notes
   const { data: recentNotes } = useSWR<StudentNote[]>(
     `checkin-notes-${student.id}`,
@@ -122,15 +133,18 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   const [bathroomOverride, setBathroomOverride] = useState<BathroomPreference | null | undefined>(undefined);
   const [checkoutOverride, setCheckoutOverride] = useState<CheckoutPreference | null | undefined>(undefined);
   const [entranceOverride, setEntranceOverride] = useState<ExitEntrance | null | undefined>(undefined);
+  // Read permission fields from the single-student fetch, not the bulk-roster
+  // prop — those keys are only emitted by /students/{id}. The override layer
+  // still wins so the row updates instantly on Save before SWR revalidates.
   const bathroomValue: BathroomPreference | null = bathroomOverride !== undefined
     ? bathroomOverride
-    : (student.bathroom_preference ?? null);
+    : (studentDetail?.bathroom_preference ?? null);
   const checkoutValue: CheckoutPreference | null = checkoutOverride !== undefined
     ? checkoutOverride
-    : (student.checkout_preference ?? null);
+    : (studentDetail?.checkout_preference ?? null);
   const entranceValue: ExitEntrance | null = entranceOverride !== undefined
     ? entranceOverride
-    : (student.exit_entrance ?? null);
+    : (studentDetail?.exit_entrance ?? null);
 
   // Frozen baseline so the TimePopover's End time doesn't drift while the popup is open.
   const checkInBaselineRef = useRef<string>(new Date().toISOString());
@@ -749,15 +763,13 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
           initialValue={bathroomValue}
           onClose={() => setBathroomModalOpen(false)}
           onSaved={async () => {
-            // Optimistic local overlay so the row updates instantly; revalidate
-            // shared student caches so other surfaces re-sync on next read.
-            // Reading the freshly written value from the modal would require a
-            // callback signature change — instead we re-fetch the student.
-            await Promise.all([
-              globalMutate(`student-${student.id}`),
-              globalMutate('students'),
-            ]);
+            // Re-fetch the canonical single-student record (the bulk roster
+            // doesn't carry permission fields, so we must hit /students/{id}).
+            // Seed the SWR cache directly to avoid double-fetching, and keep
+            // the local override so the row updates without a render gap.
             const fresh = await api.students.get(student.id);
+            await globalMutate(`student-${student.id}`, fresh, { revalidate: false });
+            await globalMutate('students');
             setBathroomOverride(fresh.bathroom_preference ?? null);
           }}
         />
@@ -769,11 +781,9 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
           initialEntrance={entranceValue}
           onClose={() => setCheckoutModalOpen(false)}
           onSaved={async () => {
-            await Promise.all([
-              globalMutate(`student-${student.id}`),
-              globalMutate('students'),
-            ]);
             const fresh = await api.students.get(student.id);
+            await globalMutate(`student-${student.id}`, fresh, { revalidate: false });
+            await globalMutate('students');
             setCheckoutOverride(fresh.checkout_preference ?? null);
             setEntranceOverride(fresh.exit_entrance ?? null);
           }}
