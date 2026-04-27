@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Send } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { Contact } from '@/lib/types';
+import type { Contact, BathroomPreference, CheckoutPreference, ExitEntrance } from '@/lib/types';
 import SmsTriggerButton from '@/components/contacts/SmsTriggerButton';
+import AmberInlineNote from '@/components/ui/AmberInlineNote';
 import styles from './PermissionsPickupCard.module.css';
 
 /**
@@ -44,6 +45,13 @@ interface PermissionsPickupCardProps {
    *  routing. Pass null when no primary contact is on file — the button
    *  renders disabled in that case. */
   primaryParent: Contact | null;
+  /** Per-student permission fields surfaced by mu-plugin v2.60.0 on both
+   *  bulk and single endpoints. Drive the bathroom subsection's render
+   *  (independent → no button; parent_text → SmsTriggerButton; null →
+   *  amber "Not on file") and the pickup subsection's value display. */
+  bathroomPreference?: BathroomPreference | null;
+  checkoutPreference?: CheckoutPreference | null;
+  exitEntrance?: ExitEntrance | null;
 }
 
 function lockoutKey(studentId: number, attendanceId: number): string {
@@ -72,6 +80,9 @@ export default function PermissionsPickupCard({
   attendanceId,
   staffId,
   primaryParent,
+  bathroomPreference,
+  checkoutPreference,
+  exitEntrance,
 }: PermissionsPickupCardProps) {
   // Post-send lockout — preserves the existing 5-minute "Request sent" UX
   // so staff can't fire repeated bathroom texts to the same parent.
@@ -126,6 +137,58 @@ export default function PermissionsPickupCard({
   // when the request actually went out. Recover that for display.
   const sentAt = lockoutAt !== null ? lockoutAt - LOCKOUT_MS : null;
 
+  // Bathroom subsection branches on cb_students.bathroom_preference (mu-plugin
+  // v2.60.0). 'independent' → no send button, just the static "Goes on their
+  // own" note (matches the Attendance Text dropdown's disabled-with-subtitle
+  // treatment per Visual 8). 'parent_text' → render SmsTriggerButton, which
+  // cascades through the SMS-consent three-state. null ('not on file') →
+  // amber inline note prompting staff to capture the value on the Student
+  // Record or via the check-in popup; firing a text without a known policy
+  // would surprise the parent.
+  const bathroomBody = bathroomPreference === 'independent' ? (
+    <p className={styles.staticNote}>Goes on their own</p>
+  ) : bathroomPreference === 'parent_text' ? (
+    lockoutAt !== null ? (
+      <button
+        type="button"
+        className={`${styles.actionBtn} ${styles.actionBtnSent}`}
+        disabled
+        aria-live="polite"
+      >
+        Request sent &middot; {sentAt !== null ? formatHHMM(sentAt) : ''}
+      </button>
+    ) : (
+      <SmsTriggerButton
+        parent={primaryParent}
+        studentFirstName={studentFirstName}
+        sendLabel="Send bathroom text"
+        sendIcon={<Send size={14} aria-hidden="true" />}
+        onSend={handleSend}
+        sending={pending}
+        captureSource="manual_entry"
+      />
+    )
+  ) : (
+    <AmberInlineNote>Bathroom preference not on file</AmberInlineNote>
+  );
+
+  // Pickup subsection (mu-plugin v2.60.0). Combined display: "Parent Pickup"
+  // for waits_for_parent, "Independent · Front" / "Independent · Back" for
+  // independent + exit_entrance. Missing pieces collapse to amber.
+  const pickupBody = (() => {
+    if (checkoutPreference === 'waits_for_parent') {
+      return <p className={styles.staticNote}>Parent Pickup</p>;
+    }
+    if (checkoutPreference === 'independent' && exitEntrance) {
+      return (
+        <p className={styles.staticNote}>
+          Independent &middot; {exitEntrance === 'front' ? 'Front' : 'Back'}
+        </p>
+      );
+    }
+    return <AmberInlineNote>Checkout preference not on file</AmberInlineNote>;
+  })();
+
   return (
     <div className={styles.card}>
       <h4 className={styles.title}>Permissions &amp; Pickup</h4>
@@ -135,34 +198,19 @@ export default function PermissionsPickupCard({
         <div className={styles.sectionHeader}>
           <span className={styles.sectionLabel}>Bathroom</span>
         </div>
-
-        {lockoutAt !== null ? (
-          <button
-            type="button"
-            className={`${styles.actionBtn} ${styles.actionBtnSent}`}
-            disabled
-            aria-live="polite"
-          >
-            Request sent &middot; {sentAt !== null ? formatHHMM(sentAt) : ''}
-          </button>
-        ) : (
-          <SmsTriggerButton
-            parent={primaryParent}
-            studentFirstName={studentFirstName}
-            sendLabel="Send bathroom text"
-            sendIcon={<Send size={14} aria-hidden="true" />}
-            onSend={handleSend}
-            sending={pending}
-            captureSource="manual_entry"
-          />
-        )}
-
+        {bathroomBody}
         {errorMsg && (
           <p className={styles.errorMsg} role="alert">{errorMsg}</p>
         )}
       </div>
 
-      {/* Pickup subsection deferred until `checkout_preference` field exists. */}
+      {/* ── Pickup subsection ──────────────────────────────────────────── */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionLabel}>Pickup</span>
+        </div>
+        {pickupBody}
+      </div>
     </div>
   );
 }

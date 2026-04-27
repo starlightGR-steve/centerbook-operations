@@ -120,6 +120,80 @@
   margin: clamp(0.75rem, 2vw, 1.25rem) 0;
 }
 
+/* ── Permissions & Pickup (86ah3xdhc) — mirrors the check-in popup's
+   permsBlock styling so the value rows look identical across the two
+   surfaces. Each row: label (left) + value/AmberInlineNote (center) +
+   teal + or primary-blue pencil square (right). */
+.permsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2_5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+}
+
+.permsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.permsRowLabel {
+  flex-shrink: 0;
+  width: 5.5rem;
+  font-family: var(--font-primary);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--neutral);
+  text-transform: uppercase;
+}
+
+.permsRowValue {
+  flex: 1;
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  color: var(--text);
+  min-width: 0;
+}
+
+.permsAddBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--white);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+.permsAddBtn:hover { background: var(--secondary-dark); }
+
+.permsEditBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms ease, color 150ms ease;
+}
+.permsEditBtn:hover {
+  background: var(--primary);
+  color: var(--white);
+}
+
 /* ── Daily Checklist (persistent items) ── */
 .persistentItemsList {
   display: flex;

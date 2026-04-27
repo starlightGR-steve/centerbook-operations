@@ -1144,8 +1144,17 @@ export default function AttendancePage() {
 
     const renderTextMenu = (menuKey: string, student: Student) => {
       if (textMenuOpen !== menuKey || !textMenuTrigger) return null;
+      // Bathroom send is gated on cb_students.bathroom_preference (mu-plugin
+      // v2.60.0). 'independent' → disabled w/ "Student goes independently"
+      // subtitle (Visual 8). null ('not on file') → also disabled, with a
+      // subtitle prompting staff to set the preference on the Student
+      // Record so a text isn't fired without a known policy. 'parent_text'
+      // (or any other value treated as 'unknown' by getBathroomPreference)
+      // → the option stays interactive.
       const bath = getBathroomPreference(student);
-      const bathDisabled = bath === 'independent';
+      const bathDisabledIndependent = bath === 'independent';
+      const bathDisabledMissing = bath === 'unknown';
+      const bathDisabled = bathDisabledIndependent || bathDisabledMissing;
       return (
         <PositionedPortal anchorEl={textMenuTrigger} gap={4} className={styles.textMenu}>
           <button
@@ -1168,7 +1177,8 @@ export default function AttendancePage() {
             <span className={`${styles.textMenuIcon} ${styles.textMenuIconBath}`}><Bath size={14} /></span>
             <span className={styles.textMenuItemBody}>
               Send bathroom text
-              {bathDisabled && <span className={styles.textMenuItemSub}>Student goes independently</span>}
+              {bathDisabledIndependent && <span className={styles.textMenuItemSub}>Student goes independently</span>}
+              {bathDisabledMissing && <span className={styles.textMenuItemSub}>Bathroom preference not on file</span>}
             </span>
           </button>
         </PositionedPortal>

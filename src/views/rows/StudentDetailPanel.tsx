@@ -429,6 +429,9 @@ export default function StudentDetailPanel({
             attendanceId={attendance.id}
             staffId={staffId}
             primaryParent={primaryContact ?? null}
+            bathroomPreference={student.bathroom_preference ?? null}
+            checkoutPreference={student.checkout_preference ?? null}
+            exitEntrance={student.exit_entrance ?? null}
           />
         )}
 
