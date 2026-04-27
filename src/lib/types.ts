@@ -55,6 +55,12 @@ export interface Student {
    *  that need it across the roster should fall back to joining against the
    *  contacts list (see StudentsRosterPage). */
   primary_contact_sms_consent_status?: SmsConsentStatus;
+  /** Per-student permissions surfaced by mu-plugin v2.58.0+. Three discrete
+   *  fields with PATCH /students/{id}/permissions as the only writer. Backend
+   *  appends a row to cb_student_permission_history on every change. */
+  bathroom_preference?: BathroomPreference | null;
+  checkout_preference?: CheckoutPreference | null;
+  exit_entrance?: ExitEntrance | null;
   created_at: string;
   updated_at: string;
   // UI-only fields (populated by mock data, not from API)
@@ -79,6 +85,12 @@ export interface Student {
 
 // Parsed subjects as array for UI consumption
 export type SubjectType = 'Math' | 'Reading';
+
+/** Student permissions wire values (mu-plugin v2.58.0+). NULL means "not on
+ *  file" — surfaces should render the amber capture-prompt state. */
+export type BathroomPreference = 'parent_text' | 'independent';
+export type CheckoutPreference = 'waits_for_parent' | 'independent';
+export type ExitEntrance = 'front' | 'back';
 
 // ── Contacts ───────────────────────────────
 

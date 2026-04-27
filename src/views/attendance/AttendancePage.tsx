@@ -87,7 +87,12 @@ function minutesLate(student: Student): number {
   return Math.max(0, nowMinutes - scheduledMinutes);
 }
 
-function parseExistingFlags(flags: unknown): { flags: string[]; checklist: string[]; teacherNote: string } {
+function parseExistingFlags(flags: unknown): {
+  flags: string[];
+  checklist: string[];
+  teacherNote: string;
+  takingTest?: { math?: string; reading?: string };
+} {
   if (!flags || typeof flags !== 'object') return { flags: [], checklist: [], teacherNote: '' };
   const f = flags as Record<string, unknown>;
   const flagKeys: string[] = [];
@@ -98,7 +103,7 @@ function parseExistingFlags(flags: unknown): { flags: string[]; checklist: strin
         if (tk === 'custom' && typeof tv === 'string') checklist.push(`__custom__:${tv}`);
         else if (tv === true) checklist.push(tk);
       }
-    } else if (key !== 'teacher_note' && key !== 'teacher_notes' && val === true) {
+    } else if (key !== 'teacher_note' && key !== 'teacher_notes' && key !== 'taking_test' && val === true) {
       flagKeys.push(key);
     }
   }
@@ -110,7 +115,13 @@ function parseExistingFlags(flags: unknown): { flags: string[]; checklist: strin
   } else if (typeof f.teacher_note === 'string') {
     teacherNote = f.teacher_note;
   }
-  return { flags: flagKeys, checklist, teacherNote };
+  // taking_test in object form hydrates the TestingSetupSection draft on Update
+  // Class Prep. Legacy boolean form is dropped (the popup never sets it).
+  let takingTest: { math?: string; reading?: string } | undefined;
+  if (f.taking_test && typeof f.taking_test === 'object' && !Array.isArray(f.taking_test)) {
+    takingTest = f.taking_test as { math?: string; reading?: string };
+  }
+  return { flags: flagKeys, checklist, teacherNote, takingTest };
 }
 
 /* ── Column identifiers (used for tabs + collapse persistence) ── */
@@ -133,17 +144,18 @@ function loadCollapsed(): Set<ColumnKey> {
 }
 
 /* ── Permission / preference helpers ── */
-/* Read graceful-fallback fields; backend ships these under task 86agxw8n3.
- * Until then, return 'unknown' so cards render the amber "Not Set" state. */
-type CheckoutPreference =
+/* Reads canonical values from mu-plugin v2.58.0+ (bathroom_preference,
+ * checkout_preference, exit_entrance). NULL → 'unknown' so cards render the
+ * amber "Not Set" state. */
+type CheckoutPreferenceView =
   | { kind: 'parent' }
   | { kind: 'independent'; exit: 'front' | 'back' | 'unknown' }
   | { kind: 'unknown' };
 
-function getCheckoutPreference(student: Student): CheckoutPreference {
-  const pref = (student as Student & { checkout_preference?: string }).checkout_preference;
-  const exit = (student as Student & { exit_direction?: string }).exit_direction;
-  if (pref === 'parent_pickup' || pref === 'parent') return { kind: 'parent' };
+function getCheckoutPreference(student: Student): CheckoutPreferenceView {
+  const pref = student.checkout_preference;
+  const exit = student.exit_entrance;
+  if (pref === 'waits_for_parent') return { kind: 'parent' };
   if (pref === 'independent') {
     if (exit === 'front') return { kind: 'independent', exit: 'front' };
     if (exit === 'back') return { kind: 'independent', exit: 'back' };
@@ -152,11 +164,11 @@ function getCheckoutPreference(student: Student): CheckoutPreference {
   return { kind: 'unknown' };
 }
 
-type BathroomPref = 'independent' | 'supervised' | 'unknown';
-function getBathroomPreference(student: Student): BathroomPref {
-  const v = (student as Student & { bathroom_preference?: string }).bathroom_preference;
+type BathroomPrefView = 'parent_text' | 'independent' | 'unknown';
+function getBathroomPreference(student: Student): BathroomPrefView {
+  const v = student.bathroom_preference;
+  if (v === 'parent_text') return 'parent_text';
   if (v === 'independent') return 'independent';
-  if (v === 'supervised') return 'supervised';
   return 'unknown';
 }
 
@@ -202,6 +214,7 @@ export default function AttendancePage() {
     checklist: string[];
     teacherNote: string;
     session_duration_minutes?: number | string | null;
+    takingTest?: { math?: string; reading?: string };
   } | null>(null);
 
   // Search dropdown (all active students)
@@ -581,6 +594,7 @@ export default function AttendancePage() {
         selectedChecklist: options.selectedChecklist,
         noteForTeacher: options.noteForTeacher,
         teacherNotes: options.teacherNotes,
+        takingTest: options.takingTest,
       };
       const flags = buildClassPrepFlags(prepInput);
       // Dispatch the save based on whether the student has been assigned to

@@ -36,6 +36,20 @@ const ICON_MAP: Record<FlagChipType, React.ComponentType<{ size?: number; stroke
   needs_homework: Home,
 };
 
+/** Map a flag-config key to the FlagChip type that drives its icon and color.
+ *  Returns null for keys outside this set (e.g. taking_test) so callers can
+ *  skip rendering. Shared by StudentDetailPanel, RowViewCard, and the
+ *  CheckInPopup so the kiosk + classroom surfaces stay in lockstep. */
+export function flagKeyToType(key: string): FlagChipType | null {
+  switch (key) {
+    case 'new_concept': return 'new_concept';
+    case 'needs_help': return 'needs_help';
+    case 'work_with_amy': return 'work_amy';
+    case 'needs_homework': return 'needs_homework';
+    default: return null;
+  }
+}
+
 export default function FlagChip({
   type,
   label,

@@ -3,7 +3,11 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(3px);
-  z-index: 50;
+  /* Sits above every host surface in the app — host popups (CheckInPopup,
+     CheckOutConfirmPopup, LinkPickerModal) cluster around z-index 1000-1001,
+     so 2000 keeps the dialog on top without colliding with the lobby board's
+     intentional 9999+ tier. */
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;

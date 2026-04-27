@@ -1,6 +1,7 @@
 'use client';
 
 import { useId } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import styles from './Modal.module.css';
@@ -34,8 +35,13 @@ export default function Modal({
   const containerRef = useFocusTrap(open, onClose);
 
   if (!open) return null;
+  // Render as a portal under <body> so the dialog escapes any parent stacking
+  // context (e.g. the kiosk CheckInPopup mounts at z-index 1001 — without the
+  // portal, this overlay's z-index 50 would sit behind the host popup and the
+  // dialog would render invisibly inside it).
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={(e) => {
@@ -64,6 +70,7 @@ export default function Modal({
         </div>
         <div className={styles.body}>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

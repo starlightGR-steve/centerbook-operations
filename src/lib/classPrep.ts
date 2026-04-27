@@ -24,6 +24,10 @@ export interface ClassPrepInput {
   selectedChecklist: string[];
   noteForTeacher?: string | null;
   teacherNotes?: Array<{ text: string; done: false | boolean }>;
+  /** Object form { math?: <level>, reading?: <level> } from TestingSetupSection.
+   *  Empty object collapses to "no testing planned" — the popup never sets the
+   *  legacy boolean form. */
+  takingTest?: { math?: string; reading?: string };
 }
 
 const CUSTOM_PREFIX = '__custom__:';
@@ -49,6 +53,9 @@ export function buildClassPrepFlags(input: ClassPrepInput): RowAssignmentFlags {
   } else if (input.noteForTeacher) {
     out.teacher_note = input.noteForTeacher;
   }
+  if (input.takingTest && Object.keys(input.takingTest).length > 0) {
+    out.taking_test = input.takingTest;
+  }
   return out as RowAssignmentFlags;
 }
 
@@ -59,6 +66,7 @@ export function hasAnyClassPrep(input: ClassPrepInput): boolean {
     input.selectedFlags.length > 0 ||
     input.selectedChecklist.length > 0 ||
     !!input.noteForTeacher ||
-    (input.teacherNotes?.length ?? 0) > 0
+    (input.teacherNotes?.length ?? 0) > 0 ||
+    !!(input.takingTest && Object.keys(input.takingTest).length > 0)
   );
 }
