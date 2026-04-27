@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import SmsCallDisplay from '@/components/ui/SmsCallDisplay';
+import PositionedPortal from '@/components/classroom/PositionedPortal';
 import AttendanceEditModal from '@/components/AttendanceEditModal';
 import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
 import SubjectBadges from '@/components/SubjectBadges';
@@ -239,9 +240,11 @@ export default function AttendancePage() {
   const [checkOutPopupStudent, setCheckOutPopupStudent] = useState<Student | null>(null);
   const [checkOutPopupAttendance, setCheckOutPopupAttendance] = useState<Attendance | null>(null);
 
-  // Move dropdown + time prompt
+  // Move dropdown + time prompt. Trigger element drives PositionedPortal so
+  // the menu flips above when there isn't room below the anchor; one menu
+  // open at a time, so a single trigger ref tracks whichever card was tapped.
   const [moveMenuOpen, setMoveMenuOpen] = useState<string | null>(null);
-  const [moveMenuPos, setMoveMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [moveMenuTrigger, setMoveMenuTrigger] = useState<HTMLElement | null>(null);
   const [moveTimePrompt, setMoveTimePrompt] = useState<{
     studentId: number;
     studentName: string;
@@ -271,9 +274,9 @@ export default function AttendancePage() {
     });
   };
 
-  // Text-parent dropdown anchor
+  // Text-parent dropdown anchor — same trigger-ref pattern as the Move menu.
   const [textMenuOpen, setTextMenuOpen] = useState<string | null>(null);
-  const [textMenuPos, setTextMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [textMenuTrigger, setTextMenuTrigger] = useState<HTMLElement | null>(null);
 
   // SMS popup
   const [smsPopup, setSmsPopup] = useState<{ student: Student; mode: 'pickup' | 'bathroom' } | null>(null);
@@ -889,33 +892,31 @@ export default function AttendancePage() {
   const toggleTextMenu = (menuKey: string, e: React.MouseEvent<HTMLButtonElement>) => {
     if (textMenuOpen === menuKey) {
       setTextMenuOpen(null);
-      setTextMenuPos(null);
+      setTextMenuTrigger(null);
       return;
     }
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTextMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setTextMenuTrigger(e.currentTarget);
     setTextMenuOpen(menuKey);
   };
   const closeTextMenu = () => {
     setTextMenuOpen(null);
-    setTextMenuPos(null);
+    setTextMenuTrigger(null);
   };
 
   /* ── Move between columns ── */
   const toggleMoveMenu = (menuKey: string, e: React.MouseEvent<HTMLButtonElement>) => {
     if (moveMenuOpen === menuKey) {
       setMoveMenuOpen(null);
-      setMoveMenuPos(null);
+      setMoveMenuTrigger(null);
       return;
     }
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMoveMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setMoveMenuTrigger(e.currentTarget);
     setMoveMenuOpen(menuKey);
   };
 
   const closeMoveMenu = () => {
     setMoveMenuOpen(null);
-    setMoveMenuPos(null);
+    setMoveMenuTrigger(null);
   };
 
   const handleMoveWithTime = (
@@ -1080,7 +1081,7 @@ export default function AttendancePage() {
       student: Student,
       attendanceId: number | null,
     ) => {
-      if (moveMenuOpen !== menuKey || !moveMenuPos) return null;
+      if (moveMenuOpen !== menuKey || !moveMenuTrigger) return null;
       const studentName = `${student.first_name} ${student.last_name}`;
       const items: Array<{ label: string; onClick: () => void }> = [];
 
@@ -1113,8 +1114,12 @@ export default function AttendancePage() {
         );
       }
 
-      return createPortal(
-        <div className={styles.moveMenu} style={{ top: moveMenuPos.top, right: moveMenuPos.right }}>
+      // PositionedPortal handles flip-up when there isn't room below the
+      // anchor and clamps inside the viewport — replaces the prior raw
+      // createPortal + rect.bottom math that overflowed off the bottom of
+      // the viewport on cards near the column scroll-tail.
+      return (
+        <PositionedPortal anchorEl={moveMenuTrigger} gap={4} className={styles.moveMenu}>
           {items.map((item, i) => (
             <button key={i} className={styles.moveMenuItem} onClick={(e) => { e.stopPropagation(); item.onClick(); }}>
               <ChevronRight size={12} className={styles.moveMenuChevron} />
@@ -1133,17 +1138,16 @@ export default function AttendancePage() {
               </button>
             </>
           )}
-        </div>,
-        document.body,
+        </PositionedPortal>
       );
     };
 
     const renderTextMenu = (menuKey: string, student: Student) => {
-      if (textMenuOpen !== menuKey || !textMenuPos) return null;
+      if (textMenuOpen !== menuKey || !textMenuTrigger) return null;
       const bath = getBathroomPreference(student);
       const bathDisabled = bath === 'independent';
-      return createPortal(
-        <div className={styles.textMenu} style={{ top: textMenuPos.top, right: textMenuPos.right }}>
+      return (
+        <PositionedPortal anchorEl={textMenuTrigger} gap={4} className={styles.textMenu}>
           <button
             className={styles.textMenuItem}
             onClick={(e) => { e.stopPropagation(); closeTextMenu(); setSmsPopup({ student, mode: 'pickup' }); }}
@@ -1167,8 +1171,7 @@ export default function AttendancePage() {
               {bathDisabled && <span className={styles.textMenuItemSub}>Student goes independently</span>}
             </span>
           </button>
-        </div>,
-        document.body,
+        </PositionedPortal>
       );
     };
 
