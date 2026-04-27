@@ -573,6 +573,25 @@ export default function StaffPage() {
 
   const userRole = (session?.user as { role?: string } | undefined)?.role;
   const isManager = status === 'authenticated' && (userRole === 'admin' || userRole === 'superuser');
+  const isSuperuser = userRole === 'superuser';
+
+  // Visible roster for the Staff List surfaces (timeclock-section table +
+  // Staff User Management table). Hides:
+  //   - deactivated rows (cb_staff.is_active=0) — soft-deleted, no longer
+  //     part of the working roster.
+  //   - test fixtures whose full_name starts with "[TEST]" — needed for QA
+  //     automation but noisy for everyday users.
+  // Superuser viewers see everything (audit + test setup require it).
+  // The unfiltered `staff` prop still backs payroll CSV export so a
+  // mid-period deactivation doesn't silently drop hours from payroll.
+  const visibleStaff = useMemo(() => {
+    if (!staff) return undefined;
+    return staff.filter((s) => {
+      if (Number(s.is_active) === 0) return false;
+      if (!isSuperuser && (s.full_name ?? '').startsWith('[TEST]')) return false;
+      return true;
+    });
+  }, [staff, isSuperuser]);
 
   const hasEntries = !!timeEntries && timeEntries.length > 0;
   const timeReady = !timeLoading;
@@ -644,7 +663,7 @@ export default function StaffPage() {
                 ) : hasEntries ? (
                   <>
                     <StaffTable
-                      staff={staff}
+                      staff={visibleStaff ?? staff}
                       timeEntries={timeEntries}
                       clockedInIds={clockedInIds}
                       periodStart={start}
@@ -667,7 +686,7 @@ export default function StaffPage() {
             </div>
           </>
         ) : null}
-        {isManager && staff && <StaffManagement staff={staff} clockedInIds={clockedInIds} />}
+        {isManager && visibleStaff && <StaffManagement staff={visibleStaff} clockedInIds={clockedInIds} />}
       </div>
 
       {selectedStaff && (

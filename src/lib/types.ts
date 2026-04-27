@@ -232,6 +232,10 @@ export interface Staff {
   wp_user_id: number | null;
   pin: string | null; // 4-digit PIN for kiosk auth
   status: StaffStatus;
+  /** WordPress soft-delete flag (0 = deactivated, 1 = active). Stringly typed
+   *  on the wire (e.g. '0' / '1'); use Number(...) when comparing. Distinct
+   *  from `status` — a deactivated row keeps its HR status for audit. */
+  is_active?: number | string | null;
   created_at: string;
   updated_at: string;
   // UI-only fields (populated by mock data, not from API)
