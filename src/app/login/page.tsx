@@ -30,7 +30,22 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError('Invalid email or password');
+      // The authorize() callback throws `rate_limited:<seconds>` when the
+      // mu-plugin v2.59.0 rate limiter trips a lockout. NextAuth may URL-
+      // encode the message depending on the version, so decode defensively
+      // before pattern-matching. Everything else collapses to the generic
+      // invalid-credentials copy.
+      let raw = result.error;
+      try { raw = decodeURIComponent(raw); } catch { /* already decoded */ }
+      if (raw.startsWith('rate_limited:')) {
+        const seconds = parseInt(raw.slice('rate_limited:'.length), 10) || 900;
+        const minutes = Math.max(1, Math.ceil(seconds / 60));
+        setError(
+          `Too many failed attempts. Please wait ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} and try again.`,
+        );
+      } else {
+        setError('Invalid email or password');
+      }
       return;
     }
 
