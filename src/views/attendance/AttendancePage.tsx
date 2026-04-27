@@ -133,17 +133,18 @@ function loadCollapsed(): Set<ColumnKey> {
 }
 
 /* ── Permission / preference helpers ── */
-/* Read graceful-fallback fields; backend ships these under task 86agxw8n3.
- * Until then, return 'unknown' so cards render the amber "Not Set" state. */
-type CheckoutPreference =
+/* Reads canonical values from mu-plugin v2.58.0+ (bathroom_preference,
+ * checkout_preference, exit_entrance). NULL → 'unknown' so cards render the
+ * amber "Not Set" state. */
+type CheckoutPreferenceView =
   | { kind: 'parent' }
   | { kind: 'independent'; exit: 'front' | 'back' | 'unknown' }
   | { kind: 'unknown' };
 
-function getCheckoutPreference(student: Student): CheckoutPreference {
-  const pref = (student as Student & { checkout_preference?: string }).checkout_preference;
-  const exit = (student as Student & { exit_direction?: string }).exit_direction;
-  if (pref === 'parent_pickup' || pref === 'parent') return { kind: 'parent' };
+function getCheckoutPreference(student: Student): CheckoutPreferenceView {
+  const pref = student.checkout_preference;
+  const exit = student.exit_entrance;
+  if (pref === 'waits_for_parent') return { kind: 'parent' };
   if (pref === 'independent') {
     if (exit === 'front') return { kind: 'independent', exit: 'front' };
     if (exit === 'back') return { kind: 'independent', exit: 'back' };
@@ -152,11 +153,11 @@ function getCheckoutPreference(student: Student): CheckoutPreference {
   return { kind: 'unknown' };
 }
 
-type BathroomPref = 'independent' | 'supervised' | 'unknown';
-function getBathroomPreference(student: Student): BathroomPref {
-  const v = (student as Student & { bathroom_preference?: string }).bathroom_preference;
+type BathroomPrefView = 'parent_text' | 'independent' | 'unknown';
+function getBathroomPreference(student: Student): BathroomPrefView {
+  const v = student.bathroom_preference;
+  if (v === 'parent_text') return 'parent_text';
   if (v === 'independent') return 'independent';
-  if (v === 'supervised') return 'supervised';
   return 'unknown';
 }
 

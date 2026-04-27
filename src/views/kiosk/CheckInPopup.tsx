@@ -6,10 +6,13 @@ import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { mutate as globalMutate } from 'swr';
 import {
-  X, Heart, Check, Send, AlertTriangle, ExternalLink, ChevronDown, Plus, X as XIcon, Pause,
+  X, Heart, Check, Send, AlertTriangle, ExternalLink, ChevronDown, Plus, X as XIcon, Pause, Pencil,
 } from 'lucide-react';
 import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
-import type { SmsConsentStatus } from '@/lib/types';
+import AmberInlineNote from '@/components/ui/AmberInlineNote';
+import BathroomCaptureModal from '@/components/students/BathroomCaptureModal';
+import CheckoutCaptureModal from '@/components/students/CheckoutCaptureModal';
+import type { SmsConsentStatus, BathroomPreference, CheckoutPreference, ExitEntrance } from '@/lib/types';
 import { api } from '@/lib/api';
 import { parseSubjects, parseScheduleDays, formatTimeKey, getSessionDuration } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
@@ -98,6 +101,24 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   const [currentNote, setCurrentNote] = useState(existingPrep?.teacherNote ?? '');
   const [confirming, setConfirming] = useState(false);
   const [visitPlanApplied, setVisitPlanApplied] = useState(false);
+
+  // Capture modals + an optimistic overlay over student.bathroom_preference /
+  // checkout_preference / exit_entrance so the row updates instantly after Save
+  // without waiting for the parent to revalidate the student record.
+  const [bathroomModalOpen, setBathroomModalOpen] = useState(false);
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [bathroomOverride, setBathroomOverride] = useState<BathroomPreference | null | undefined>(undefined);
+  const [checkoutOverride, setCheckoutOverride] = useState<CheckoutPreference | null | undefined>(undefined);
+  const [entranceOverride, setEntranceOverride] = useState<ExitEntrance | null | undefined>(undefined);
+  const bathroomValue: BathroomPreference | null = bathroomOverride !== undefined
+    ? bathroomOverride
+    : (student.bathroom_preference ?? null);
+  const checkoutValue: CheckoutPreference | null = checkoutOverride !== undefined
+    ? checkoutOverride
+    : (student.checkout_preference ?? null);
+  const entranceValue: ExitEntrance | null = entranceOverride !== undefined
+    ? entranceOverride
+    : (student.exit_entrance ?? null);
 
   // Frozen baseline so the TimePopover's End time doesn't drift while the popup is open.
   const checkInBaselineRef = useRef<string>(new Date().toISOString());
@@ -459,6 +480,76 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
             </div>
           </div>
 
+          {/* ── Permissions & Pickup (per design reference Visuals 1-2) ──
+              Two rows. NULL fields show italic amber "Not on file" + teal +
+              button that opens the capture modal. Set fields show plain text
+              + pencil button that opens the same modal pre-selected. */}
+          <div className={styles.permsBlock}>
+            <h4 className={styles.permsHeading}>Permissions &amp; Pickup</h4>
+
+            <div className={styles.permsRow}>
+              <span className={styles.permsRowLabel}>BATHROOM</span>
+              <span className={styles.permsRowValue}>
+                {bathroomValue === 'parent_text' && 'Needs parent text'}
+                {bathroomValue === 'independent' && 'Goes on their own'}
+                {bathroomValue === null && <AmberInlineNote>Not on file</AmberInlineNote>}
+              </span>
+              {bathroomValue === null ? (
+                <button
+                  type="button"
+                  className={styles.permsAddBtn}
+                  onClick={() => setBathroomModalOpen(true)}
+                  aria-label="Capture bathroom preference"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.permsEditBtn}
+                  onClick={() => setBathroomModalOpen(true)}
+                  aria-label="Edit bathroom preference"
+                >
+                  <Pencil size={14} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+
+            <div className={styles.permsRow}>
+              <span className={styles.permsRowLabel}>CHECKOUT</span>
+              <span className={styles.permsRowValue}>
+                {checkoutValue && entranceValue ? (
+                  <>
+                    {checkoutValue === 'waits_for_parent' ? 'Waits for parent' : 'Checks out independently'}
+                    {' \u00B7 '}
+                    {entranceValue === 'front' ? 'Front' : 'Back'}
+                  </>
+                ) : (
+                  <AmberInlineNote>Not on file</AmberInlineNote>
+                )}
+              </span>
+              {checkoutValue && entranceValue ? (
+                <button
+                  type="button"
+                  className={styles.permsEditBtn}
+                  onClick={() => setCheckoutModalOpen(true)}
+                  aria-label="Edit checkout preference"
+                >
+                  <Pencil size={14} aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.permsAddBtn}
+                  onClick={() => setCheckoutModalOpen(true)}
+                  aria-label="Capture checkout preference"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+
           <hr className={styles.divider} />
 
           {/* STAFF NOTES */}
@@ -607,6 +698,43 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
           </button>
         </div>
       </div>
+
+      {bathroomModalOpen && (
+        <BathroomCaptureModal
+          studentId={student.id}
+          initialValue={bathroomValue}
+          onClose={() => setBathroomModalOpen(false)}
+          onSaved={async () => {
+            // Optimistic local overlay so the row updates instantly; revalidate
+            // shared student caches so other surfaces re-sync on next read.
+            // Reading the freshly written value from the modal would require a
+            // callback signature change — instead we re-fetch the student.
+            await Promise.all([
+              globalMutate(`student-${student.id}`),
+              globalMutate('students'),
+            ]);
+            const fresh = await api.students.get(student.id);
+            setBathroomOverride(fresh.bathroom_preference ?? null);
+          }}
+        />
+      )}
+      {checkoutModalOpen && (
+        <CheckoutCaptureModal
+          studentId={student.id}
+          initialMode={checkoutValue}
+          initialEntrance={entranceValue}
+          onClose={() => setCheckoutModalOpen(false)}
+          onSaved={async () => {
+            await Promise.all([
+              globalMutate(`student-${student.id}`),
+              globalMutate('students'),
+            ]);
+            const fresh = await api.students.get(student.id);
+            setCheckoutOverride(fresh.checkout_preference ?? null);
+            setEntranceOverride(fresh.exit_entrance ?? null);
+          }}
+        />
+      )}
     </>
   );
 }

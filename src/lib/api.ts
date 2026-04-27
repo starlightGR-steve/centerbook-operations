@@ -194,6 +194,23 @@ export const api = {
     byBarcode: (code: string) => directFetch<Student>(`/students/barcode/${encodeURIComponent(code)}`),
     contacts: (id: number) =>
       directFetch<StudentContact[]>(`/students/${id}/contacts`),
+    /** PATCH the per-student permissions block (mu-plugin v2.58.0+). Backend
+     *  appends a row to cb_student_permission_history with the staff name
+     *  joined; pass changed_by_staff_id from the session. */
+    updatePermissions: (
+      id: number,
+      data: {
+        bathroom_preference?: import('./types').BathroomPreference | null;
+        checkout_preference?: import('./types').CheckoutPreference | null;
+        exit_entrance?: import('./types').ExitEntrance | null;
+        changed_by_staff_id?: number | null;
+        notes?: string | null;
+      },
+    ) =>
+      directFetch<Student>(`/students/${id}/permissions`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
   },
 
   // ── Contacts ──

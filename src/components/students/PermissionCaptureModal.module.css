@@ -1,0 +1,186 @@
+/* Shared module for BathroomCaptureModal + CheckoutCaptureModal — same
+   layout primitives the two modals render (option cards, icon circles,
+   entrance pills, footer buttons). Mirrors ConsentCaptureModal's structure
+   so the three capture modals feel like one family at the kiosk. */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-primary);
+  min-height: var(--touch-min);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--secondary);
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.optionSelectedOrange {
+  border-color: var(--accent);
+  background: var(--color-warn-bg);
+}
+
+.optionSelectedGreen {
+  border-color: var(--green);
+  background: var(--color-success-soft);
+}
+
+.optionSelectedTeal {
+  border-color: var(--secondary);
+  background: var(--secondary-ul);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: var(--white);
+}
+.iconOrange { background: var(--accent); }
+.iconGreen  { background: var(--green); }
+.iconTeal   { background: var(--secondary); }
+
+.optionTitle {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+/* Exit entrance — appears under the option list once a checkout mode is picked */
+.entranceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.entranceLabel {
+  font-family: var(--font-primary);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--neutral);
+  text-transform: uppercase;
+}
+
+.entrancePills {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.entrancePill {
+  flex: 1;
+  min-height: var(--touch-min);
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--text);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.entrancePill:hover:not(:disabled) {
+  border-color: var(--secondary);
+}
+
+.entrancePill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.entrancePillSelected {
+  border-color: var(--secondary);
+  background: var(--secondary-ul);
+  color: var(--secondary);
+}
+
+.error {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  color: var(--red);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.btnGhost {
+  min-height: var(--touch-min);
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--text);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+.btnGhost:hover { border-color: var(--neutral); }
+.btnGhost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnSave {
+  min-height: var(--touch-min);
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--green);
+  border-radius: var(--radius-btn);
+  background: var(--green);
+  color: var(--white);
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.btnSave:hover:not(:disabled) { background: #16a34a; border-color: #16a34a; }
+.btnSave:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--green);
+  color: var(--white);
+}

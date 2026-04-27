@@ -187,6 +187,86 @@
   gap: var(--space-6);
 }
 
+/* ── Permissions & Pickup section (design reference Visuals 1-2) ── */
+.permsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2_5);
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+}
+
+.permsHeading {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.permsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.permsRowLabel {
+  flex-shrink: 0;
+  width: 5.5rem;
+  font-family: var(--font-primary);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--neutral);
+  text-transform: uppercase;
+}
+
+.permsRowValue {
+  flex: 1;
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  color: var(--text);
+  min-width: 0;
+}
+
+.permsAddBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--white);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+.permsAddBtn:hover { background: var(--secondary-dark); }
+
+.permsEditBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-btn);
+  background: var(--white);
+  color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms ease, color 150ms ease;
+}
+.permsEditBtn:hover {
+  background: var(--primary);
+  color: var(--white);
+}
+
 .row2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
