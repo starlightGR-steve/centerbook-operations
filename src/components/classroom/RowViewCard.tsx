@@ -5,7 +5,7 @@ import { Heart } from 'lucide-react';
 import type { Student, Attendance, RowAssignmentFlags } from '@/lib/types';
 import { parseSubjects } from '@/lib/types';
 import { useFlagConfig, useChecklistConfig } from '@/hooks/useFlagConfig';
-import FlagChip, { type FlagChipType } from './FlagChip';
+import FlagChip, { flagKeyToType } from './FlagChip';
 import ChecklistItem from './ChecklistItem';
 import CardButton from './CardButton';
 import styles from './RowViewCard.module.css';
@@ -31,16 +31,7 @@ export interface RowViewCardProps {
   onMedicalTap: () => void;
 }
 
-/** Map configured flag keys to FlagChip visual types. */
-function flagKeyToType(key: string): FlagChipType | null {
-  switch (key) {
-    case 'new_concept': return 'new_concept';
-    case 'needs_help': return 'needs_help';
-    case 'work_with_amy': return 'work_amy';
-    case 'needs_homework': return 'needs_homework';
-    default: return null;
-  }
-}
+// flagKeyToType moved to FlagChip.tsx as a shared named export.
 
 export default function RowViewCard({
   student,

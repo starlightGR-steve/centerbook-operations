@@ -20,7 +20,7 @@ import PermissionsPickupCard from '@/components/classroom/PermissionsPickupCard'
 import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
 import PlanNextVisitModal, { type VisitPlanDraft } from '@/components/classroom/PlanNextVisitModal';
 import ChecklistItem from '@/components/classroom/ChecklistItem';
-import FlagChip, { type FlagChipType } from '@/components/classroom/FlagChip';
+import FlagChip, { flagKeyToType } from '@/components/classroom/FlagChip';
 import type { Contact, SmsConsentStatus } from '@/lib/types';
 import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
 import type { AppRole } from '@/lib/auth';
@@ -54,15 +54,9 @@ function formatRelativeTime(dateStr: string): string {
  * FlagChip type the Row View card uses. Same switch RowViewCard.tsx and
  * PlanNextVisitModal.tsx ship — keys outside this set return null and the
  * Detail Panel skips them, matching Row View's behavior. */
-function flagKeyToType(key: string): FlagChipType | null {
-  switch (key) {
-    case 'new_concept': return 'new_concept';
-    case 'needs_help': return 'needs_help';
-    case 'work_with_amy': return 'work_amy';
-    case 'needs_homework': return 'needs_homework';
-    default: return null;
-  }
-}
+// flagKeyToType moved to FlagChip.tsx as a named export so the kiosk surfaces
+// (CheckInPopup) and the classroom surfaces (RowViewCard, StudentDetailPanel)
+// share one mapping table.
 
 interface StudentDetailPanelProps {
   student: Student;

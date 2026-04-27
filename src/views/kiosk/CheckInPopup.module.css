@@ -379,39 +379,29 @@
   padding: 0;
 }
 
-/* ── Pill grid ── */
-.pillGrid {
+/* ── Class Prep — vertical stacks shared with the Live Class Detail Panel ──
+   These match StudentDetailPanel.module.css so the FlagChip / ChecklistItem /
+   TeacherNoteCard / TestingSetupSection components render identically across
+   surfaces. */
+.flagGrid {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--space-1_5);
   margin-bottom: var(--space-2_5);
 }
 
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1_5) 0.875rem;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  background: var(--white);
-  font-family: var(--font-primary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--neutral);
-  cursor: pointer;
-  transition: all 0.15s;
+.checklistGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1_5);
+  margin-bottom: var(--space-2_5);
 }
 
-.pill:hover {
-  border-color: var(--secondary);
-}
-
-.pillSelected {
-  border-color: var(--secondary);
-  background: var(--secondary-ul);
-  color: var(--secondary);
-  font-weight: 600;
+.teacherNoteStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2_5);
 }
 
 /* ── Add task row ── */
@@ -451,53 +441,6 @@
 .addTaskBtn:hover { opacity: 0.85; }
 .addTaskBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Note chips ── */
-.noteChipList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-bottom: 0.5rem;
-}
-
-.noteChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--secondary-ul);
-  border: 1px solid var(--secondary);
-  border-radius: 0.25rem;
-  max-width: 100%;
-}
-
-.noteChipText {
-  font-family: var(--font-primary);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.noteChipRemove {
-  background: none;
-  border: none;
-  color: var(--secondary);
-  cursor: pointer;
-  padding: 2px;
-  display: flex;
-  flex-shrink: 0;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  align-items: center;
-  justify-content: center;
-}
-
-.noteChipRemove:hover {
-  color: var(--red);
-}
-
 /* ── Note input ── */
 .noteInputRow {
   display: flex;
@@ -518,21 +461,6 @@
 .noteInput:focus {
   border-color: var(--secondary);
 }
-
-.sendBtn {
-  padding: var(--space-2) var(--space-3);
-  border: none;
-  border-radius: 6px;
-  background: var(--accent);
-  color: var(--white);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: opacity 0.15s;
-}
-
-.sendBtn:hover { opacity: 0.85; }
-.sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .placeholder {
   font-family: var(--font-primary);

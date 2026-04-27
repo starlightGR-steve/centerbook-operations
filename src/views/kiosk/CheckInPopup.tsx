@@ -6,13 +6,17 @@ import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { mutate as globalMutate } from 'swr';
 import {
-  X, Heart, Check, Send, AlertTriangle, ExternalLink, ChevronDown, Plus, X as XIcon, Pause, Pencil,
+  X, Heart, Check, AlertTriangle, ExternalLink, ChevronDown, Plus, X as XIcon, Pause, Pencil,
 } from 'lucide-react';
 import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
 import AmberInlineNote from '@/components/ui/AmberInlineNote';
 import BathroomCaptureModal from '@/components/students/BathroomCaptureModal';
 import CheckoutCaptureModal from '@/components/students/CheckoutCaptureModal';
-import type { SmsConsentStatus, BathroomPreference, CheckoutPreference, ExitEntrance } from '@/lib/types';
+import FlagChip, { flagKeyToType } from '@/components/classroom/FlagChip';
+import ChecklistItem from '@/components/classroom/ChecklistItem';
+import TeacherNoteCard from '@/components/classroom/TeacherNoteCard';
+import TestingSetupSection, { type TestingState } from '@/components/classroom/TestingSetupSection';
+import type { SmsConsentStatus, BathroomPreference, CheckoutPreference, ExitEntrance, RowAssignmentFlags } from '@/lib/types';
 import { api } from '@/lib/api';
 import { parseSubjects, parseScheduleDays, formatTimeKey, getSessionDuration } from '@/lib/types';
 import type { Student, StudentContact, StudentNote } from '@/lib/types';
@@ -29,6 +33,9 @@ export interface CheckInOptions {
   selectedFlags: string[];
   noteForTeacher: string | null;
   teacherNotes?: Array<{ text: string; done: false }>;
+  /** Object form { math?: <level>, reading?: <level> } from TestingSetupSection.
+   *  Empty / absent = no testing planned. */
+  takingTest?: TestingState;
 }
 
 interface CheckInPopupProps {
@@ -44,6 +51,9 @@ interface CheckInPopupProps {
      *  silently overwrite a staff-overridden duration on Update Class Prep.
      *  Stringly-typed because WordPress returns numeric columns as strings. */
     session_duration_minutes?: number | string | null;
+    /** Hydrated from cb_attendance.pending_class_prep.taking_test on Update
+     *  Class Prep so TestingSetupSection opens with the existing test plan. */
+    takingTest?: TestingState;
   };
 }
 
@@ -101,6 +111,8 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
   const [currentNote, setCurrentNote] = useState(existingPrep?.teacherNote ?? '');
   const [confirming, setConfirming] = useState(false);
   const [visitPlanApplied, setVisitPlanApplied] = useState(false);
+  // Draft taking_test for TestingSetupSection. Object form per RowAssignmentFlags.
+  const [testingDraft, setTestingDraft] = useState<TestingState>(existingPrep?.takingTest ?? {});
 
   // Capture modals + an optimistic overlay over student.bathroom_preference /
   // checkout_preference / exit_entrance so the row updates instantly after Save
@@ -248,6 +260,7 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
       selectedFlags,
       noteForTeacher: null,
       teacherNotes: teacherNotes.length > 0 ? teacherNotes : undefined,
+      takingTest: Object.keys(testingDraft).length > 0 ? testingDraft : undefined,
     });
   };
 
@@ -568,24 +581,29 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
             </div>
           )}
 
-          {/* ── Class Prep ── */}
+          {/* ── Class Prep ──
+              Renders identically to the Live Class Detail Panel: shared
+              FlagChip, ChecklistItem, TeacherNoteCard, and TestingSetupSection
+              components. The popup runs them in selection / draft mode (toggle
+              local state, fire one PATCH on Confirm) instead of the immediate-
+              write semantics Live Class uses for the active row's flags.
+              Reference: Check-In Popup design reference Visual 2. */}
           <h3 className={styles.sectionHeading}>Class Prep</h3>
 
-          {/* Note for Teacher — multi-entry */}
+          {/* NOTE FOR TEACHER — staged notes render as TeacherNoteCard with
+              the action button labelled "Remove" (versus "Mark done" in Live
+              Class), matching the visual treatment without the persistence. */}
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Note for Teacher</span>
             {notesList.length > 0 && (
-              <div className={styles.noteChipList}>
-                {notesList.map((note, i) => (
-                  <div key={i} className={styles.noteChip}>
-                    <span className={styles.noteChipText}>{note}</span>
-                    <button
-                      className={styles.noteChipRemove}
-                      onClick={() => setNotesList((prev) => prev.filter((_, idx) => idx !== i))}
-                    >
-                      <X size={10} />
-                    </button>
-                  </div>
+              <div className={styles.teacherNoteStack}>
+                {notesList.map((noteText, idx) => (
+                  <TeacherNoteCard
+                    key={`staged-${idx}`}
+                    note={{ text: noteText, done: false }}
+                    actionLabel="Remove"
+                    onMarkDone={() => setNotesList((prev) => prev.filter((_, i) => i !== idx))}
+                  />
                 ))}
               </div>
             )}
@@ -598,37 +616,41 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
                 onKeyDown={(e) => e.key === 'Enter' && handleSendNote()}
               />
               <button
-                className={styles.sendBtn}
+                className={styles.addTaskBtn}
                 onClick={handleSendNote}
                 disabled={!currentNote.trim()}
               >
-                <Send size={14} />
+                Add
               </button>
             </div>
           </div>
 
-          {/* Teacher Checklist */}
+          {/* TEACHER CHECKLIST — shared ChecklistItem in selection mode for
+              configured items, plus any staged custom tasks (the popup uses
+              the "__custom__:<text>" sentinel — buildClassPrepFlags translates
+              that to flags.tasks.custom on the wire). */}
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Teacher Checklist</span>
-            <div className={styles.pillGrid}>
+            <div className={styles.checklistGrid}>
               {checklistConfigItems.map((ci) => (
-                <button
+                <ChecklistItem
                   key={ci.key}
-                  className={`${styles.pill} ${selectedChecklist.includes(ci.key) ? styles.pillSelected : ''}`}
-                  onClick={() => toggleChecklist(ci.key)}
-                >
-                  {selectedChecklist.includes(ci.key) && <Check size={12} />}
-                  {ci.label}
-                </button>
+                  itemKey={ci.key}
+                  label={ci.label}
+                  selected={selectedChecklist.includes(ci.key)}
+                  mode="selection"
+                  onToggle={() => toggleChecklist(ci.key)}
+                />
               ))}
               {selectedChecklist.filter((k) => k.startsWith('__custom__:')).map((k) => (
-                <button
+                <ChecklistItem
                   key={k}
-                  className={`${styles.pill} ${styles.pillSelected}`}
-                  onClick={() => toggleChecklist(k)}
-                >
-                  <Check size={12} /> {k.slice(11)}
-                </button>
+                  itemKey={k}
+                  label={k.slice('__custom__:'.length)}
+                  selected
+                  mode="selection"
+                  onToggle={() => toggleChecklist(k)}
+                />
               ))}
             </div>
             <div className={styles.addTaskRow}>
@@ -645,22 +667,44 @@ export default function CheckInPopup({ student, onClose, onConfirm, existingPrep
             </div>
           </div>
 
-          {/* Student Flags */}
+          {/* STUDENT FLAGS — shared FlagChip in selection mode, variant
+              "labeled". All four flags always render; FlagChip's CSS supplies
+              the type-specific colored circle + icon (Lightbulb / HelpCircle /
+              User / Home). Unknown config keys (no FlagChipType match) are
+              skipped, mirroring Live Class. */}
           <div className={styles.sectionBlock}>
             <span className={styles.colLabel}>Student Flags</span>
-            <div className={styles.pillGrid}>
-              {flagConfigItems.map((fi) => (
-                <button
-                  key={fi.key}
-                  className={`${styles.pill} ${selectedFlags.includes(fi.key) ? styles.pillSelected : ''}`}
-                  onClick={() => toggleFlag(fi.key)}
-                >
-                  {selectedFlags.includes(fi.key) && <Check size={12} />}
-                  {fi.label}
-                </button>
-              ))}
+            <div className={styles.flagGrid}>
+              {flagConfigItems
+                .filter((fi) => flagKeyToType(fi.key) !== null)
+                .map((fi) => (
+                  <FlagChip
+                    key={fi.key}
+                    type={flagKeyToType(fi.key)!}
+                    label={fi.label}
+                    selected={selectedFlags.includes(fi.key)}
+                    mode="selection"
+                    variant="labeled"
+                    onToggle={() => toggleFlag(fi.key)}
+                  />
+                ))}
             </div>
           </div>
+
+          {/* TESTING TODAY — shared TestingSetupSection. Renders only when the
+              student has subjects; per-subject toggles + level pickers update
+              local testingDraft, which folds into pending_class_prep.taking_test
+              on Confirm via classPrep.buildClassPrepFlags. */}
+          {parseSubjects(student.subjects).length > 0 && (
+            <div className={styles.sectionBlock}>
+              <TestingSetupSection
+                student={student}
+                currentFlags={{ taking_test: testingDraft } as RowAssignmentFlags}
+                sectionLabel="Testing Today"
+                onChange={(next) => setTestingDraft(next)}
+              />
+            </div>
+          )}
 
           <hr className={styles.divider} />
 

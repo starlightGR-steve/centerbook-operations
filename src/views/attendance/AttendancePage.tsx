@@ -87,7 +87,12 @@ function minutesLate(student: Student): number {
   return Math.max(0, nowMinutes - scheduledMinutes);
 }
 
-function parseExistingFlags(flags: unknown): { flags: string[]; checklist: string[]; teacherNote: string } {
+function parseExistingFlags(flags: unknown): {
+  flags: string[];
+  checklist: string[];
+  teacherNote: string;
+  takingTest?: { math?: string; reading?: string };
+} {
   if (!flags || typeof flags !== 'object') return { flags: [], checklist: [], teacherNote: '' };
   const f = flags as Record<string, unknown>;
   const flagKeys: string[] = [];
@@ -98,7 +103,7 @@ function parseExistingFlags(flags: unknown): { flags: string[]; checklist: strin
         if (tk === 'custom' && typeof tv === 'string') checklist.push(`__custom__:${tv}`);
         else if (tv === true) checklist.push(tk);
       }
-    } else if (key !== 'teacher_note' && key !== 'teacher_notes' && val === true) {
+    } else if (key !== 'teacher_note' && key !== 'teacher_notes' && key !== 'taking_test' && val === true) {
       flagKeys.push(key);
     }
   }
@@ -110,7 +115,13 @@ function parseExistingFlags(flags: unknown): { flags: string[]; checklist: strin
   } else if (typeof f.teacher_note === 'string') {
     teacherNote = f.teacher_note;
   }
-  return { flags: flagKeys, checklist, teacherNote };
+  // taking_test in object form hydrates the TestingSetupSection draft on Update
+  // Class Prep. Legacy boolean form is dropped (the popup never sets it).
+  let takingTest: { math?: string; reading?: string } | undefined;
+  if (f.taking_test && typeof f.taking_test === 'object' && !Array.isArray(f.taking_test)) {
+    takingTest = f.taking_test as { math?: string; reading?: string };
+  }
+  return { flags: flagKeys, checklist, teacherNote, takingTest };
 }
 
 /* ── Column identifiers (used for tabs + collapse persistence) ── */
@@ -203,6 +214,7 @@ export default function AttendancePage() {
     checklist: string[];
     teacherNote: string;
     session_duration_minutes?: number | string | null;
+    takingTest?: { math?: string; reading?: string };
   } | null>(null);
 
   // Search dropdown (all active students)
@@ -582,6 +594,7 @@ export default function AttendancePage() {
         selectedChecklist: options.selectedChecklist,
         noteForTeacher: options.noteForTeacher,
         teacherNotes: options.teacherNotes,
+        takingTest: options.takingTest,
       };
       const flags = buildClassPrepFlags(prepInput);
       // Dispatch the save based on whether the student has been assigned to
