@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
 
         const apiBase = `${process.env.WP_API_URL}/cb/v1`;
@@ -38,19 +38,48 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Resolve the user's real public IP for the rate-limiter (mu-plugin
+        // v2.59.0+). Vercel populates x-forwarded-for at ingress with the
+        // client's IP as the leftmost entry; subsequent entries are edge
+        // hops. NextAuth normalizes header values to string | string[] so we
+        // handle both shapes. Empty / missing → omit the header so the
+        // backend falls back to CF-Connecting-IP.
+        const xff = req?.headers?.['x-forwarded-for'];
+        const xffFirst = Array.isArray(xff) ? xff[0] : xff;
+        const userIp =
+          typeof xffFirst === 'string'
+            ? (xffFirst.split(',')[0]?.trim() ?? '')
+            : '';
+
+        const outboundHeaders: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + Buffer.from(`${apiUser}:${apiPass}`).toString('base64'),
+        };
+        if (userIp) {
+          outboundHeaders['X-CB-Client-IP'] = userIp;
+        }
+
         const res = await fetch(`${apiBase}/staff/auth`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Basic ' + Buffer.from(`${apiUser}:${apiPass}`).toString('base64'),
-          },
+          headers: outboundHeaders,
           body: JSON.stringify({
             email: credentials.email,
             password: credentials.password,
           }),
         });
 
-        if (!res.ok) return null;
+        if (!res.ok) {
+          // Surface rate-limit lockouts to the login page via the NextAuth
+          // error channel. Anything else (401, 5xx, malformed body) collapses
+          // to the existing "Invalid email or password" path via null.
+          let body: { code?: string; data?: { retry_after_seconds?: number } } | null = null;
+          try { body = await res.json(); } catch { body = null; }
+          if (res.status === 429 && body?.code === 'rate_limited') {
+            const retry = body.data?.retry_after_seconds ?? 900;
+            throw new Error(`rate_limited:${retry}`);
+          }
+          return null;
+        }
 
         const envelope = await res.json();
         const staff = envelope.data ?? envelope;
