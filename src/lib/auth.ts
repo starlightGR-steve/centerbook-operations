@@ -109,6 +109,42 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as { role: AppRole }).role;
         token.id = user.id;
+        token.roleCheckedAt = Date.now();
+        return token;
+      }
+      // Subsequent calls (no `user`): refresh role from the cb_staff record
+      // on a 5-minute TTL so cb_staff role changes (audit retitles, role
+      // promotions) propagate to active sessions without requiring sign-out
+      // and back in. Stale-while-revalidate — the existing role is served on
+      // read until the next interval, so this never blocks page loads.
+      const ROLE_TTL_MS = 5 * 60 * 1000;
+      const lastChecked = typeof token.roleCheckedAt === 'number' ? token.roleCheckedAt : 0;
+      if (token.id && Date.now() - lastChecked > ROLE_TTL_MS) {
+        try {
+          const apiBase = `${process.env.WP_API_URL}/cb/v1`;
+          const apiUser = process.env.WP_API_USER;
+          const apiPass = process.env.WP_API_PASSWORD;
+          if (apiBase && apiUser && apiPass) {
+            const res = await fetch(`${apiBase}/staff/${token.id}`, {
+              headers: {
+                'Authorization': 'Basic ' + Buffer.from(`${apiUser}:${apiPass}`).toString('base64'),
+              },
+            });
+            if (res.ok) {
+              const envelope = await res.json();
+              const staff = envelope.data ?? envelope;
+              if (staff?.role) {
+                token.role = toAppRole(staff.role);
+              }
+            }
+            // Bump the timestamp regardless of fetch success so a flapping
+            // backend doesn't hammer /staff/{id} on every request.
+            token.roleCheckedAt = Date.now();
+          }
+        } catch (err) {
+          console.error('JWT role refresh failed', err);
+          token.roleCheckedAt = Date.now();
+        }
       }
       return token;
     },
