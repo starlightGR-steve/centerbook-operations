@@ -108,6 +108,17 @@
   color: var(--red);
 }
 
+/* Static value display for Pickup ("Parent Pickup" / "Independent · Front")
+   and Bathroom-when-independent ("Goes on their own"). Text-only — no
+   action affordance, since these states don't have a tap target. */
+.staticNote {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--text);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .actionBtn {
     transition: none;
