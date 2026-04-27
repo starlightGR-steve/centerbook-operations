@@ -86,15 +86,34 @@ export default function RowViewCard({
       }));
   }, [flagConfig, flags]);
 
+  // Standard configured items + custom-keyed tasks (added via the "Custom task..."
+  // input on the check-in popup). Mirrors StudentDetailPanel so both surfaces
+  // render the same set. Label resolution for custom keys:
+  //   1. Legacy shape — flags.tasks.custom = "<text>" (value is the label)
+  //   2. Phase 6c shape — flags.tasks["custom:<text>"] = false (strip prefix)
+  //   3. Unknown key — pretty-print as fallback
   const checklistEntries = useMemo(() => {
     const tasks = (flags?.tasks ?? {}) as Record<string, boolean | string | null | undefined>;
-    return checklistConfig
+    const standard = checklistConfig
       .filter((ci) => tasks[ci.key] !== undefined && tasks[ci.key] !== null)
       .map((ci) => ({
         key: ci.key,
         label: ci.label,
         done: tasks[ci.key] === true,
       }));
+    const configKeys = new Set(checklistConfig.map((ci) => ci.key));
+    const custom = Object.keys(tasks)
+      .filter((k) => !configKeys.has(k))
+      .map((key) => {
+        const val = tasks[key];
+        const label = typeof val === 'string' && val.length > 0
+          ? val
+          : key.startsWith('custom:')
+            ? key.slice('custom:'.length)
+            : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        return { key, label, done: val === true };
+      });
+    return [...standard, ...custom];
   }, [checklistConfig, flags]);
 
   const cardClassNames = [
