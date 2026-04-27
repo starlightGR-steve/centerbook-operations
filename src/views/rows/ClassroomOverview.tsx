@@ -13,6 +13,8 @@ import type { Student, Attendance, ClassroomSection, ClassroomRow, RowAssignment
 import { getTimeRemaining, getTeacherNotes } from '@/lib/types';
 import styles from './ClassroomOverview.module.css';
 
+const DRAG_LOCK_STORAGE_KEY = 'rows.dragLocked';
+
 interface FlatRow extends ClassroomRow {
   section: string;
   seats: number;
@@ -144,15 +146,30 @@ export default function ClassroomOverview({
     return 'Staff';
   };
 
-  // Global drag lock — defaults to locked on every page mount; auto re-locks
-  // after a successful drop. State is intentionally not persisted across sessions.
-  const [isLocked, setIsLocked] = useState(true);
+  // Global drag lock — persisted per-tablet via localStorage so the toggle
+  // stays in whichever position Fran picked across drops and reloads. Default
+  // is locked so a fresh tablet doesn't accept stray taps as drags.
+  const [isLocked, setIsLocked] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const raw = window.localStorage.getItem(DRAG_LOCK_STORAGE_KEY);
+      if (raw === null) return true;
+      return raw === 'true';
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(DRAG_LOCK_STORAGE_KEY, isLocked ? 'true' : 'false');
+    } catch { /* ignore quota / disabled storage */ }
+  }, [isLocked]);
 
   const handleDrop = useCallback((rowId: string, isTesting?: boolean) => {
     if (dragStudent) {
       onMoveStudent(dragStudent.id, rowId, isTesting);
       onDragEnd();
-      setIsLocked(true);
     }
   }, [dragStudent, onMoveStudent, onDragEnd]);
 
