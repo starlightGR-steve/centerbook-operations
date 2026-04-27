@@ -3,15 +3,20 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 
 export type AppRole = 'superuser' | 'admin' | 'staff';
 
-/** Map WordPress cb_staff.role values to AppRole for nav gating */
+/** Map WordPress cb_staff.role values to AppRole for nav gating.
+ *  cb_staff.role lands in either snake_case ('project_manager') or Title Case
+ *  ('Project Manager'). Normalize both to snake_case before matching so the
+ *  bucket is independent of how the row was written. */
 function toAppRole(wpRole: string): AppRole {
-  switch (wpRole.toLowerCase()) {
+  const normalized = wpRole.toLowerCase().replace(/\s+/g, '_');
+  switch (normalized) {
     case 'superuser':
       return 'superuser';
     case 'owner':
     case 'admin':
     case 'instruction_manager':
     case 'center_manager':
+    case 'project_manager':
       return 'admin';
     default:
       return 'staff';
