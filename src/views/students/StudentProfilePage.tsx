@@ -46,6 +46,8 @@ import { useActiveStaff } from '@/hooks/useStaff';
 import { usePersistentItems } from '@/hooks/usePersistentItems';
 import { useChecklistConfig } from '@/hooks/useFlagConfig';
 import NextClassPlanning from '@/components/students/NextClassPlanning';
+import BathroomCaptureModal from '@/components/students/BathroomCaptureModal';
+import CheckoutCaptureModal from '@/components/students/CheckoutCaptureModal';
 import { parseSubjects, parseScheduleDays, formatTimeKey } from '@/lib/types';
 import type { CbTaskType, Contact, Absence, SmsConsentStatus } from '@/lib/types';
 import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
@@ -233,6 +235,13 @@ export default function StudentProfilePage({ studentId }: Props) {
   const [editFields, setEditFields] = useState<EditableFields>({});
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+
+  // Permissions & Pickup modals — independent of the page-level Edit mode.
+  // Each capture modal owns its own PATCH /students/{id}/permissions call;
+  // mutateStudent on save re-pulls the canonical record so the row reflects
+  // the new value without waiting for the bulk roster to revalidate.
+  const [bathroomModalOpen, setBathroomModalOpen] = useState(false);
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
 
   // Level-up triggers
   const [levelUpMathEmail, setLevelUpMathEmail] = useState(true);
@@ -807,6 +816,80 @@ export default function StudentProfilePage({ studentId }: Props) {
 
           <hr className={styles.groupDivider} />
 
+          {/* ── Permissions & Pickup ──
+              Always view-mode (independent of the page-level Edit). Tapping +
+              or the pencil opens the shared BathroomCaptureModal /
+              CheckoutCaptureModal which PATCH /students/{id}/permissions
+              and append a row to cb_student_permission_history. After save,
+              mutateStudent revalidates the single-student record so the
+              new value lands here. */}
+          <h4 className={styles.groupHeading}>Permissions &amp; Pickup</h4>
+          <div className={styles.permsBlock}>
+            <div className={styles.permsRow}>
+              <span className={styles.permsRowLabel}>BATHROOM</span>
+              <span className={styles.permsRowValue}>
+                {student.bathroom_preference === 'parent_text' && 'Needs parent text'}
+                {student.bathroom_preference === 'independent' && 'Goes on their own'}
+                {!student.bathroom_preference && <AmberInlineNote>Not on file</AmberInlineNote>}
+              </span>
+              {student.bathroom_preference ? (
+                <button
+                  type="button"
+                  className={styles.permsEditBtn}
+                  onClick={() => setBathroomModalOpen(true)}
+                  aria-label="Edit bathroom preference"
+                >
+                  <Pencil size={14} aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.permsAddBtn}
+                  onClick={() => setBathroomModalOpen(true)}
+                  aria-label="Capture bathroom preference"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+
+            <div className={styles.permsRow}>
+              <span className={styles.permsRowLabel}>CHECKOUT</span>
+              <span className={styles.permsRowValue}>
+                {student.checkout_preference && student.exit_entrance ? (
+                  <>
+                    {student.checkout_preference === 'waits_for_parent' ? 'Waits for parent' : 'Checks out independently'}
+                    {' \u00B7 '}
+                    {student.exit_entrance === 'front' ? 'Front' : 'Back'}
+                  </>
+                ) : (
+                  <AmberInlineNote>Not on file</AmberInlineNote>
+                )}
+              </span>
+              {student.checkout_preference && student.exit_entrance ? (
+                <button
+                  type="button"
+                  className={styles.permsEditBtn}
+                  onClick={() => setCheckoutModalOpen(true)}
+                  aria-label="Edit checkout preference"
+                >
+                  <Pencil size={14} aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.permsAddBtn}
+                  onClick={() => setCheckoutModalOpen(true)}
+                  aria-label="Capture checkout preference"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <hr className={styles.groupDivider} />
+
           {/* ── Schedule (existing section — do not modify) ── */}
           <h4 className={styles.groupHeading}>Schedule</h4>
           {student.schedule_review_needed && (
@@ -1295,6 +1378,25 @@ export default function StudentProfilePage({ studentId }: Props) {
             student={student}
             onClose={() => setShowAbsenceModal(false)}
             onSave={() => mutateStudentAbsences()}
+          />
+        )}
+
+        {bathroomModalOpen && student && (
+          <BathroomCaptureModal
+            studentId={student.id}
+            initialValue={student.bathroom_preference ?? null}
+            onClose={() => setBathroomModalOpen(false)}
+            onSaved={async () => { await mutateStudent(); }}
+          />
+        )}
+
+        {checkoutModalOpen && student && (
+          <CheckoutCaptureModal
+            studentId={student.id}
+            initialMode={student.checkout_preference ?? null}
+            initialEntrance={student.exit_entrance ?? null}
+            onClose={() => setCheckoutModalOpen(false)}
+            onSaved={async () => { await mutateStudent(); }}
           />
         )}
 
