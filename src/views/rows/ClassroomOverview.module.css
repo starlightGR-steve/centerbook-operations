@@ -214,40 +214,34 @@
   gap: var(--space-1_5);
 }
 
-/* 86ah1fzxr: WholeClassCards flow horizontally with wrap per 86agzay36
-   ("Cards use min-width with flex-grow: 1 to fill available horizontal
-   space"). Column direction was making the card's flex-basis 17.5rem
-   apply to height, producing tall empty cards. Row direction makes the
-   same 17.5rem basis the per-card min-width — cards size to content
-   height and wrap to additional lines when the row card can't fit more
-   per line. align-items: flex-start keeps wrapped rows top-aligned
-   instead of stretching to match the tallest card in the line. */
+/* 86ah4vrex item 3: row-grid uses CSS grid auto-fill per Visual 9 spec.
+   minmax(17.5rem, 1fr) creates as many 17.5rem-minimum tracks as fit in
+   the row shell, expanding each toward 1fr to share leftover space. With
+   auto-fill (not auto-fit) the tracks stay reserved when partially empty,
+   so a single card lands in the leftmost column at column-track width
+   instead of stretching across the whole row. align-items: start keeps
+   wrapped rows top-aligned. */
 .cardStack {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+  align-items: start;
   gap: var(--space-2);
 }
 
-/* 86ah3f3xp Finding 1: empty seat card. Width matches WholeClassCard
-   (17.5rem) and padding matches its single-line content height so the
-   row visually resolves to a clean grid of cards regardless of fill. */
+/* 86ah4vrex item 2: empty seat = flat gray fill, NO border. The wc-card
+   shell footprint and tap target are preserved (still opens the Assign
+   picker) but the visual demotes to a neutral gray block so teachers can
+   spot open seats at a glance without it competing with filled cards. */
 .emptySeat {
-  width: 17.5rem;
+  width: 100%;
+  min-width: 0;
   min-height: calc(var(--space-3) * 2 + 1.875rem);
   padding: var(--space-3) var(--space-4);
-  background: var(--white);
-  border: 1.5px dashed #d4d4d4;
+  background: var(--color-done-bg);
+  border: none;
   border-radius: var(--radius-btn);
   cursor: pointer;
   font-family: var(--font-primary);
-  transition: border-color 150ms ease, background 150ms ease;
-}
-
-.emptySeat:hover {
-  border-color: var(--secondary);
-  background: var(--secondary-ul);
 }
 
 .emptySeat:focus-visible {

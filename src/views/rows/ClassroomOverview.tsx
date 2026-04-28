@@ -5,6 +5,7 @@ import { Edit2 } from 'lucide-react';
 import ClockDisplay from '@/components/ClockDisplay';
 import WholeClassCard, { type WholeClassTeacherNote } from '@/components/classroom/WholeClassCard';
 import DragLockToggle from '@/components/classroom/DragLockToggle';
+import EmptySeatsToggle from '@/components/classroom/EmptySeatsToggle';
 import { getCenterToday } from '@/lib/dates';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useTimeclock } from '@/hooks/useTimeclock';
@@ -149,6 +150,12 @@ export default function ClassroomOverview({
     return 'Staff';
   };
 
+  // 86ah4vrex item 1: hide empty seats — page-wide preference for the
+  // current session only. No persistence: every fresh load defaults back to
+  // OFF so teachers see the open seats on session start. Toggling re-renders
+  // every row simultaneously since the flag is held here at the page level.
+  const [hideEmptySeats, setHideEmptySeats] = useState<boolean>(false);
+
   // Global drag lock — persisted per-tablet via localStorage so the toggle
   // stays in whichever position Fran picked across drops and reloads. Default
   // is locked so a fresh tablet doesn't accept stray taps as drags.
@@ -233,6 +240,10 @@ export default function ClassroomOverview({
         <h3 className={styles.title}>Live Classroom</h3>
         <span className={styles.badge}>{totalIn} students checked in</span>
         <div className={styles.headerSpacer} />
+        <EmptySeatsToggle
+          isHidden={hideEmptySeats}
+          onToggle={() => setHideEmptySeats((v) => !v)}
+        />
         <DragLockToggle
           isLocked={isLocked}
           onToggle={() => setIsLocked((v) => !v)}
@@ -366,10 +377,13 @@ export default function ClassroomOverview({
                         {Array.from({ length: row.seats }).map((_, slotIdx) => {
                           const s = regularStudents[slotIdx];
                           if (s) return renderCard(s);
-                          // 86ah3f3xp Finding 1: empty seat card. Restored from
-                          // pre-consolidation behavior — every open seat shows a blank
-                          // card matching WholeClassCard footprint. Clicking opens the
-                          // picker; the card is also a drag target.
+                          // 86ah4vrex item 1: when "Hide empty seats" is on,
+                          // skip empty slots entirely so the row-grid reflows
+                          // to fill with student cards only. The capacity
+                          // counter above still reflects the true seat total
+                          // because it's sourced from row.seats, not the
+                          // rendered card count.
+                          if (hideEmptySeats) return null;
                           return (
                             <button
                               key={`empty-${row.id}-${slotIdx}`}
@@ -419,6 +433,7 @@ export default function ClassroomOverview({
                             {Array.from({ length: row.testingSeats }).map((_, slotIdx) => {
                               const s = testingStudents[slotIdx];
                               if (s) return renderCard(s);
+                              if (hideEmptySeats) return null;
                               return (
                                 <button
                                   key={`empty-test-${row.id}-${slotIdx}`}

@@ -1250,6 +1250,18 @@
   background: rgba(0, 154, 171, 0.06);
 }
 
+/* 86ah4vrex item 4: Permissions / Pickup / Time row read as one panel
+   section per Visual 15. The wrapper tightens the gap to space-2 so the
+   PermissionsPickupCard, the session Time row, and the SMS status
+   indicator group visually instead of inheriting the body's space-6 gap
+   which would read as separate sections. Outer body gap still separates
+   this group from Observations above and Library Books below. */
+.permissionsTimeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 /* 86ah3f3xp Finding 3D: collapsed session info — small compact note line
    on the left, Time button (CardButton variant="time") on the right.
    Replaces the prior two-row .sessionCard. */
