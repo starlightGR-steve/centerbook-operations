@@ -622,9 +622,6 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-size: 0.6875rem;
-  flex: 1;
-  display: flex;
-  align-items: center;
 }
 
 .stripBadge {
@@ -635,7 +632,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.95);
   color: var(--col-accent, var(--neutral));
-  margin-bottom: 0.25rem;
+  margin-top: 0.25rem;
 }
 
 /* ── Attendance Cards ── */

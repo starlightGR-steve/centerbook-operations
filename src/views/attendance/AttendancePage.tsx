@@ -1015,8 +1015,8 @@ export default function AttendancePage() {
           aria-label={`Expand ${meta.label}`}
         >
           <span className={styles.stripCaret}><ChevronRight size={14} /></span>
-          <span className={styles.stripLabel}>{meta.label}</span>
           <span className={styles.stripBadge}>{meta.count}</span>
+          <span className={styles.stripLabel}>{meta.label}</span>
         </button>
       );
     };
