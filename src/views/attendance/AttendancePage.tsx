@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import SmsCallDisplay from '@/components/ui/SmsCallDisplay';
+import SMSConsentBadge from '@/components/ui/SMSConsentBadge';
 import PositionedPortal from '@/components/classroom/PositionedPortal';
 import AttendanceEditModal from '@/components/AttendanceEditModal';
 import ExcusedAbsenceModal from '@/components/attendance/ExcusedAbsenceModal';
@@ -1907,11 +1908,7 @@ function SmsPopup({ student, mode, onClose, onSend }: SmsPopupProps) {
             <span className={styles.parentBlockName}>{fullParentName}</span>
             {phone && <span className={styles.parentBlockPhone}>{phone}</span>}
           </div>
-          <span className={`${styles.consentBadge} ${styles[`consentBadge_${consent}`]}`}>
-            {consent === 'on' && (<><Check size={11} /> SMS on</>)}
-            {consent === 'opted_out' && 'Opted out'}
-            {consent === 'no_reply' && 'No reply'}
-          </span>
+          <SMSConsentBadge status={consent === 'on' ? 'sms_on' : consent} size="medium" />
         </div>
 
         {consent === 'on' && (

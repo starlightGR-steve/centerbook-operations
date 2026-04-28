@@ -36,6 +36,8 @@ export const SMS_CONSENT_SOURCE_LABEL: Record<SmsConsentSourceUi, string> = {
 const DISPLAY_LABEL: Record<string, string> = {
   phone_call: 'Phone call with parent',
   manual_entry: 'Manual entry',
+  inbound_stop: 'Inbound STOP reply',
+  inbound_start: 'Inbound START reply',
 };
 
 export function formatSmsConsentSource(source: string | null | undefined): string {
