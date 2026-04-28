@@ -41,7 +41,10 @@ function buildRows(sections: ClassroomSection[]): FlatRow[] {
     sec.rows.map((r) => ({
       ...r,
       section: sec.name,
-      seats: r.tables * r.seatsPerTable,
+      // 86ah46rd5: ClassroomRow.seats is canonical now. The prior
+      // r.tables * r.seatsPerTable expression rounded odd seat counts up
+      // via the lossy useClassroomConfig adapter.
+      seats: r.seats,
       testingSeats: r.testing_seats ?? 0,
     }))
   );

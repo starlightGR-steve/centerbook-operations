@@ -44,7 +44,10 @@ function buildRows(sections: ClassroomSection[]): FlatRow[] {
     sec.rows.map((r) => ({
       ...r,
       section: sec.name,
-      seats: r.tables * r.seatsPerTable,
+      // 86ah46rd5: ClassroomRow.seats is the canonical flat count now.
+      // Previously: r.tables * r.seatsPerTable, which rounded odd seat
+      // counts up via the lossy adapter in useClassroomConfig.
+      seats: r.seats,
       testingSeats: r.testing_seats ?? 0,
     }))
   );
@@ -263,7 +266,6 @@ export default function ClassroomOverview({
 
               <div
                 className={styles.rowGrid}
-                data-small={sectionRows.length <= 3 && sectionRows[0]?.tables === 1 ? '' : undefined}
               >
                 {sectionRows.map((row) => {
                   const rs = assignments[row.id] || [];

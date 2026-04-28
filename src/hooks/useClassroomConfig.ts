@@ -41,8 +41,14 @@ export function useClassroomConfig() {
             .map((r) => ({
               id: r.id,
               label: r.name,
-              tables: Math.ceil(r.seats / 2),
-              seatsPerTable: 2,
+              // 86ah46rd5: pass through the saved flat seat count verbatim.
+              // The previous adapter rewrote this as
+              //   { tables: Math.ceil(r.seats / 2), seatsPerTable: 2 }
+              // which rounded any odd seat count up to the next even number
+              // when consumers multiplied the two fields back together. The
+              // canonical wire shape and the user-facing Setup screen both
+              // use a flat seats: number.
+              seats: r.seats,
               teacher: '',
               testing_seats: r.testing_seats ?? 0,
             })),
