@@ -622,10 +622,6 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-size: 0.6875rem;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .stripBadge {
