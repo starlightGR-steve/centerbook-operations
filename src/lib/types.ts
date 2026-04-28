@@ -351,8 +351,12 @@ export type ClassroomPositionName = 'Early Learners' | 'Main Classroom' | 'Upper
 export interface ClassroomRow {
   id: string;               // "el1", "m1", "upper"
   label: string;            // "EL Row 1", "Row 1", "Upper Row"
-  tables: number;           // tables in this row
-  seatsPerTable: number;    // seats per table
+  /** Total seats in the row. Flat count to match the user-configurable
+   *  Classroom Setup screen and the backend (cb_classroom_config.rows[].seats).
+   *  Replaces the legacy `tables × seatsPerTable` model from the original
+   *  mock fixtures, which lossily rounded odd seat counts up to the next
+   *  even number on the way back from the API (86ah46rd5). */
+  seats: number;
   teacher: string;          // assigned teacher name
   ratio?: string;           // e.g. "1:2" for EL rows
   advanced?: boolean;       // Upper Classroom flag

@@ -7,9 +7,9 @@ export const CLASSROOM_CONFIG: ClassroomSection[] = [
     desc: '1:2 teacher-to-student ratio',
     color: 'var(--secondary)',
     rows: [
-      { id: 'el1', label: 'EL Row 1', tables: 1, seatsPerTable: 2, teacher: 'Maria T.', ratio: '1:2' },
-      { id: 'el2', label: 'EL Row 2', tables: 1, seatsPerTable: 2, teacher: 'Lisa W.', ratio: '1:2' },
-      { id: 'el3', label: 'EL Row 3', tables: 1, seatsPerTable: 2, teacher: 'Tom H.', ratio: '1:2' },
+      { id: 'el1', label: 'EL Row 1', seats: 2, teacher: 'Maria T.', ratio: '1:2' },
+      { id: 'el2', label: 'EL Row 2', seats: 2, teacher: 'Lisa W.', ratio: '1:2' },
+      { id: 'el3', label: 'EL Row 3', seats: 2, teacher: 'Tom H.', ratio: '1:2' },
     ],
   },
   {
@@ -17,11 +17,11 @@ export const CLASSROOM_CONFIG: ClassroomSection[] = [
     desc: 'Standard rows',
     color: 'var(--primary)',
     rows: [
-      { id: 'm1', label: 'Row 1', tables: 5, seatsPerTable: 2, teacher: 'Sarah K.' },
-      { id: 'm2', label: 'Row 2', tables: 5, seatsPerTable: 2, teacher: 'Jane D.' },
-      { id: 'm3', label: 'Row 3', tables: 5, seatsPerTable: 2, teacher: 'Mike R.' },
-      { id: 'm4', label: 'Row 4', tables: 5, seatsPerTable: 2, teacher: 'Leah M.' },
-      { id: 'm5', label: 'Row 5', tables: 5, seatsPerTable: 2, teacher: 'Chris P.' },
+      { id: 'm1', label: 'Row 1', seats: 10, teacher: 'Sarah K.' },
+      { id: 'm2', label: 'Row 2', seats: 10, teacher: 'Jane D.' },
+      { id: 'm3', label: 'Row 3', seats: 10, teacher: 'Mike R.' },
+      { id: 'm4', label: 'Row 4', seats: 10, teacher: 'Leah M.' },
+      { id: 'm5', label: 'Row 5', seats: 10, teacher: 'Chris P.' },
     ],
   },
   {
@@ -29,7 +29,7 @@ export const CLASSROOM_CONFIG: ClassroomSection[] = [
     desc: 'Advanced students — requires advanced math teacher',
     color: 'var(--accent)',
     rows: [
-      { id: 'upper', label: 'Upper Row', tables: 5, seatsPerTable: 2, teacher: 'Dr. Kim (Adv. Math)', advanced: true },
+      { id: 'upper', label: 'Upper Row', seats: 10, teacher: 'Dr. Kim (Adv. Math)', advanced: true },
     ],
   },
 ];
