@@ -1,0 +1,87 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-primary);
+  font-size: var(--text-base);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: var(--space-1_5) var(--space-3);
+  min-height: var(--touch-min);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.pill:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.label {
+  line-height: 1;
+}
+
+/* Shown state — neutral (default OFF). #d3d1c7 mirrors the adjacent
+   DragLockToggle "locked" border so the two header toggles read as a
+   matched neutral pair when both are off. */
+.shown {
+  background: transparent;
+  border: 1.5px solid #d3d1c7;
+  color: var(--neutral);
+}
+
+.shown .track {
+  background: #d3d1c7;
+}
+
+.shown .thumb {
+  left: 2px;
+}
+
+/* Hidden state — teal active. Pill bg/text reuse the
+   --color-pill-checked-* tokens from the students-checked badge in the
+   same header so the active teal reads consistently across the row. */
+.hidden {
+  background: var(--color-pill-checked-bg);
+  border: 1.5px solid var(--secondary);
+  color: var(--color-pill-checked-text);
+}
+
+.hidden .track {
+  background: var(--secondary);
+}
+
+.hidden .thumb {
+  left: 16px;
+}
+
+/* Switch track + thumb — sized to match DragLockToggle 1:1 so both
+   pills look identical at rest. */
+.track {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 16px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: background-color 150ms ease;
+}
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  background: var(--white);
+  border-radius: 50%;
+  transition: left 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill,
+  .track,
+  .thumb {
+    transition: none;
+  }
+}

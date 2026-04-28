@@ -397,53 +397,14 @@ export default function StudentDetailPanel({
           </div>
         )}
 
-        {/* 86ah3f3xp Findings 3D + 3E: session info collapses to a single
-            compact line plus a Time button styled identically to the Row View
-            card's Time button (CardButton variant="time"). Edit pencil and
-            AttendanceEditModal trigger removed — check-in editing lives on
-            the Attendance kiosk page only. */}
-        {attendance && (
-          <div className={styles.sessionLine}>
-            <div className={styles.sessionLineText}>
-              <span>Checked in {formatTime(attendance.check_in)}</span>
-              <span aria-hidden="true"> · </span>
-              <span>Session {Number(attendance.session_duration_minutes ?? 0)}m</span>
-            </div>
-            <span ref={timeButtonRef}>
-              <CardButton
-                variant="time"
-                label="Time"
-                onPress={() => setTimePopoverOpen(true)}
-              />
-            </span>
-          </div>
-        )}
-
-        {/* 86agzuwdf §3B: Permissions & Pickup card. Same attendance gate as Session info.
-            86ah3duvq Phase 2: pass through the primary parent so the bathroom button
-            can render its three-state SmsTriggerButton (PDF section 4). */}
-        {attendance && (
-          <PermissionsPickupCard
-            studentId={student.id}
-            studentFirstName={student.first_name}
-            attendanceId={attendance.id}
-            staffId={staffId}
-            primaryParent={primaryContact ?? null}
-            bathroomPreference={student.bathroom_preference ?? null}
-            checkoutPreference={student.checkout_preference ?? null}
-            exitEntrance={student.exit_entrance ?? null}
-          />
-        )}
-
-        {/* 4. SMS Status */}
-        {attendance && attendance.sms_10min_sent && (
-          <SmsStatusIndicator attendance={attendance} variant="detail" />
-        )}
-
         {/* 86ah3f3xp Finding 3C: standalone Schedule section removed — schedule
             now appears once in the inline strip under the meta row. */}
 
-        {/* 6. During Class */}
+        {/* 86ah4vrex item 4: During Class moved directly under Medical so the
+            day-of work the teacher actually does is the first thing they see.
+            Permissions/Pickup/Time + SMS status drop below Observations
+            because they're only needed at check-in/checkout, not during the
+            active part of the session. */}
         <div className={styles.duringClassSection}>
           <div className={styles.duringClassHeader}>
             <label className={styles.duringClassHeading}>During Class</label>
@@ -708,6 +669,45 @@ export default function StudentDetailPanel({
             )}
           </div>
         </div>
+
+        {/* 86ah4vrex item 4: Permissions and Pickup grouped with the session
+            Time row in one panel section, dropped below Observations because
+            Amy/teaching only need these at check-in or checkout. Per Visual
+            15, the Time row sits at the BOTTOM of this grouping (below the
+            Bathroom/Checkout/Pickup block). The wrapper collapses the
+            inter-element gap so the three pieces read as one section while
+            still keeping each component's internal content untouched. */}
+        {attendance && (
+          <div className={styles.permissionsTimeGroup}>
+            <PermissionsPickupCard
+              studentId={student.id}
+              studentFirstName={student.first_name}
+              attendanceId={attendance.id}
+              staffId={staffId}
+              primaryParent={primaryContact ?? null}
+              bathroomPreference={student.bathroom_preference ?? null}
+              checkoutPreference={student.checkout_preference ?? null}
+              exitEntrance={student.exit_entrance ?? null}
+            />
+            {attendance.sms_10min_sent && (
+              <SmsStatusIndicator attendance={attendance} variant="detail" />
+            )}
+            <div className={styles.sessionLine}>
+              <div className={styles.sessionLineText}>
+                <span>Checked in {formatTime(attendance.check_in)}</span>
+                <span aria-hidden="true"> · </span>
+                <span>Session {Number(attendance.session_duration_minutes ?? 0)}m</span>
+              </div>
+              <span ref={timeButtonRef}>
+                <CardButton
+                  variant="time"
+                  label="Time"
+                  onPress={() => setTimePopoverOpen(true)}
+                />
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* 8. Library Books */}
         <div>
