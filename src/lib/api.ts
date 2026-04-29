@@ -168,6 +168,28 @@ function directFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   return baseFetch<T>(endpoint, options);
 }
 
+/** Coerce numeric fields on a TimeEntry payload back to numbers.
+ *
+ *  WordPress's REST serializer emits MySQL INT columns as JSON strings (e.g.
+ *  duration_minutes: "486", staff_id: "12"). The TypeScript type says
+ *  `number | null`, but at runtime we get strings. Two consequences if not
+ *  fixed at this boundary:
+ *    1. Sum totals — reduce((s, e) => s + e.duration_minutes, 0) — turns into
+ *       string concatenation. Fran's 5 entries totalling 40.5 hrs displayed
+ *       as "8258258008008.0 hrs" until this normalize was added.
+ *    2. Identity filters — entries.filter((e) => e.staff_id === staffIdNum)
+ *       on the Me page would silently match nothing because "12" !== 12.
+ *
+ *  Applied to every list returned by api.timeclock.today / .range /
+ *  .forStaff so component code can treat the fields as plain numbers. */
+function normalizeTimeEntry(e: TimeEntry): TimeEntry {
+  return {
+    ...e,
+    staff_id: Number(e.staff_id),
+    duration_minutes: e.duration_minutes == null ? null : Number(e.duration_minutes),
+  };
+}
+
 // ── API Methods ────────────────────────────
 // All methods use directFetch for single operations.
 // Use batchFetch only when doing bulk reads/writes in loops.
@@ -350,22 +372,26 @@ export const api = {
 
   // ── Timeclock (Staff) ──
   timeclock: {
-    today: (date?: string) => {
+    today: async (date?: string) => {
       const d = date || getCenterToday();
-      return directFetch<TimeEntry[]>(`/timeclock?date=${d}`);
+      const entries = await directFetch<TimeEntry[]>(`/timeclock?date=${d}`);
+      return entries.map(normalizeTimeEntry);
     },
     /** Period-ranged fetch across all staff. Backs the StaffPage hours table,
      *  StaffDetailModal time log, and the Me-page "My Hours" section. */
-    range: (from: string, to: string) =>
-      directFetch<TimeEntry[]>(`/timeclock?from=${from}&to=${to}`),
-    forStaff: (staffId: number, from?: string, to?: string) => {
+    range: async (from: string, to: string) => {
+      const entries = await directFetch<TimeEntry[]>(`/timeclock?from=${from}&to=${to}`);
+      return entries.map(normalizeTimeEntry);
+    },
+    forStaff: async (staffId: number, from?: string, to?: string) => {
       const params = new URLSearchParams();
       if (from) params.set('from', from);
       if (to) params.set('to', to);
       const qs = params.toString();
-      return directFetch<TimeEntry[]>(
+      const entries = await directFetch<TimeEntry[]>(
         `/timeclock/staff/${staffId}${qs ? `?${qs}` : ''}`
       );
+      return entries.map(normalizeTimeEntry);
     },
     clockIn: (data: ClockInRequest) =>
       directFetch<TimeEntry>('/timeclock/in', {
