@@ -190,6 +190,22 @@ function normalizeTimeEntry(e: TimeEntry): TimeEntry {
   };
 }
 
+/** Coerce numeric fields on a Staff payload back to numbers. Same WP-REST
+ *  string-serialization issue as TimeEntry — cb_staff.id arrives as "12"
+ *  even though TS types it as number. The StaffTable hours filter does
+ *  `e.staff_id === s.id` strict equality, so without this Staff.id stays a
+ *  string while TimeEntry.staff_id is a number, the filter never matches,
+ *  and every row reports 0 hrs. is_active is already documented as stringly
+ *  typed on the wire (types.ts:235-238); coerced here for the same reason. */
+function normalizeStaff(s: Staff): Staff {
+  return {
+    ...s,
+    id: Number(s.id),
+    wp_user_id: s.wp_user_id == null ? null : Number(s.wp_user_id),
+    is_active: s.is_active == null ? null : Number(s.is_active),
+  };
+}
+
 // ── API Methods ────────────────────────────
 // All methods use directFetch for single operations.
 // Use batchFetch only when doing bulk reads/writes in loops.
@@ -308,18 +324,22 @@ export const api = {
 
   // ── Staff ──
   staff: {
-    list: () => directFetch<Staff[]>('/staff'),
-    get: (id: number) => directFetch<Staff>(`/staff/${id}`),
-    create: (data: Partial<Staff>) =>
-      directFetch<Staff>('/staff', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    update: (id: number, data: Partial<Staff>) =>
-      directFetch<Staff>(`/staff/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+    list: async () => (await directFetch<Staff[]>('/staff')).map(normalizeStaff),
+    get: async (id: number) => normalizeStaff(await directFetch<Staff>(`/staff/${id}`)),
+    create: async (data: Partial<Staff>) =>
+      normalizeStaff(
+        await directFetch<Staff>('/staff', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+      ),
+    update: async (id: number, data: Partial<Staff>) =>
+      normalizeStaff(
+        await directFetch<Staff>(`/staff/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+      ),
     deactivate: (id: number) =>
       directFetch<{ success: boolean }>(`/staff/${id}`, {
         method: 'PUT',
