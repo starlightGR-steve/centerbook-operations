@@ -22,6 +22,7 @@ import type {
   TimeEntry,
   ClockInRequest,
   ClockOutRequest,
+  ManualEntryRequest,
   StudentNote,
   CreateNoteRequest,
   CbTask,
@@ -353,6 +354,10 @@ export const api = {
       const d = date || getCenterToday();
       return directFetch<TimeEntry[]>(`/timeclock?date=${d}`);
     },
+    /** Period-ranged fetch across all staff. Backs the StaffPage hours table,
+     *  StaffDetailModal time log, and the Me-page "My Hours" section. */
+    range: (from: string, to: string) =>
+      directFetch<TimeEntry[]>(`/timeclock?from=${from}&to=${to}`),
     forStaff: (staffId: number, from?: string, to?: string) => {
       const params = new URLSearchParams();
       if (from) params.set('from', from);
@@ -372,6 +377,24 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    /** Admin-posted manual entry (in + out together). Backend accepts
+     *  center-local ISO strings; do NOT pre-convert to UTC. */
+    manual: (data: ManualEntryRequest) =>
+      directFetch<TimeEntry>('/timeclock/manual', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    /** CSV export from the backend at GET /timeclock/export.csv. Bypasses
+     *  directFetch because the response is text/csv, not the JSON envelope.
+     *  Returns the raw Blob; caller wires the download anchor. */
+    exportCsv: async (from: string, to: string): Promise<Blob> => {
+      const res = await fetch(`${API_BASE}/timeclock/export.csv?from=${from}&to=${to}`);
+      if (!res.ok) {
+        const text = await res.text().catch(() => 'Unknown error');
+        throw new ApiClientError(res.status, `Export failed (${res.status}): ${text}`);
+      }
+      return res.blob();
+    },
   },
 
   // ── Notes (backed by /journal endpoint) ──

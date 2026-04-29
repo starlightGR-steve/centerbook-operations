@@ -6,7 +6,7 @@ import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
-import { clockInStaff } from '@/hooks/useTimeclock';
+import { mutateAllTimeclock } from '@/hooks/useTimeclock';
 import { api } from '@/lib/api';
 import type { Staff, TimeEntry } from '@/lib/types';
 import { formatTime } from '@/lib/types';
@@ -54,6 +54,8 @@ export default function StaffDetailModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [manualSubmitting, setManualSubmitting] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
 
   const staffName = getStaffName(staff);
   const isClockedIn = clockedInIds?.has(staff.id) ?? false;
@@ -80,11 +82,38 @@ export default function StaffDetailModal({
   const avgHours = uniqueDays.size > 0 ? totalHours / uniqueDays.size : 0;
 
   async function handleAddManual() {
-    if (!manualDate || !manualIn || !manualOut) return;
-    // Create via clockIn (simplified — in production would use a dedicated manual entry endpoint)
-    await clockInStaff({ staff_id: staff.id, source: 'manual' });
-    setShowManualForm(false);
-    setManualDate('');
+    if (manualSubmitting) return;
+    setManualError(null);
+    if (!manualDate || !manualIn || !manualOut) {
+      setManualError('Date, start time, and end time are all required.');
+      return;
+    }
+    // Center-local ISO strings — concatenate the form values directly.
+    // Wrapping these in `new Date(...)` would interpret them in the browser's
+    // timezone and shift the value when the user happens to be outside
+    // America/Detroit. The backend stores center-local time as-is.
+    const clockInIso = `${manualDate}T${manualIn}:00`;
+    const clockOutIso = `${manualDate}T${manualOut}:00`;
+    if (clockInIso >= clockOutIso) {
+      setManualError('End time must be after start time.');
+      return;
+    }
+    setManualSubmitting(true);
+    try {
+      await api.timeclock.manual({
+        staff_id: staff.id,
+        clock_in: clockInIso,
+        clock_out: clockOutIso,
+      });
+      await mutateAllTimeclock();
+      setShowManualForm(false);
+      setManualDate('');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to add entry.';
+      setManualError(message);
+    } finally {
+      setManualSubmitting(false);
+    }
   }
 
   return (
@@ -289,12 +318,14 @@ export default function StaffDetailModal({
                 className={styles.manualInput}
                 value={manualDate}
                 onChange={(e) => setManualDate(e.target.value)}
+                disabled={manualSubmitting}
               />
               <input
                 type="time"
                 className={styles.manualInput}
                 value={manualIn}
                 onChange={(e) => setManualIn(e.target.value)}
+                disabled={manualSubmitting}
               />
               <span className={styles.manualTo}>to</span>
               <input
@@ -302,13 +333,23 @@ export default function StaffDetailModal({
                 className={styles.manualInput}
                 value={manualOut}
                 onChange={(e) => setManualOut(e.target.value)}
+                disabled={manualSubmitting}
               />
             </div>
+            {manualError && (
+              <p style={{ color: 'var(--red)', fontSize: 'var(--text-sm)', margin: '0 0 10px', fontFamily: 'var(--font-primary)' }}>
+                {manualError}
+              </p>
+            )}
             <div className={styles.manualActions}>
-              <Button variant="primary" size="sm" onClick={handleAddManual}>
-                Add Entry
+              <Button variant="primary" size="sm" onClick={handleAddManual} disabled={manualSubmitting}>
+                {manualSubmitting ? 'Adding…' : 'Add Entry'}
               </Button>
-              <button className={styles.cancelLink} onClick={() => setShowManualForm(false)}>
+              <button
+                className={styles.cancelLink}
+                onClick={() => { setShowManualForm(false); setManualError(null); }}
+                disabled={manualSubmitting}
+              >
                 Cancel
               </button>
             </div>

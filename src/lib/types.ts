@@ -322,13 +322,19 @@ export interface CheckOutRequest {
 
 // ── Time Entries (Staff Timeclock) ──────────
 
+/** Where a time entry was originated. 'self' covers the Me-page clock-in/out
+ *  button (staff acting on their own row). The backend column is varchar(50)
+ *  and accepts arbitrary strings, so adding a value here doesn't require a
+ *  schema migration. */
+export type TimeEntrySource = 'kiosk' | 'manual' | 'barcode' | 'self';
+
 export interface TimeEntry {
   id: number;
   staff_id: number;
   clock_in: string;
   clock_out: string | null; // NULL = currently clocked in
   duration_minutes: number | null;
-  source: 'kiosk' | 'manual' | 'barcode';
+  source: TimeEntrySource;
   notes: string | null;
   created_at: string;
   // Joined fields
@@ -337,11 +343,23 @@ export interface TimeEntry {
 
 export interface ClockInRequest {
   staff_id: number;
-  source: 'kiosk' | 'manual' | 'barcode';
+  source: TimeEntrySource;
 }
 
 export interface ClockOutRequest {
   staff_id: number;
+}
+
+/** Manual time entry — admin posts a complete (in + out) entry on behalf of
+ *  a staff member to backfill missed clock-ins. clock_in / clock_out are
+ *  center-local ISO strings without trailing Z (e.g. "2026-04-15T15:00:00"),
+ *  built directly from the date/time form inputs. NEVER round-trip through
+ *  `new Date()` here — the browser's timezone would shift the value. */
+export interface ManualEntryRequest {
+  staff_id: number;
+  clock_in: string;
+  clock_out: string;
+  notes?: string;
 }
 
 // ── Classroom Layout ─────────────────────────

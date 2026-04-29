@@ -11,9 +11,10 @@ import StaffTable from './StaffTable';
 import StaffDetailModal from './StaffDetailModal';
 import TimeclockPanel from './TimeclockPanel';
 import { useStaff, useActiveStaff } from '@/hooks/useStaff';
-import { useTimeclock } from '@/hooks/useTimeclock';
+import { useTimeclock, useTimeclockRange } from '@/hooks/useTimeclock';
 import { usePayPeriod } from '@/hooks/usePayPeriod';
-import type { Staff, TimeEntry } from '@/lib/types';
+import { api } from '@/lib/api';
+import type { Staff } from '@/lib/types';
 import StaffSkeleton from './StaffSkeleton';
 import styles from './StaffPage.module.css';
 
@@ -23,32 +24,18 @@ function getStaffName(s: Staff): string {
   return s.first_name || s.last_name || 'Unnamed';
 }
 
-function exportPayrollCSV(
-  staff: Staff[],
-  timeEntries: TimeEntry[],
-  periodStart: string,
-  periodEnd: string
-) {
-  const rows = staff.map((s) => {
-    const entries = timeEntries.filter(
-      (e) =>
-        e.staff_id === s.id &&
-        e.clock_in >= periodStart &&
-        e.clock_in <= periodEnd + 'T23:59:59' &&
-        e.duration_minutes != null
-    );
-    const hours = entries.reduce((sum, e) => sum + (e.duration_minutes || 0), 0) / 60;
-    return [getStaffName(s), s.role, hours.toFixed(2), String(entries.length), `${periodStart} to ${periodEnd}`];
-  });
-
-  const header = 'Employee Name,Role,Total Hours,Entries,Period';
-  const csv = [header, ...rows.map((r) => r.join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
+/** Trigger a CSV download from the backend export endpoint. The server sets
+ *  Content-Disposition with a sensible filename; we keep a fallback on the
+ *  anchor for browsers that ignore the header. */
+async function downloadPayrollCsv(periodStart: string, periodEnd: string): Promise<void> {
+  const blob = await api.timeclock.exportCsv(periodStart, periodEnd);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `payroll_${periodStart}_${periodEnd}.csv`;
+  a.download = `timeclock_${periodStart}_${periodEnd}.csv`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
@@ -565,10 +552,18 @@ function StaffManagement({ staff, clockedInIds }: MgmtProps) {
 export default function StaffPage() {
   const { data: session, status } = useSession();
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const { data: staff, isLoading: staffLoading, mutate: mutateStaff } = useStaff();
   const { data: activeStaff } = useActiveStaff();
-  const { data: timeEntries, error: timeError, isLoading: timeLoading } = useTimeclock();
   const { start, end, label, goPrev, goNext, goToCurrent } = usePayPeriod();
+  // Two data sources on this page:
+  //   liveEntries (today, 10s)  → currently-clocked-in indicator + TimeclockPanel
+  //   periodEntries (range, 30s)→ hours table, detail modal, CSV trigger guard
+  // The previous single useTimeclock() was today-only and silently
+  // under-reported every day prior in the pay period.
+  const { data: liveEntries } = useTimeclock();
+  const { data: periodEntries, isLoading: periodLoading } = useTimeclockRange(start, end);
   const [timeclockOpen, setTimeclockOpen] = useState(false);
 
   const userRole = (session?.user as { role?: string } | undefined)?.role;
@@ -593,20 +588,36 @@ export default function StaffPage() {
     });
   }, [staff, isSuperuser]);
 
-  const hasEntries = !!timeEntries && timeEntries.length > 0;
-  const timeReady = !timeLoading;
+  const hasEntries = !!periodEntries && periodEntries.length > 0;
+  const timeReady = !periodLoading;
 
   useEffect(() => {
     if (hasEntries) setTimeclockOpen(true);
   }, [hasEntries]);
 
+  // clockedInIds is a "right now" question, so it derives from live entries
+  // (today). Used by EditStaffModal to block deletion of a clocked-in member
+  // and by StaffDetailModal to surface a clocked-in badge.
   const clockedInIds = useMemo(() => {
     const ids = new Set<number>();
-    timeEntries?.forEach((e) => {
+    liveEntries?.forEach((e) => {
       if (e.clock_out === null) ids.add(e.staff_id);
     });
     return ids;
-  }, [timeEntries]);
+  }, [liveEntries]);
+
+  const handleExport = async () => {
+    setExportError(null);
+    setExporting(true);
+    try {
+      await downloadPayrollCsv(start, end);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Export failed';
+      setExportError(message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -620,16 +631,14 @@ export default function StaffPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() =>
-              staff &&
-              timeEntries &&
-              exportPayrollCSV(staff, timeEntries, start, end)
-            }
+            onClick={handleExport}
+            disabled={exporting}
           >
             <Download size={16} />
-            Export
+            {exporting ? 'Exporting...' : 'Export'}
           </Button>
         </div>
+        {exportError && <p className={styles.msgError}>{exportError}</p>}
         <PayPeriodNavigator
           label={label}
           onPrev={goPrev}
@@ -651,8 +660,8 @@ export default function StaffPage() {
                 <span className={styles.collapsibleTitle}>
                   <Clock size={16} />
                   Timeclock &amp; Payroll
-                  {hasEntries && (
-                    <span className={styles.entryCount}>{timeEntries.length} entries</span>
+                  {hasEntries && periodEntries && (
+                    <span className={styles.entryCount}>{periodEntries.length} entries</span>
                   )}
                 </span>
                 {timeclockOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -660,11 +669,11 @@ export default function StaffPage() {
               <div className={`${styles.collapsibleContent} ${timeclockOpen ? styles.collapsibleOpen : ''}`}>
                 {!timeReady ? (
                   <StaffSkeleton />
-                ) : hasEntries ? (
+                ) : hasEntries && periodEntries ? (
                   <>
                     <StaffTable
                       staff={visibleStaff ?? staff}
-                      timeEntries={timeEntries}
+                      timeEntries={periodEntries}
                       clockedInIds={clockedInIds}
                       periodStart={start}
                       periodEnd={end}
@@ -672,7 +681,7 @@ export default function StaffPage() {
                     />
                     {activeStaff && (
                       <div className={styles.timeclockWrap}>
-                        <TimeclockPanel staff={activeStaff} timeEntries={timeEntries} />
+                        <TimeclockPanel staff={activeStaff} timeEntries={liveEntries ?? []} />
                       </div>
                     )}
                   </>
@@ -694,7 +703,7 @@ export default function StaffPage() {
           open={!!selectedStaff}
           onClose={() => setSelectedStaff(null)}
           staff={selectedStaff}
-          timeEntries={timeEntries || []}
+          timeEntries={periodEntries || []}
           periodStart={start}
           periodEnd={end}
           clockedInIds={clockedInIds}

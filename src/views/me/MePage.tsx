@@ -7,16 +7,26 @@ import {
   LogOut, UserCircle, Key, Eye, EyeOff,
   ClipboardList, Plus, Check, Inbox,
   Calendar, Trash2, Search, X as XIcon, ArrowRight,
+  Clock,
 } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import StudentDetailPanel from '@/views/rows/StudentDetailPanel';
+import PayPeriodNavigator from '@/views/staff/PayPeriodNavigator';
 import { api } from '@/lib/api';
 import { useActiveStaff } from '@/hooks/useStaff';
 import { useStudents } from '@/hooks/useStudents';
-import type { CbTask, CbTaskType, CreateTaskRequest, Student } from '@/lib/types';
+import {
+  useTimeclockRange,
+  useClockedInStaff,
+  clockInStaff,
+  clockOutStaff,
+} from '@/hooks/useTimeclock';
+import { usePayPeriod } from '@/hooks/usePayPeriod';
+import type { CbTask, CbTaskType, CreateTaskRequest, Student, TimeEntry } from '@/lib/types';
+import { formatTime } from '@/lib/types';
 import styles from './MePage.module.css';
 
 const TASK_TYPE_LABELS: Record<CbTaskType, string> = {
@@ -60,6 +70,15 @@ function sortTasks(a: CbTask, b: CbTask): number {
   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 }
 
+function formatEntryDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function sortEntriesNewestFirst(a: TimeEntry, b: TimeEntry): number {
+  return b.clock_in.localeCompare(a.clock_in);
+}
+
 export default function MePage() {
   const { data: session } = useSession();
   const user = session?.user;
@@ -95,6 +114,40 @@ export default function MePage() {
   // drawer instead of navigating to the full profile page. Read-only context --
   // no flag/task callbacks wired since the inbox isn't a classroom-edit surface.
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+
+  // My Hours
+  const { start: periodStart, end: periodEnd, label: periodLabel, goPrev, goNext, goToCurrent } = usePayPeriod();
+  const { data: periodEntries, isLoading: hoursLoading } = useTimeclockRange(periodStart, periodEnd);
+  const { data: clockedInToday } = useClockedInStaff();
+  const myCurrentEntry = clockedInToday?.find((e) => e.staff_id === staffIdNum);
+  const isClockedIn = !!myCurrentEntry;
+  const myPeriodEntries = useMemo(
+    () => (periodEntries ?? []).filter((e) => e.staff_id === staffIdNum).sort(sortEntriesNewestFirst),
+    [periodEntries, staffIdNum]
+  );
+  const myPeriodHours = useMemo(
+    () => myPeriodEntries.reduce((sum, e) => sum + (e.duration_minutes ?? 0), 0) / 60,
+    [myPeriodEntries]
+  );
+  const [clockSubmitting, setClockSubmitting] = useState(false);
+  const [clockError, setClockError] = useState<string | null>(null);
+  const handleSelfClock = async () => {
+    if (!staffIdNum || clockSubmitting) return;
+    setClockError(null);
+    setClockSubmitting(true);
+    try {
+      if (isClockedIn) {
+        await clockOutStaff({ staff_id: staffIdNum });
+      } else {
+        await clockInStaff({ staff_id: staffIdNum, source: 'self' });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Clock action failed.';
+      setClockError(message);
+    } finally {
+      setClockSubmitting(false);
+    }
+  };
 
   // Data
   const { data: staff } = useActiveStaff();
@@ -309,6 +362,79 @@ export default function MePage() {
             </div>
           </div>
         </Card>
+
+        {/* My Hours — self-service clock + period totals + entry list */}
+        {staffId && (
+          <Card className={styles.actionsCard}>
+            <div className={styles.hoursHeader}>
+              <h4 className={styles.tasksTitle}>
+                <Clock size={15} /> My Hours
+              </h4>
+            </div>
+
+            <PayPeriodNavigator
+              label={periodLabel}
+              onPrev={goPrev}
+              onNext={goNext}
+              onCurrent={goToCurrent}
+            />
+
+            <div className={styles.hoursClockRow}>
+              <Button
+                variant={isClockedIn ? 'secondary' : 'primary'}
+                size="md"
+                onClick={handleSelfClock}
+                disabled={clockSubmitting}
+              >
+                <Clock size={16} />
+                {clockSubmitting ? 'Working...' : isClockedIn ? 'Clock Out' : 'Clock In'}
+              </Button>
+              {isClockedIn && myCurrentEntry && (
+                <span className={styles.hoursClockSubtext}>
+                  Clocked in at {formatTime(myCurrentEntry.clock_in)}
+                </span>
+              )}
+            </div>
+            {clockError && <p className={styles.msgError}>{clockError}</p>}
+
+            <div className={styles.hoursTotal}>
+              <span className={styles.hoursValue}>{myPeriodHours.toFixed(2)}</span>
+              <span className={styles.hoursUnit}>hours this period</span>
+            </div>
+
+            {hoursLoading && !periodEntries ? (
+              <p className={styles.sectionDesc}>Loading entries...</p>
+            ) : myPeriodEntries.length === 0 ? (
+              <p className={styles.hoursEmpty}>No time entries in this period yet.</p>
+            ) : (
+              <div className={styles.hoursList}>
+                {myPeriodEntries.map((entry) => {
+                  const duration = entry.duration_minutes != null
+                    ? `${(entry.duration_minutes / 60).toFixed(2)} hrs`
+                    : 'In progress';
+                  return (
+                    <div key={entry.id} className={styles.hoursEntry}>
+                      <span className={styles.hoursEntryDate}>{formatEntryDate(entry.clock_in)}</span>
+                      <span className={styles.hoursEntryTime}>
+                        {formatTime(entry.clock_in)}
+                        {entry.clock_out ? ` – ${formatTime(entry.clock_out)}` : ' – now'}
+                      </span>
+                      <span
+                        className={
+                          entry.duration_minutes != null
+                            ? styles.hoursEntryDuration
+                            : styles.hoursEntryDurationActive
+                        }
+                      >
+                        {duration}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        )}
 
         {/* Tasks */}
         {staffId ? (
